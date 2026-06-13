@@ -109,7 +109,7 @@ _DEFAULT_MINIO_ENDPOINT = build_external_service_url(_MINIO_EXTERNAL_HOSTNAME) o
 
 
 class Settings(BaseSettings):
-    PROJECT_NAME: str = "Academy Guinéenne"
+    PROJECT_NAME: str = "Guinée Academy"
     API_V1_STR: str = "/api/v1"
 
     LOG_LEVEL: str = "INFO"
@@ -160,15 +160,15 @@ class Settings(BaseSettings):
     MINIO_ACCESS_KEY: str = get_secret("MINIO_ACCESS_KEY", "")
     MINIO_SECRET_KEY: str = get_secret("MINIO_SECRET_KEY", "")
     MINIO_SECURE: bool = True  # SECURITY: Default to HTTPS for MinIO connections
-    MINIO_BUCKET: str = get_secret("MINIO_BUCKET", "schoolflow")
+    MINIO_BUCKET: str = get_secret("MINIO_BUCKET", "guinee_academy")
 
     REDIS_URL: str = get_secret("REDIS_URL", "redis://localhost:6379/0")
 
     DEBUG: bool = os.getenv("DEBUG", "False").lower() == "true"
-    APP_NAME: str = "Academy Guinéenne API"
+    APP_NAME: str = "Guinée Academy API"
     APP_VERSION: str = "1.0.0"
 
-    ADMIN_DEFAULT_EMAIL: str = get_secret("ADMIN_DEFAULT_EMAIL", "admin@schoolflow.local")
+    ADMIN_DEFAULT_EMAIL: str = get_secret("ADMIN_DEFAULT_EMAIL", "admin@guinee-academy.local")
     ADMIN_DEFAULT_PASSWORD: str = get_secret("ADMIN_DEFAULT_PASSWORD", "")
     BOOTSTRAP_SECRET: str = get_secret("BOOTSTRAP_SECRET", "")
     SECRET_KEY: str = get_secret("SECRET_KEY", "")
@@ -226,8 +226,8 @@ class Settings(BaseSettings):
     SMTP_PORT: int = 587
     SMTP_USER: str = get_secret("SMTP_USER", "")
     SMTP_PASS: str = get_secret("SMTP_PASS", "")
-    FROM_EMAIL: str = get_secret("FROM_EMAIL", "noreply@schoolflow.pro")
-    FROM_NAME: str = get_secret("FROM_NAME", "SchoolFlow Pro")
+    FROM_EMAIL: str = get_secret("FROM_EMAIL", "noreply@guinee-academy.com")
+    FROM_NAME: str = get_secret("FROM_NAME", "Guinée Academy")
     # URL base utilisée dans les emails (lien de reset, etc.)
     FRONTEND_URL: str = get_secret("FRONTEND_URL", "http://localhost:3000")
 

@@ -1,4 +1,4 @@
-// SchoolFlow Pro — Load Tests for Badges API
+// Guinée Academy — Load Tests for Badges API
 // Usage: k6 run --env BASE_URL=http://localhost:8000 load-tests/badges-load.js
 // Requires: ANON_KEY env var with a valid JWT from POST /api/v1/auth/login/
 import http from 'k6/http';

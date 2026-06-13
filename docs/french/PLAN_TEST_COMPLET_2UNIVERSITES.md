@@ -1,4 +1,4 @@
-# 📋 Plan de Test Complet - SchoolFlow Pro
+# 📋 Plan de Test Complet - Guinée Academy
 ## 2 Universités Distinctes + Version Mobile Multiplateforme
 
 **Date de Création**: 26 Janvier 2026  
@@ -771,7 +771,7 @@ print("\n✅ Création des utilisateurs terminée")
 
 **1. Vérifier configuration**
 ```bash
-cd c:\Users\cheic\Documents\EduSchool\schoolflow-pro
+cd c:\Users\cheic\Documents\EduSchool\guinee-academy
 
 # Vérifier Capacitor installé
 npx cap --version
@@ -856,7 +856,7 @@ npx cap open ios
 
 #### 4.4.1 Test Authentification Mobile
 - [ ] Lancer app sur Android
-- [ ] Écran splash "SchoolFlow Pro" s'affiche 2 sec
+- [ ] Écran splash "Guinée Academy" s'affiche 2 sec
 - [ ] Voir écran Login
 - [ ] Email input visible
 - [ ] Password input visible (avec masquage)
@@ -1375,11 +1375,11 @@ INFRASTRUCTURE:
    - Note les étapes reproduction
 
 2. **Bugs Backend/DB**
-   - Logs: `docker logs schoolflow-pro-supabase-db-1`
+   - Logs: `docker logs guinee-academy-supabase-db-1`
    - Check PostgREST: `curl http://localhost:8000/rest/v1/tenants`
 
 3. **Problèmes Mobile**
-   - Android Logs: `adb logcat | grep schoolflow`
+   - Android Logs: `adb logcat | grep guinee_academy`
    - iOS Logs: Xcode Console
 
 4. **Question Fonctionnelle**
@@ -1422,8 +1422,8 @@ INFRASTRUCTURE:
 ### Commandes Utiles
 ```bash
 # Voir logs
-docker logs schoolflow-pro-supabase-db-1
-docker logs schoolflow-pro-api-1
+docker logs guinee-academy-supabase-db-1
+docker logs guinee-academy-api-1
 
 # Accéder DB
 psql -U postgres -d postgres -h localhost

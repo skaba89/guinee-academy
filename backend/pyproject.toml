@@ -1,0 +1,131 @@
+# =============================================================================
+# Guinée Academy — Backend Python Configuration
+# =============================================================================
+# Centralized configuration for pytest, ruff (linting), mypy (type checking),
+# and coverage. Previously, test config was only in CI YAML; now it's
+# discoverable and consistent across local dev and CI.
+# =============================================================================
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+addopts = [
+    "-v",
+    "--tb=short",
+    "--strict-markers",
+    "-ra",
+    "--showlocals",
+]
+markers = [
+    "slow: marks tests as slow (deselect with '-m \"not slow\"')",
+    "integration: marks integration tests requiring DB",
+    "security: marks security-focused tests",
+    "unit: marks pure unit tests (no DB, no network)",
+    "asyncio: marks async tests",
+]
+asyncio_mode = "auto"
+filterwarnings = [
+    "ignore::DeprecationWarning:passlib.*",
+    "ignore::DeprecationWarning:bcrypt.*",
+    "ignore::UserWarning:sqlalchemy.*",
+]
+
+[tool.coverage.run]
+source = ["app"]
+omit = [
+    "app/main.py",           # Entry point — tested via integration
+    "app/core/config.py",    # Settings module — tested separately
+    "*/migrations/*",
+    "*/__pycache__/*",
+]
+branch = true
+
+[tool.coverage.report]
+fail_under = 50
+show_missing = true
+skip_covered = false
+exclude_lines = [
+    "pragma: no cover",
+    "if TYPE_CHECKING:",
+    "if __name__ == .__main__.:",
+    "raise NotImplementedError",
+    "pass$",
+    "\\.\\.\\.$",
+    "@abstractmethod",
+]
+
+[tool.ruff]
+target-version = "py311"
+line-length = 120
+src = ["app", "tests"]
+
+[tool.ruff.lint]
+select = [
+    "E",    # pycodestyle errors
+    "W",    # pycodestyle warnings
+    "F",    # Pyflakes
+    "I",    # isort
+    "N",    # pep8-naming
+    "UP",   # pyupgrade
+    "B",    # flake8-bugbear
+    "SIM",  # flake8-simplify
+    "TCH",  # flake8-type-checking
+    "RUF",  # Ruff-specific rules
+    "S",    # flake8-bandit (security)
+]
+ignore = [
+    "E501",   # Line too long (handled by formatter)
+    "S101",   # Use of assert (fine in tests)
+    "S104",   # Hardcoded bind all interfaces
+    "B008",   # Function call in default argument (FastAPI pattern)
+    "N805",   # First argument of method (Pydantic validator pattern)
+    "N815",   # Mixed-case variable in class scope (SQLAlchemy models)
+    "RUF012", # Mutable class attributes (Pydantic/SQLAlchemy)
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["S101", "S105", "S106", "D100", "D103", "RUF012"]
+"app/api/*" = ["B008"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["app"]
+force-single-line = false
+lines-after-imports = 2
+
+[tool.mypy]
+python_version = "3.11"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = false  # Gradual adoption
+disallow_incomplete_defs = true
+check_untyped_defs = true
+no_implicit_optional = true
+warn_redundant_casts = true
+warn_unused_ignores = false
+warn_no_return = true
+strict_equality = true
+
+[[tool.mypy.overrides]]
+module = [
+    "minio.*",
+    "redis.*",
+    "stripe.*",
+    "groq.*",
+    "slowapi.*",
+    "passlib.*",
+    "bcrypt.*",
+    "jwt.*",
+    "psycopg.*",
+    "aiosqlite.*",
+    "sentry_sdk.*",
+    "prometheus_client.*",
+    "pydantic_settings.*",
+]
+ignore_missing_imports = true
+
+[tool.bandit]
+targets = ["app"]
+exclude_dirs = ["tests", "migrations"]
+skips = ["B101"]  # Skip assert_used (fine in pytest)

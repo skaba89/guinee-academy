@@ -99,7 +99,7 @@ test.describe('Finances - Sécurité API', () => {
   });
 
   test('accès sans auth redirige depuis la page finances', async ({ page }) => {
-    await page.evaluate(() => localStorage.removeItem('schoolflow:access_token'));
+    await page.evaluate(() => localStorage.removeItem('guinee_academy:access_token'));
     await page.goto('/admin/finances');
     await page.waitForLoadState('networkidle');
 

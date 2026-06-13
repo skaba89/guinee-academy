@@ -1,6 +1,6 @@
-# SchoolFlow Pro - Backend API
+# Guinée Academy - Backend API
 
-Backend FastAPI pour SchoolFlow Pro - Architecture souveraine
+Backend FastAPI pour Guinée Academy - Architecture souveraine
 
 ## Stack Technique
 
@@ -54,7 +54,7 @@ pip install -r requirements.txt
 Créer un fichier `.env` :
 
 ```env
-DATABASE_URL=postgresql://postgres:postgres@localhost:5432/schoolflow
+DATABASE_URL=postgresql://postgres:postgres@localhost:5432/guinee_academy
 REDIS_URL=redis://localhost:6379
 SECRET_KEY=your-secret-key-at-least-32-chars-long
 MINIO_ENDPOINT=localhost:9000

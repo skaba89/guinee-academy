@@ -181,7 +181,7 @@ ADD COLUMN IF NOT EXISTS address TEXT;
 **Option B : Via CLI Supabase**
 
 ```powershell
-cd c:\Users\cheic\Documents\EduSchool\schoolflow-pro
+cd c:\Users\cheic\Documents\EduSchool\guinee-academy
 supabase db push
 ```
 
@@ -216,7 +216,7 @@ scoop install supabase
 **Déploiement** :
 
 ```powershell
-cd c:\Users\cheic\Documents\EduSchool\schoolflow-pro
+cd c:\Users\cheic\Documents\EduSchool\guinee-academy
 
 # Se connecter à Supabase
 supabase login

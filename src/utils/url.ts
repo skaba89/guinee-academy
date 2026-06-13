@@ -9,7 +9,7 @@ export function resolveUploadUrl(url: string | null | undefined): string {
     return url;
   }
   // Relative path — prefix with backend origin
-  const cfg = (window as any).__SCHOOLFLOW_CONFIG__;
+  const cfg = (window as any).__GUINEE_ACADEMY_CONFIG__;
   const apiUrl = cfg?.API_URL || '';
   if (!apiUrl) return url;
   return `${apiUrl}${url}`;

@@ -13,7 +13,7 @@ const supabase = createClient(supabaseUrl, supabaseKey);
 async function testLogin() {
     try {
         const args = process.argv.slice(2);
-        const email = args[0] || 'admin@schoolflow.pro';
+        const email = args[0] || 'admin@guinee-academy.com';
         const password = args[1] || 'SuperAdmin123456';
 
         console.log(`Testing Login for ${email}...`);

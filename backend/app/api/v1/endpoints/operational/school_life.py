@@ -11,7 +11,7 @@ from datetime import datetime, date, time
 from pydantic import BaseModel
 
 from app.core.database import get_db
-from app.core.security import get_current_user, require_permission
+from app.core.security import require_permission
 from app.schemas.school_life import (
     Assessment, AssessmentCreate, AssessmentUpdate,
     Grade, GradeCreate, GradeUpdate,
@@ -31,7 +31,7 @@ logger = logging.getLogger(__name__)
 @router.get("/assessments/", response_model=List[Assessment])
 def read_assessments(
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(require_permission("assessments:read")),
 ):
     try:
         return crud_sl.get_assessments(db, tenant_id=current_user.get("tenant_id"))
@@ -45,7 +45,7 @@ def create_assessment(
     *,
     db: Session = Depends(get_db),
     obj_in: AssessmentCreate,
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(require_permission("assessments:write")),
 ):
     try:
         return crud_sl.create_assessment(db, obj_in=obj_in, tenant_id=current_user.get("tenant_id"))
@@ -60,7 +60,7 @@ def update_assessment(
     *,
     db: Session = Depends(get_db),
     obj_in: AssessmentUpdate,
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(require_permission("assessments:write")),
 ):
     """Update a school life assessment."""
     tenant_id = current_user.get("tenant_id")
@@ -97,7 +97,7 @@ def delete_assessment(
 def read_grades(
     student_id: Optional[UUID] = None,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(require_permission("grades:read")),
 ):
     try:
         return crud_sl.get_grades(db, tenant_id=current_user.get("tenant_id"), student_id=student_id)
@@ -111,7 +111,7 @@ def create_grade(
     *,
     db: Session = Depends(get_db),
     obj_in: GradeCreate,
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(require_permission("grades:write")),
 ):
     try:
         return crud_sl.create_grade(db, obj_in=obj_in, tenant_id=current_user.get("tenant_id"))
@@ -126,7 +126,7 @@ def update_grade(
     *,
     db: Session = Depends(get_db),
     obj_in: GradeUpdate,
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(require_permission("grades:write")),
 ):
     """Update a school life grade."""
     tenant_id = current_user.get("tenant_id")
@@ -164,7 +164,7 @@ def delete_grade(
 def read_attendance(
     student_ids: List[UUID] = Query(None),
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(require_permission("attendance:read")),
 ):
     try:
         return crud_sl.get_attendance(db, tenant_id=current_user.get("tenant_id"), student_ids=student_ids)
@@ -178,7 +178,7 @@ def create_attendance(
     *,
     db: Session = Depends(get_db),
     obj_in: AttendanceCreate,
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(require_permission("attendance:write")),
 ):
     try:
         return crud_sl.create_attendance(db, obj_in=obj_in, tenant_id=current_user.get("tenant_id"))
@@ -193,7 +193,7 @@ def update_attendance(
     *,
     db: Session = Depends(get_db),
     obj_in: AttendanceUpdate,
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(require_permission("attendance:write")),
 ):
     """Update an attendance record."""
     tenant_id = current_user.get("tenant_id")
@@ -258,7 +258,7 @@ def delete_attendance(
 def read_events(
     start_after: Optional[datetime] = None,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(require_permission("school_life:read")),
 ):
     try:
         return crud_sl.get_events(db, tenant_id=current_user.get("tenant_id"), start_after=start_after)
@@ -273,7 +273,7 @@ def create_event(
     *,
     db: Session = Depends(get_db),
     obj_in: SchoolEventCreate,
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(require_permission("school_life:write")),
 ):
     try:
         return crud_sl.create_event(db, obj_in=obj_in, tenant_id=current_user.get("tenant_id"))
@@ -678,7 +678,7 @@ def list_check_in_assignments(
 def read_check_ins(
     student_ids: List[UUID] = Query(None),
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(require_permission("school_life:read")),
 ):
     try:
         return crud_sl.get_check_ins(db, tenant_id=current_user.get("tenant_id"), student_ids=student_ids)
@@ -693,7 +693,7 @@ def create_check_in(
     *,
     db: Session = Depends(get_db),
     obj_in: StudentCheckInCreate,
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(require_permission("school_life:write")),
 ):
     try:
         return crud_sl.create_check_in(db, obj_in=obj_in, tenant_id=current_user.get("tenant_id"))
@@ -706,7 +706,7 @@ def create_check_in(
 # --- Badges ---
 
 @router.get("/badges/")
-def list_badges(db: Session = Depends(get_db), current_user: dict = Depends(get_current_user)):
+def list_badges(db: Session = Depends(get_db), current_user: dict = Depends(require_permission("school_life:read"))):
     try:
         tenant_id = current_user.get("tenant_id")
         if not tenant_id:
@@ -730,7 +730,7 @@ def list_badges(db: Session = Depends(get_db), current_user: dict = Depends(get_
         raise HTTPException(status_code=500, detail="An internal error occurred.")
 
 @router.get("/students-without-badges/")
-def students_without_badges(db: Session = Depends(get_db), current_user: dict = Depends(get_current_user)):
+def students_without_badges(db: Session = Depends(get_db), current_user: dict = Depends(require_permission("school_life:read"))):
     try:
         tenant_id = current_user.get("tenant_id")
         if not tenant_id:
@@ -755,7 +755,7 @@ def students_without_badges(db: Session = Depends(get_db), current_user: dict = 
 def list_event_registrations(
     student_id: Optional[str] = Query(None),
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(require_permission("school_life:read")),
 ):
     try:
         tenant_id = current_user.get("tenant_id")
@@ -787,7 +787,7 @@ class EventRegistrationCreate(BaseModel):
 def create_event_registration(
     payload: EventRegistrationCreate,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(require_permission("school_life:write")),
 ):
     try:
         tenant_id = current_user.get("tenant_id")
@@ -816,7 +816,7 @@ def create_event_registration(
         raise HTTPException(status_code=500, detail="An internal error occurred.")
 
 @router.get("/gamification/stats/")
-def get_gamification_stats(db: Session = Depends(get_db), current_user: dict = Depends(get_current_user)):
+def get_gamification_stats(db: Session = Depends(get_db), current_user: dict = Depends(require_permission("school_life:read"))):
     try:
         tenant_id = current_user.get("tenant_id")
         if not tenant_id:
@@ -1437,7 +1437,7 @@ def _build_bulletin_v2(
   <div class="footer">
     Bulletin généré le {now_str} &nbsp;·&nbsp; {esc(school_name)}
     &nbsp;·&nbsp; <strong>Confidentiel</strong> — Réservé aux parents et tuteurs légaux
-    &nbsp;·&nbsp; SchoolFlow Pro
+    &nbsp;·&nbsp; Guinée Academy
   </div>
 
 </div>
@@ -1471,7 +1471,7 @@ function downloadHtml() {{
 def generate_smart_report_card(
     body: SmartReportCardRequest,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(require_permission("grades:read")),
 ):
     """
     POST /school-life/generate-report-card/v2/
@@ -1579,7 +1579,7 @@ def generate_smart_report_card(
 def generate_batch_report_cards(
     body: SmartBatchRequest,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(require_permission("grades:read")),
 ):
     """
     POST /school-life/generate-report-cards/batch/
@@ -2008,7 +2008,7 @@ def _build_bulletin_html(
 @router.post("/generate-report-card/")
 def generate_report_card_html(
     body: ReportCardRequest,
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(require_permission("grades:read")),
 ):
     """
     POST /school-life/generate-report-card/

@@ -47,7 +47,7 @@ class AddMemberRequest(BaseModel):
 # --- Clubs CRUD ---
 
 @router.get("/")
-def list_clubs(db: Session = Depends(get_db), current_user: dict = Depends(get_current_user)):
+def list_clubs(db: Session = Depends(get_db), current_user: dict = Depends(require_permission("clubs:read"))):
     tenant_id = current_user.get("tenant_id")
     if not tenant_id:
         return []
@@ -68,7 +68,7 @@ def list_clubs(db: Session = Depends(get_db), current_user: dict = Depends(get_c
 def create_club(
     club: ClubCreate,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(require_permission("settings:write")),
+    current_user: dict = Depends(require_permission("clubs:write")),
 ):
     """Create a new club."""
     tenant_id = current_user.get("tenant_id")
@@ -101,7 +101,7 @@ def update_club(
     club_id: UUID,
     club: ClubUpdate,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(require_permission("settings:write")),
+    current_user: dict = Depends(require_permission("clubs:write")),
 ):
     """Update a club."""
     tenant_id = current_user.get("tenant_id")
@@ -148,7 +148,7 @@ def update_club(
 def delete_club(
     club_id: UUID,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(require_permission("settings:write")),
+    current_user: dict = Depends(require_permission("clubs:write")),
 ):
     """Delete a club."""
     tenant_id = current_user.get("tenant_id")
@@ -177,7 +177,7 @@ def delete_club(
 # --- Memberships ---
 
 @router.get("/memberships/")
-def list_memberships(db: Session = Depends(get_db), current_user: dict = Depends(get_current_user)):
+def list_memberships(db: Session = Depends(get_db), current_user: dict = Depends(require_permission("clubs:read"))):
     tenant_id = current_user.get("tenant_id")
     if not tenant_id:
         return []
@@ -198,7 +198,7 @@ def add_club_member(
     club_id: UUID,
     member: AddMemberRequest,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(require_permission("settings:write")),
+    current_user: dict = Depends(require_permission("clubs:write")),
 ):
     """Add a member to a club."""
     tenant_id = current_user.get("tenant_id")
@@ -229,7 +229,7 @@ def remove_club_member(
     club_id: UUID,
     user_id: str,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(require_permission("settings:write")),
+    current_user: dict = Depends(require_permission("clubs:write")),
 ):
     """Remove a member from a club."""
     tenant_id = current_user.get("tenant_id")

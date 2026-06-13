@@ -1,4 +1,4 @@
-# Guide de Reprise d'Activité (DRP) : SchoolFlow Pro
+# Guide de Reprise d'Activité (DRP) : Guinée Academy
 
 Ce document définit les procédures nécessaires pour garantir la continuité des services éducatifs et la protection des données en cas de sinistre technique majeur.
 
@@ -8,7 +8,7 @@ Ce document définit les procédures nécessaires pour garantir la continuité d
 Il est impératif d'utiliser `pg_dump` pour des extractions quotidiennes.
 - **Commande recommandée** :
   ```bash
-  docker exec -t schoolflow-db pg_dump -U postgres > backup_$(date +%Y%m%d).sql
+  docker exec -t guinee-academy-db pg_dump -U postgres > backup_$(date +%Y%m%d).sql
   ```
 - **Rétention** :
   - 7 derniers jours (Quotidiens)
@@ -32,7 +32,7 @@ En cas de perte totale du serveur :
     ```
 4.  **Injection des données** :
     ```bash
-    cat backup_latest.sql | docker exec -i schoolflow-db psql -U postgres
+    cat backup_latest.sql | docker exec -i guinee-academy-db psql -U postgres
     ```
 5.  **Vérification de l'intégrité** : Consulter le Dashboard Ministry pour valider que les agrégats sont corrects.
 
@@ -48,4 +48,4 @@ Pour les déploiements nationaux à forte charge :
 
 ## 📞 4. Contacts d'Urgence
 - **Équipe DevOps Régionale** : [Numéro/Email]
-- **Support Niveau 3 (Souveraineté)** : admin@schoolflow.example.com
+- **Support Niveau 3 (Souveraineté)** : admin@guinee_academy.example.com

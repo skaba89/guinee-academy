@@ -27,7 +27,7 @@ router = APIRouter()
 @router.get("/", response_model=List[dict])
 def list_parents(
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(require_permission("parents:read")),
     search: Optional[str] = Query(None, description="Search by first_name, last_name, or email"),
 ):
     """List all parents for the tenant. GET /parents/"""
@@ -117,7 +117,7 @@ def create_parent(
 @router.get("/children/", response_model=List[ParentStudent])
 def read_parent_children(
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(require_permission("parents:read")),
 ):
     """Retrieve all children associated with the current parent user."""
     return crud_parents.get_parent_children(db, parent_id=current_user.get("id"), tenant_id=current_user.get("tenant_id"))
@@ -126,7 +126,7 @@ def read_parent_children(
 def read_student_parents(
     student_id: UUID,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(require_permission("parents:read")),
 ):
     """Retrieve all parents associated with a specific student."""
     return crud_parents.get_student_parents(db, student_id=student_id, tenant_id=current_user.get("tenant_id"))
@@ -229,7 +229,7 @@ def get_unlinked_students(
 @router.get("/dashboard/")
 def get_parent_dashboard(
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(require_permission("parents:read"))
 ):
     """Retrieve all aggregated metrics for the Parent Dashboard."""
     parent_id = current_user.get("id")
@@ -366,7 +366,7 @@ def get_parent_dashboard(
 @router.get("/terms/")
 def list_parent_terms(
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(require_permission("parents:read")),
 ):
     """List all terms for the tenant — parent portal alias."""
     tenant_id = current_user.get("tenant_id")
@@ -397,7 +397,7 @@ def list_parent_terms(
 @router.get("/risk-scores/")
 def get_risk_scores(
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(require_permission("parents:read")),
 ):
     """Retrieve risk scores for the parent's children."""
     tenant_id = current_user.get("tenant_id")
@@ -405,10 +405,10 @@ def get_risk_scores(
     if not user_id or not tenant_id:
         return []
 
-    # Get children for this parent
+    # Get children for this parent — SECURITY: filter by tenant_id to prevent cross-tenant IDOR
     children = db.execute(text(
-        "SELECT student_id FROM parent_students WHERE parent_id = :uid"
-    ), {"uid": user_id}).fetchall()
+        "SELECT student_id FROM parent_students WHERE parent_id = :uid AND tenant_id = :tid"
+    ), {"uid": user_id, "tid": tenant_id}).fetchall()
     if not children:
         return []
 
@@ -430,7 +430,7 @@ def get_risk_scores(
 @router.get("/payment-schedules/")
 def list_parent_payment_schedules(
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(require_permission("parents:read")),
     student_id: Optional[str] = Query(None),
     invoice_id: Optional[str] = Query(None),
     ps_status: Optional[str] = Query(None, alias="status"),
@@ -540,7 +540,7 @@ def create_parent_payment(
     body: ParentPaymentCreate,
     request: Request,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(require_permission("payments:write")),
 ):
     """
     Parent creates or initiates a payment against an invoice.
@@ -555,8 +555,8 @@ def create_parent_payment(
 
     # Verify the invoice belongs to one of the parent's children
     children = db.execute(text(
-        "SELECT student_id FROM parent_students WHERE parent_id = :uid"
-    ), {"uid": user_id}).fetchall()
+        "SELECT student_id FROM parent_students WHERE parent_id = :uid AND tenant_id = :tid"
+    ), {"uid": user_id, "tid": tenant_id}).fetchall()
     if not children:
         raise HTTPException(status_code=403, detail="No children linked")
     child_ids = [str(c.student_id) for c in children]
@@ -857,7 +857,7 @@ class ReportCardGenerateRequest(BaseModel):
 def generate_report_card(
     body: ReportCardGenerateRequest,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(require_permission("parents:read")),
 ):
     """Generate a report card for a student (parent portal stub).
     Returns aggregated grades and attendance data for the requested term."""
@@ -868,8 +868,8 @@ def generate_report_card(
 
     # Verify the student belongs to this parent
     link = db.execute(text(
-        "SELECT 1 FROM parent_students WHERE parent_id = :uid AND student_id = :sid"
-    ), {"uid": user_id, "sid": body.student_id}).first()
+        "SELECT 1 FROM parent_students WHERE parent_id = :uid AND student_id = :sid AND tenant_id = :tid"
+    ), {"uid": user_id, "sid": body.student_id, "tid": tenant_id}).first()
     if not link:
         raise HTTPException(status_code=403, detail="Student not linked to your account")
 
@@ -960,7 +960,7 @@ def generate_report_card(
 def generate_invoice_pdf(
     invoice_id: str = Query(...),
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(require_permission("parents:read")),
 ):
     """Generate a PDF for an invoice (parent portal stub).
     Returns invoice data ready for client-side PDF generation."""
@@ -971,8 +971,8 @@ def generate_invoice_pdf(
 
     # Verify invoice belongs to parent's child
     children = db.execute(text(
-        "SELECT student_id FROM parent_students WHERE parent_id = :uid"
-    ), {"uid": user_id}).fetchall()
+        "SELECT student_id FROM parent_students WHERE parent_id = :uid AND tenant_id = :tid"
+    ), {"uid": user_id, "tid": tenant_id}).fetchall()
     child_ids = [str(c.student_id) for c in children]
 
     inv = db.execute(text("""
@@ -1024,7 +1024,7 @@ def generate_invoice_pdf(
 @router.get("/appointments/")
 def list_parent_appointments(
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(require_permission("parents:read")),
     page: int = Query(1, ge=1),
     page_size: int = Query(50, ge=1, le=100),
 ):
@@ -1091,7 +1091,7 @@ class AppointmentCreate(BaseModel):
 def create_parent_appointment(
     body: AppointmentCreate,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(require_permission("parents:write")),
 ):
     """Create a parent-teacher appointment request."""
     tenant_id = current_user.get("tenant_id")
@@ -1102,8 +1102,8 @@ def create_parent_appointment(
     # If student_id provided, verify it's linked to this parent
     if body.student_id:
         link = db.execute(text(
-            "SELECT 1 FROM parent_students WHERE parent_id = :uid AND student_id = :sid"
-        ), {"uid": user_id, "sid": body.student_id}).first()
+            "SELECT 1 FROM parent_students WHERE parent_id = :uid AND student_id = :sid AND tenant_id = :tid"
+        ), {"uid": user_id, "sid": body.student_id, "tid": tenant_id}).first()
         if not link:
             raise HTTPException(status_code=403, detail="Student not linked to your account")
 
@@ -1151,7 +1151,7 @@ def create_parent_appointment(
 @router.get("/appointment-slots/")
 def list_parent_appointment_slots(
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(require_permission("parents:read")),
     teacher_id: Optional[str] = Query(None),
     date_from: Optional[str] = Query(None),
     date_to: Optional[str] = Query(None),
@@ -1207,7 +1207,7 @@ class AppointmentSlotCreate(BaseModel):
 def create_parent_appointment_slot(
     body: AppointmentSlotCreate,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(require_permission("parents:write")),
 ):
     """Create an appointment slot (parent portal).
     Typically used by admin/teachers to make slots available for booking."""

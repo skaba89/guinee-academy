@@ -74,5 +74,5 @@ Si les fonctions ne marchent toujours pas :
 docker compose logs --tail 50 supabase-functions
 
 # Vérifier les variables d'environnement
-docker exec schoolflow-pro-supabase-functions-1 env | findstr "RESEND\|STRIPE"
+docker exec guinee-academy-supabase-functions-1 env | findstr "RESEND\|STRIPE"
 ```

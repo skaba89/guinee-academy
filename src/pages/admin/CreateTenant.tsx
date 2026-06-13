@@ -296,7 +296,7 @@ const CreateTenant = () => {
                 <div className="space-y-2">
                   <Label htmlFor="slug">{t("createTenant.fieldSlug")}</Label>
                   <div className="flex items-center gap-2">
-                    <span className="text-sm text-muted-foreground">schoolflow.app/</span>
+                    <span className="text-sm text-muted-foreground">guinee-academy.com/</span>
                     <Input
                       id="slug"
                       placeholder={t("createTenant.placeholderSlug")}

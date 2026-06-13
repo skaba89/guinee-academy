@@ -38,7 +38,7 @@ class ConnectionManager:
             "type": "connected",
             "tenant_id": tenant_id,
             "user_id": user_id,
-            "message": "Connected to SchoolFlow Realtime"
+            "message": "Connected to Guinée Academy Realtime"
         })
     
     def disconnect(self, websocket: WebSocket, tenant_id: str):
@@ -83,7 +83,7 @@ class ConnectionManager:
             "data": data
         }
         
-        channel = f"schoolflow:{tenant_id}"
+        channel = f"guinee_academy:{tenant_id}"
         await self.redis_client.publish(channel, json.dumps(event))
     
     async def subscribe_to_events(self, tenant_id: str):
@@ -93,7 +93,7 @@ class ConnectionManager:
         """
         await self.init_redis()
         
-        channel = f"schoolflow:{tenant_id}"
+        channel = f"guinee_academy:{tenant_id}"
         pubsub = self.redis_client.pubsub()
         await pubsub.subscribe(channel)
         

@@ -53,7 +53,7 @@
 ### Root Directory (Clean & Essential)
 
 ```
-schoolflow-pro/
+guinee-academy/
 ├── Configuration Files:
 │   ├── .env, .env.docker, .env.example
 │   ├── .gitignore, .github/
@@ -367,5 +367,5 @@ For questions about:
 
 **Generated**: 26 Janvier 2025  
 **Version**: 1.0  
-**Project**: SchoolFlow Pro  
+**Project**: Guinée Academy  
 **Status**: Ready for Development & Production Deployment

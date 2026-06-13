@@ -52,7 +52,7 @@ class AssignRequest(BaseModel):
 # --- List Incidents ---
 
 @router.get("/")
-def list_incidents(db: Session = Depends(get_db), current_user: dict = Depends(get_current_user)):
+def list_incidents(db: Session = Depends(get_db), current_user: dict = Depends(require_permission("incidents:read"))):
     tenant_id = current_user.get("tenant_id")
     if not tenant_id:
         return []
@@ -82,7 +82,7 @@ def list_incidents(db: Session = Depends(get_db), current_user: dict = Depends(g
 def create_incident(
     incident: IncidentCreate,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(require_permission("settings:write")),
+    current_user: dict = Depends(require_permission("incidents:write")),
 ):
     """Create a new incident."""
     tenant_id = current_user.get("tenant_id")
@@ -139,7 +139,7 @@ def update_incident(
     incident_id: UUID,
     incident: IncidentUpdate,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(require_permission("settings:write")),
+    current_user: dict = Depends(require_permission("incidents:write")),
 ):
     """Update an incident."""
     tenant_id = current_user.get("tenant_id")
@@ -193,7 +193,7 @@ def resolve_incident(
     incident_id: UUID,
     resolve: ResolveRequest,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(require_permission("settings:write")),
+    current_user: dict = Depends(require_permission("incidents:write")),
 ):
     """Resolve an incident."""
     tenant_id = current_user.get("tenant_id")
@@ -241,7 +241,7 @@ def assign_incident(
     incident_id: UUID,
     assign: AssignRequest,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(require_permission("settings:write")),
+    current_user: dict = Depends(require_permission("incidents:write")),
 ):
     """Assign an incident to a resolver."""
     tenant_id = current_user.get("tenant_id")

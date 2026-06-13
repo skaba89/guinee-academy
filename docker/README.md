@@ -1,4 +1,4 @@
-# SchoolFlow Pro — Docker Self-Hosting Guide
+# Guinée Academy — Docker Self-Hosting Guide
 
 ## Prerequisites
 
@@ -12,7 +12,7 @@
 
 ```bash
 git clone <your-repo-url>
-cd gestion-scolaire-pro
+cd guinee-academy
 ```
 
 ### 2. Configure environment variables
@@ -104,7 +104,7 @@ docker compose build api
 docker compose up -d api
 
 # Access PostgreSQL shell
-docker compose exec postgres psql -U schoolflow -d schoolflow
+docker compose exec postgres psql -U guinee_academy -d guinee_academy
 
 # Access Redis CLI
 docker compose exec redis redis-cli
@@ -125,17 +125,17 @@ docker compose exec redis redis-cli
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `POSTGRES_DB` | `schoolflow` | Database name |
-| `POSTGRES_USER` | `schoolflow` | Database user |
+| `POSTGRES_DB` | `guinee_academy` | Database name |
+| `POSTGRES_USER` | `guinee_academy` | Database user |
 | `POSTGRES_PORT` | `5432` | PostgreSQL exposed port |
 | `REDIS_PORT` | `6379` | Redis exposed port |
 | `MINIO_ROOT_USER` | `minioadmin` | MinIO root username |
-| `MINIO_BUCKET` | `schoolflow` | Default MinIO bucket |
+| `MINIO_BUCKET` | `guinee_academy` | Default MinIO bucket |
 | `MINIO_API_PORT` | `9002` | MinIO API exposed port |
 | `MINIO_CONSOLE_PORT` | `9001` | MinIO Console exposed port |
 | `API_PORT` | `8000` | Backend API exposed port |
 | `FRONTEND_PORT` | `3000` | Frontend exposed port |
-| `PGADMIN_EMAIL` | `admin@schoolflow.com` | pgAdmin login email |
+| `PGADMIN_EMAIL` | `admin@guinee-academy.com` | pgAdmin login email |
 | `PGADMIN_PORT` | `5050` | pgAdmin exposed port |
 | `VITE_API_URL` | `http://localhost:8000` | API URL for frontend |
 | `DEBUG` | `False` | Enable debug mode |
@@ -156,7 +156,7 @@ On first launch, create the default bucket:
 
 ```bash
 docker compose exec minio mc alias set local http://localhost:9000 minioadmin <MINIO_ROOT_PASSWORD>
-docker compose exec minio mc mb local/schoolflow
+docker compose exec minio mc mb local/guinee_academy
 ```
 
 ## Production Security Checklist

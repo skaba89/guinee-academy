@@ -1,5 +1,5 @@
 # 📚 INDEX: Plan de Test Complet + Versions Mobiles
-## SchoolFlow Pro - 2 Universités Distinctes
+## Guinée Academy - 2 Universités Distinctes
 
 **Date Création**: 26 Janvier 2026  
 **Version**: 1.0 Complet  
@@ -290,7 +290,7 @@ scripts/create_test_users.py            ← Script Python
 **Option 1: Vous commencez maintenant (Recommandé)**
 ```bash
 # Étape 1: Créer les universités
-cd c:\Users\cheic\Documents\EduSchool\schoolflow-pro
+cd c:\Users\cheic\Documents\EduSchool\guinee-academy
 # Ouvrir Supabase Studio: http://localhost:3001/
 # SQL Editor → Copy-Paste: scripts/insert_2_universities_complete.sql
 # Exécuter

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Create a platform-level SUPER_ADMIN user for SchoolFlow Pro.
+Create a platform-level SUPER_ADMIN user for Guinée Academy.
 
 The SUPER_ADMIN does NOT belong to any tenant. They operate at the platform
 level and can create/manage establishments (tenants) and their admin users.
@@ -10,7 +10,7 @@ Usage:
     python -m scripts.create_admin
 
 Checks if a SUPER_ADMIN user already exists. If not, creates:
-  - A SUPER_ADMIN user (email: admin@schoolflow.local, password: Admin@123456)
+  - A SUPER_ADMIN user (email: admin@guinee-academy.local, password: Admin@123456)
   - The SUPER_ADMIN role assignment (tenant_id = NULL)
 
 Supports both PostgreSQL (via psycopg v3) and SQLite backends.
@@ -57,7 +57,7 @@ SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
-ADMIN_EMAIL = "admin@schoolflow.local"
+ADMIN_EMAIL = "admin@guinee-academy.local"
 ADMIN_PASSWORD = os.environ.get("ADMIN_PASSWORD")
 if not ADMIN_PASSWORD:
     print("[ERROR] ADMIN_PASSWORD environment variable is required.")
@@ -101,7 +101,7 @@ def main():
                 text("""
                     INSERT INTO users (id, email, username, password_hash, first_name, last_name,
                                        tenant_id, is_active, is_verified, created_at, updated_at)
-                    VALUES (:id, :email, :email, :pw, 'Admin', 'SchoolFlow',
+                    VALUES (:id, :email, :email, :pw, 'Admin', 'Guinée Academy',
                             NULL, 1, 1, datetime('now'), datetime('now'))
                 """),
                 {
@@ -115,7 +115,7 @@ def main():
                 text("""
                     INSERT INTO users (id, email, username, password_hash, first_name, last_name,
                                        tenant_id, is_active, is_verified, created_at, updated_at)
-                    VALUES (:id, :email, :email, :pw, 'Admin', 'SchoolFlow',
+                    VALUES (:id, :email, :email, :pw, 'Admin', 'Guinée Academy',
                             NULL, true, true, NOW(), NOW())
                 """),
                 {

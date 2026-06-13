@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-SchoolFlow Pro — Login Diagnostic Script (Python)
+Guinée Academy — Login Diagnostic Script (Python)
 
 Performs comprehensive checks from database connectivity through JWT validation
 to identify the root cause of login failures.
@@ -101,7 +101,7 @@ def _remediate(msg: str) -> None:
 def _header() -> None:
     print()
     print(f"{Color.CYAN}╔══════════════════════════════════════════════════════════════╗{Color.NC}")
-    print(f"{Color.CYAN}║{Color.BOLD}  SchoolFlow Pro — Login Diagnostic Script (Python){Color.NC}         {Color.CYAN}║{Color.NC}")
+    print(f"{Color.CYAN}║{Color.BOLD}  Guinée Academy — Login Diagnostic Script (Python){Color.NC}         {Color.CYAN}║{Color.NC}")
     print(f"{Color.CYAN}╚══════════════════════════════════════════════════════════════╝{Color.NC}")
     print(f"  {Color.DIM}{time.strftime('%Y-%m-%d %H:%M:%S')}{Color.NC}")
 
@@ -394,7 +394,7 @@ def check_super_admin(env_path: Path, database_url: Optional[str]) -> Optional[d
             if not row:
                 _fail("No SUPER_ADMIN user found in database")
                 _remediate("Create the super admin: cd backend && python -m scripts.create_admin")
-                _info("Default credentials: admin@schoolflow.local (see ADMIN_DEFAULT_EMAIL/ADMIN_DEFAULT_PASSWORD in .env)")
+                _info("Default credentials: admin@guinee-academy.local (see ADMIN_DEFAULT_EMAIL/ADMIN_DEFAULT_PASSWORD in .env)")
                 engine.dispose()
                 return None
 
@@ -490,7 +490,7 @@ def check_login_api(env_path: Path) -> Optional[str]:
     port = int(read_env_var(env_path, "BACKEND_PORT") or "8000")
     login_url = f"http://localhost:{port}/api/v1/auth/login/"
 
-    login_email = "admin@schoolflow.local"
+    login_email = "admin@guinee-academy.local"
     login_password = "CHANGE_ME_TEST_PASSWORD"
 
     form_data = urllib.parse.urlencode({
@@ -664,7 +664,7 @@ def check_users_me() -> None:
 # ═══════════════════════════════════════════════════════════════════════════════
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="SchoolFlow Pro — Login Diagnostic Script")
+    parser = argparse.ArgumentParser(description="Guinée Academy — Login Diagnostic Script")
     parser.add_argument(
         "--env",
         type=Path,

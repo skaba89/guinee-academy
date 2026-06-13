@@ -31,7 +31,7 @@ KONG_CORS_ORIGINS: "http://localhost:3000,http://localhost:5173,http://localhost
 
 Puis redémarrer Kong:
 ```bash
-docker restart schoolflow-pro-supabase-kong-1
+docker restart guinee-academy-supabase-kong-1
 ```
 
 ## State de Services (post-redémarrage):

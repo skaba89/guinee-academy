@@ -1,6 +1,6 @@
 [Unit]
-Description=SchoolFlow Pro Daily Backup Timer
-Requires=schoolflow-backup.service
+Description=Guinée Academy Daily Backup Timer
+Requires=guinee_academy-backup.service
 
 [Timer]
 OnCalendar=daily

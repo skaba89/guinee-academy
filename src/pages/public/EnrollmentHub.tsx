@@ -43,7 +43,7 @@ export default function EnrollmentHub() {
 
   useEffect(() => {
     if (!tenantSlug) return;
-    const apiBase = (window as any).__SCHOOLFLOW_CONFIG__?.API_URL || import.meta.env.VITE_API_URL || "";
+    const apiBase = (window as any).__GUINEE_ACADEMY_CONFIG__?.API_URL || import.meta.env.VITE_API_URL || "";
     axios
       .get(`${apiBase}/api/v1/admissions/public/tenant-info/${tenantSlug}/`)
       .then((r) => setSchool(r.data))

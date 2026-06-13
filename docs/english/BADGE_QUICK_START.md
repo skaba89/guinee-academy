@@ -6,11 +6,11 @@
 ```bash
 # The database tables will auto-create on docker-compose up
 docker-compose down
-docker volume rm schoolflow-pro_db-data
+docker volume rm guinee-academy_db-data
 docker-compose up -d --wait
 
 # Verify tables created
-docker exec schoolflow-pro-supabase-db-1 psql -U postgres -d postgres \
+docker exec guinee-academy-supabase-db-1 psql -U postgres -d postgres \
   -c "SELECT table_name FROM information_schema.tables WHERE table_schema = 'public';"
 ```
 
@@ -244,7 +244,7 @@ http://localhost:3000/class/[class-id]
 ### Badges not showing?
 ```bash
 # Check database tables exist
-docker exec schoolflow-pro-supabase-db-1 psql -U postgres -d postgres \
+docker exec guinee-academy-supabase-db-1 psql -U postgres -d postgres \
   -c "SELECT COUNT(*) FROM badges_definitions;"
 
 # Should return 25
@@ -274,7 +274,7 @@ SELECT COUNT(*) FROM user_badges;
 ### Permission errors?
 ```bash
 # Check RLS policies are enabled
-docker exec schoolflow-pro-supabase-db-1 psql -U postgres -d postgres \
+docker exec guinee-academy-supabase-db-1 psql -U postgres -d postgres \
   -c "SELECT tablename FROM pg_tables WHERE schemaname='public';"
 ```
 

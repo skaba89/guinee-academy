@@ -1,5 +1,5 @@
 /**
- * SchoolFlow Pro — Offline Database (Dexie / IndexedDB)
+ * Guinée Academy — Offline Database (Dexie / IndexedDB)
  *
  * Tables:
  *   pendingAttendance  — absences saisies hors-ligne, à synchroniser
@@ -86,7 +86,7 @@ export interface CachedSubject {
 
 // ── Dexie DB class ─────────────────────────────────────────────────────────────
 
-class SchoolFlowOfflineDB extends Dexie {
+class GuineeAcademyOfflineDB extends Dexie {
   pendingAttendance!: EntityTable<PendingAttendance, "id">;
   pendingGrades!: EntityTable<PendingGrade, "id">;
   cachedStudents!: EntityTable<CachedStudent, "id">;
@@ -94,7 +94,7 @@ class SchoolFlowOfflineDB extends Dexie {
   cachedSubjects!: EntityTable<CachedSubject, "id">;
 
   constructor() {
-    super("SchoolFlowOfflineDB");
+    super("GuineeAcademyOfflineDB");
 
     this.version(1).stores({
       // Pending sync queues
@@ -110,7 +110,7 @@ class SchoolFlowOfflineDB extends Dexie {
   }
 }
 
-export const offlineDb = new SchoolFlowOfflineDB();
+export const offlineDb = new GuineeAcademyOfflineDB();
 
 // ── Helper: cache reference data ───────────────────────────────────────────────
 

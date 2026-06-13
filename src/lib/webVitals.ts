@@ -1,5 +1,5 @@
 /**
- * Web Vitals tracking for SchoolFlow Pro.
+ * Web Vitals tracking for Guinée Academy.
  *
  * Measures: CLS, FID/INP, FCP, LCP, TTFB
  * Reports to: console (dev) + Sentry (prod)

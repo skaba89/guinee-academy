@@ -8,12 +8,12 @@ services:
     volumes:
       - pg_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U schoolflow -d schoolflow"]
+      test: ["CMD-SHELL", "pg_isready -U guinee_academy -d guinee_academy"]
       interval: 5s
       timeout: 5s
       retries: 20
     networks:
-      - schoolflow-network
+      - guinee-academy-network
     mem_limit: 512m
 
   redis:
@@ -26,7 +26,7 @@ services:
     volumes:
       - redis_data:/data
     networks:
-      - schoolflow-network
+      - guinee-academy-network
     mem_limit: 128m
     healthcheck:
       test: ["CMD-SHELL", "redis-cli -a \"$$REDIS_PASSWORD\" ping"]
@@ -50,7 +50,7 @@ services:
     volumes:
       - minio_data:/data
     networks:
-      - schoolflow-network
+      - guinee-academy-network
     mem_limit: 512m
     healthcheck:
       test: ["CMD", "mc", "ready", "local"]
@@ -88,7 +88,7 @@ services:
       retries: 3
       start_period: 60s
     networks:
-      - schoolflow-network
+      - guinee-academy-network
     mem_limit: 512m
 
   frontend:
@@ -111,7 +111,7 @@ services:
       start_period: 30s
       retries: 3
     networks:
-      - schoolflow-network
+      - guinee-academy-network
     mem_limit: 128m
 
   pgadmin:
@@ -124,7 +124,7 @@ services:
       postgres:
         condition: service_healthy
     networks:
-      - schoolflow-network
+      - guinee-academy-network
     mem_limit: 256m
 
   db-backup:
@@ -139,7 +139,7 @@ services:
       postgres:
         condition: service_healthy
     networks:
-      - schoolflow-network
+      - guinee-academy-network
 
 volumes:
   pg_data:
@@ -147,5 +147,5 @@ volumes:
   minio_data:
 
 networks:
-  schoolflow-network:
+  guinee-academy-network:
     driver: bridge

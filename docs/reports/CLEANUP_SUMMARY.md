@@ -115,7 +115,7 @@ Les 8 fichiers suivants sont maintenant dans [docs/english/]:
 ## 📁 Structure Finale
 
 ```
-schoolflow-pro/
+guinee-academy/
 ├── .env                          # Environment config
 ├── .env.docker
 ├── .env.example

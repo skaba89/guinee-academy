@@ -329,8 +329,47 @@ def submit_homework(
     db: Session = Depends(get_db),
     current_user: dict = Depends(get_current_user),
 ):
-    """Submit homework (student)."""
+    """Submit homework (student).
+
+    SECURITY: A student can only submit homework for themselves.
+    The student_id in the body MUST match the authenticated user's student profile.
+    This prevents IDOR where one student submits on behalf of another.
+    """
     tenant_id = current_user.get("tenant_id")
+    user_id = current_user.get("id")
+    user_roles = current_user.get("roles", [])
+
+    # SECURITY: Non-admin users can only submit for their own student profile
+    is_admin = "*" in user_roles or any(
+        r in user_roles for r in ["SUPER_ADMIN", "TENANT_ADMIN", "TEACHER", "DIRECTOR"]
+    )
+
+    if not is_admin:
+        # Find the student profile for the current user
+        student_row = db.execute(text("""
+            SELECT id FROM students WHERE email = :email AND tenant_id = :tenant_id
+            LIMIT 1
+        """), {"email": current_user.get("email"), "tenant_id": tenant_id}).mappings().first()
+
+        if not student_row:
+            raise HTTPException(
+                status_code=403,
+                detail="Vous n'avez pas de profil étudiant dans cet établissement",
+            )
+
+        # SECURITY: Enforce that body.student_id matches the authenticated student
+        if str(student_row["id"]) != str(body.student_id):
+            raise HTTPException(
+                status_code=403,
+                detail="Vous ne pouvez soumettre un devoir que pour vous-même",
+            )
+
+    # SECURITY: Verify the homework belongs to the same tenant
+    hw = db.execute(text("""
+        SELECT id FROM homework WHERE id = :hid AND tenant_id = :tid
+    """), {"hid": homework_id, "tid": tenant_id}).mappings().first()
+    if not hw:
+        raise HTTPException(status_code=404, detail="Homework not found")
 
     try:
         result = db.execute(text("""

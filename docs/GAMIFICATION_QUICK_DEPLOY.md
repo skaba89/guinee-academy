@@ -211,4 +211,4 @@ Votre système de gamification est maintenant déployé !
 
 ---
 
-**Besoin d'aide ?** Consultez [GAMIFICATION_COMPLETE_SETUP.md](file:///c:/Users/cheic/Documents/EduSchool/schoolflow-pro/docs/GAMIFICATION_COMPLETE_SETUP.md)
+**Besoin d'aide ?** Consultez [GAMIFICATION_COMPLETE_SETUP.md](file:///c:/Users/cheic/Documents/EduSchool/guinee-academy/docs/GAMIFICATION_COMPLETE_SETUP.md)

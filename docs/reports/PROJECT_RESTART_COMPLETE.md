@@ -9,7 +9,7 @@
 
 ## 🎯 Mission Accomplished
 
-Successfully completed a clean restart of SchoolFlow Pro with:
+Successfully completed a clean restart of Guinée Academy with:
 - ✅ All containers restarted
 - ✅ Database completely reset (new volume created)
 - ✅ All migrations run cleanly
@@ -31,7 +31,7 @@ docker-compose down
 
 ### 2. Reset Database Volume ✅
 ```bash
-docker volume rm schoolflow-pro_db-data -f
+docker volume rm guinee-academy_db-data -f
 ```
 - Deleted existing database volume
 - Removed all test/seed data
@@ -316,7 +316,7 @@ npm run dev
 
 ## 🎉 Summary
 
-**SchoolFlow Pro** has been successfully restarted with:
+**Guinée Academy** has been successfully restarted with:
 
 ✅ **Clean Infrastructure** - All containers fresh  
 ✅ **Clean Database** - No test or seed data  

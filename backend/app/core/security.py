@@ -41,7 +41,7 @@ def create_access_token(data: dict, expires_delta: timedelta | None = None) -> s
     )
     to_encode.update({"exp": expire})
     # SECURITY: Add issuer and audience claims for token binding to this deployment
-    to_encode.update({"iss": "schoolflow-pro", "aud": "schoolflow-api"})
+    to_encode.update({"iss": "guinee-academy", "aud": "guinee-academy-api"})
     return jwt.encode(to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
 
 def verify_token(token: str = Depends(oauth2_scheme)) -> dict:
@@ -58,8 +58,8 @@ def verify_token(token: str = Depends(oauth2_scheme)) -> dict:
             settings.SECRET_KEY,
             algorithms=[settings.ALGORITHM],
             options={"verify_sub": True, "verify_iss": True, "verify_aud": True},
-            issuer="schoolflow-pro",
-            audience="schoolflow-api",
+            issuer="guinee-academy",
+            audience="guinee-academy-api",
         )
     except JWTError as exc:
         logger.info("JWT validation failed: %s", exc)
@@ -80,8 +80,8 @@ def verify_token_raw(token: str) -> dict:
             settings.SECRET_KEY,
             algorithms=[settings.ALGORITHM],
             options={"verify_sub": True, "verify_exp": False},
-            audience="schoolflow-api",
-            issuer="schoolflow-pro",
+            audience="guinee-academy-api",
+            issuer="guinee-academy",
         )
     except JWTError as exc:
         logger.info("JWT raw decode failed: %s", exc)
@@ -98,7 +98,7 @@ async def _get_token_version_from_redis(user_id: str) -> int:
     try:
         from app.core.cache import redis_client
         client = await redis_client.client
-        current = await client.get(f"sfp:user_token_version:{user_id}")
+        current = await client.get(f"ga:user_token_version:{user_id}")
         return int(current) if current else 0
     except Exception:
         return 0
@@ -282,12 +282,13 @@ ROLE_PERMISSIONS: dict = {
         "incidents:read", "incidents:write",
         "parents:read", "parents:write",
         "admissions:read", "admissions:write",
+        "alumni:read", "alumni:write",
+        "billing:read", "billing:write",
+        "mfa:manage",
         "analytics:read",
         "audit:read",
         # Settings (but NOT RGPD deletion)
         "settings:read", "settings:write",
-        # MFA
-        "mfa:manage",
         # EXPLICITLY EXCLUDED: "rgpd:delete", "tenants:write", "tenants:delete"
     ],
     "DIRECTOR": [
@@ -302,6 +303,19 @@ ROLE_PERMISSIONS: dict = {
         "admissions:read", "admissions:write",
         "inventory:read", "inventory:write",
         "hr:read", "hr:write",
+        "parents:read", "parents:write",
+        "library:read", "library:write",
+        "school_life:read", "school_life:write",
+        "communications:read", "communications:write",
+        "surveys:read", "surveys:write",
+        "incidents:read", "incidents:write",
+        "clubs:read", "clubs:write",
+        "departments:read", "departments:write",
+        "homework:read", "homework:write",
+        "assessments:read", "assessments:write",
+        "alumni:read",
+        "billing:read",
+        "mfa:manage",
     ],
     "DEPARTMENT_HEAD": [
         "users:read",
@@ -312,6 +326,14 @@ ROLE_PERMISSIONS: dict = {
         "settings:read",
         "schedule:read", "schedule:write",
         "admissions:read",
+        "parents:read",
+        "library:read",
+        "school_life:read",
+        "communications:read",
+        "departments:read",
+        "homework:read", "homework:write",
+        "assessments:read", "assessments:write",
+        "incidents:read",
     ],
     "TEACHER": [
         "users:read",
@@ -319,21 +341,53 @@ ROLE_PERMISSIONS: dict = {
         "attendance:read", "attendance:write",
         "subjects:read", "settings:read",
         "schedule:read",
+        "parents:read",
+        "library:read",
+        "homework:read", "homework:write",
+        "school_life:read", "school_life:write",
+        "communications:read", "communications:write",
+        "assessments:read", "assessments:write",
+        "clubs:read",
+        "incidents:read", "incidents:write",
+        "departments:read",
+        "surveys:read",
     ],
-    "STUDENT": ["me:read", "grades:read", "attendance:read", "schedule:read", "settings:read"],
-    "PARENT": ["me:read", "students:read", "grades:read", "attendance:read", "settings:read"],
-    "ALUMNI": ["students:read", "grades:read", "attendance:read", "schedule:read", "subjects:read"],
+    "STUDENT": ["me:read", "grades:read", "attendance:read", "schedule:read", "settings:read",
+                "homework:read", "library:read", "school_life:read", "communications:read",
+                "surveys:read", "clubs:read", "alumni:read"],
+    "PARENT": ["me:read", "students:read", "grades:read", "attendance:read", "settings:read",
+               "parents:read", "parents:write", "payments:write", "library:read",
+               "school_life:read", "communications:read", "surveys:read",
+               "clubs:read", "incidents:read", "billing:read"],
+    "ALUMNI": ["students:read", "grades:read", "attendance:read", "schedule:read", "subjects:read",
+                "library:read", "alumni:read", "alumni:write", "communications:read",
+                "surveys:read", "clubs:read"],
     "STAFF": ["users:read", "students:read", "students:write", "attendance:read",
               "settings:read",
-              "admissions:read", "admissions:write", "inventory:read", "inventory:write"],
+              "admissions:read", "admissions:write", "inventory:read", "inventory:write",
+              "parents:read", "library:read",
+              "school_life:read", "school_life:write",
+              "communications:read", "incidents:read", "incidents:write",
+              "clubs:read", "clubs:write",
+              "surveys:read"],
     "ACCOUNTANT": ["finance:read", "finance:write", "students:read", "payments:read", "payments:write",
-                    "inventory:read", "settings:read"],
+                    "inventory:read", "settings:read", "parents:read",
+                    "billing:read", "admissions:read"],
     "SECRETARY": ["users:read", "students:read", "students:write", "attendance:read", "attendance:write",
                   "grades:read", "settings:read",
                   "admissions:read", "admissions:write",
                   "enrollments:read", "enrollments:write",
                   "certificates:read", "certificates:write",
-                  "inventory:read", "inventory:write"],
+                  "inventory:read", "inventory:write",
+                  "parents:read", "parents:write", "library:read",
+                  "school_life:read", "school_life:write",
+                  "communications:read", "communications:write",
+                  "incidents:read", "incidents:write",
+                  "clubs:read", "surveys:read",
+                  "departments:read",
+                  "billing:read",
+                  "homework:read",
+                  "assessments:read"],
 }
 
 def require_permission(permission: str):
@@ -424,9 +478,18 @@ def require_plan(min_plan: str):
             with SessionLocal() as db:
                 tenant = db.query(_Tenant).filter(_Tenant.id == tenant_id).first()
                 if not tenant:
-                    # Tenant not found — fail open to avoid false positives
-                    logger.warning("require_plan: tenant %s not found, failing open", tenant_id)
-                    return current_user
+                    # SECURITY: Tenant not found — fail CLOSED to prevent unauthorized premium access.
+                    # A missing tenant record should not grant access to plan-gated features.
+                    logger.warning("require_plan: tenant %s not found, denying access (fail-closed)", tenant_id)
+                    raise HTTPException(
+                        status_code=status.HTTP_402_PAYMENT_REQUIRED,
+                        detail={
+                            "error": "PLAN_REQUIRED",
+                            "required_plan": min_plan,
+                            "message": "Impossible de vérifier votre abonnement. Veuillez contacter le support.",
+                            "upgrade_url": "/billing",
+                        },
+                    )
 
                 plan = (tenant.subscription_plan or "starter").lower()
                 sub_status = (tenant.subscription_status or "trialing").lower()
@@ -469,8 +532,20 @@ def require_plan(min_plan: str):
         except HTTPException:
             raise
         except Exception as exc:
-            # Fail open: plan check failure must not break existing functionality
-            logger.warning("require_plan check failed (failing open): %s", exc)
-            return current_user
+            # SECURITY: Fail-closed to prevent unauthorized premium access during DB outages.
+            # Previously fail-open which allowed all users to access premium features if DB was down.
+            # Now we deny access and require retry, which is the safer default.
+            logger.error("require_plan check failed (failing CLOSED): %s", exc)
+            raise HTTPException(
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                detail={
+                    "error": "PLAN_CHECK_UNAVAILABLE",
+                    "message": (
+                        "Impossible de vérifier votre abonnement pour le moment. "
+                        "Veuillez réessayer dans quelques instants."
+                    ),
+                    "retry_after": 30,
+                },
+            )
 
     return _check

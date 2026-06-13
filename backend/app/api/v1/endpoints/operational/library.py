@@ -19,7 +19,7 @@ router = APIRouter()
 # --- Category CRUD ---
 
 @router.get("/")
-def list_categories(db: Session = Depends(get_db), current_user: dict = Depends(get_current_user)):
+def list_categories(db: Session = Depends(get_db), current_user: dict = Depends(require_permission("library:read"))):
     tenant_id = current_user.get("tenant_id")
     if not tenant_id:
         return []
@@ -153,7 +153,7 @@ def list_resources(
     resource_type: Optional[str] = None,
     search: Optional[str] = None,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(require_permission("library:read"))
 ):
     tenant_id = current_user.get("tenant_id")
     if not tenant_id:
@@ -356,25 +356,44 @@ class ReturnRequest(BaseModel):
 def borrow_resource(
     borrow: BorrowRequest,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(require_permission("library:write")),
 ):
-    """Borrow a library resource."""
+    """Borrow a library resource.
+
+    SECURITY: Uses atomic conditional UPDATE to prevent race conditions
+    where two concurrent borrow requests could both succeed (double-borrowing).
+    The UPDATE only succeeds if available_copies > 0, and the rowcount
+    check ensures only one concurrent request wins.
+    """
     tenant_id = current_user.get("tenant_id")
     if not tenant_id:
         raise HTTPException(status_code=403, detail="No tenant context")
     try:
-        # Check availability
-        resource = db.execute(text("""
-            SELECT available_copies, total_copies FROM library_resources
-            WHERE id = :rid AND tenant_id = :tid
+        # SECURITY: Atomic check-and-decrement in a single SQL statement
+        # This prevents the race condition where:
+        # 1. Thread A reads available_copies = 1
+        # 2. Thread B reads available_copies = 1
+        # 3. Both threads insert a borrow record
+        # 4. Both threads decrement → available_copies = -1
+        result = db.execute(text("""
+            UPDATE library_resources
+            SET available_copies = available_copies - 1, updated_at = NOW()
+            WHERE id = :rid AND tenant_id = :tid AND available_copies > 0
+            RETURNING id, title, available_copies
         """), {"rid": borrow.resource_id, "tid": tenant_id}).mappings().first()
-        if not resource:
-            raise HTTPException(status_code=404, detail="Resource not found")
-        if resource["available_copies"] <= 0:
+
+        if not result:
+            # Either resource doesn't exist, or no copies available
+            resource = db.execute(text("""
+                SELECT available_copies FROM library_resources
+                WHERE id = :rid AND tenant_id = :tid
+            """), {"rid": borrow.resource_id, "tid": tenant_id}).mappings().first()
+            if not resource:
+                raise HTTPException(status_code=404, detail="Resource not found")
             raise HTTPException(status_code=400, detail="No copies available")
 
         # Create borrow record
-        result = db.execute(text("""
+        borrow_result = db.execute(text("""
             INSERT INTO library_borrow_records (id, tenant_id, resource_id, borrowed_by, borrowed_at, due_date, status, notes)
             VALUES (gen_random_uuid(), :tid, :rid, :uid, NOW(), :due, 'BORROWED', :notes)
             RETURNING id, tenant_id, resource_id, borrowed_by, borrowed_at, due_date, status, notes
@@ -386,17 +405,11 @@ def borrow_resource(
             "notes": borrow.notes,
         }).mappings().first()
 
-        # Decrement available copies
-        db.execute(text("""
-            UPDATE library_resources SET available_copies = available_copies - 1, updated_at = NOW()
-            WHERE id = :rid AND tenant_id = :tid
-        """), {"rid": borrow.resource_id, "tid": tenant_id})
-
         log_audit(db, user_id=current_user.get("id"), tenant_id=tenant_id,
                   action="BORROW_RESOURCE", resource_type="LIBRARY_BORROW",
-                  resource_id=str(result["id"]))
+                  resource_id=str(borrow_result["id"]))
         db.commit()
-        return result
+        return borrow_result
     except HTTPException:
         raise
     except Exception as e:
@@ -409,7 +422,7 @@ def borrow_resource(
 def return_resource(
     ret: ReturnRequest,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(require_permission("library:write")),
 ):
     """Return a borrowed library resource."""
     tenant_id = current_user.get("tenant_id")
@@ -451,7 +464,7 @@ def return_resource(
 @router.get("/borrowers/")
 def list_borrowers(
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(require_permission("library:read")),
 ):
     """List current borrowers (active borrow records)."""
     tenant_id = current_user.get("tenant_id")

@@ -44,7 +44,7 @@ interface SubmitResult {
 }
 
 function getApiBase() {
-  return (window as any).__SCHOOLFLOW_CONFIG__?.API_URL || import.meta.env.VITE_API_URL || "";
+  return (window as any).__GUINEE_ACADEMY_CONFIG__?.API_URL || import.meta.env.VITE_API_URL || "";
 }
 
 export default function ReEnrollment() {

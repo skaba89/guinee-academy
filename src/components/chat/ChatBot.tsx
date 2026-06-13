@@ -17,7 +17,7 @@ interface Message {
 
 // Resolve API base URL (same logic as apiClient)
 function resolveChatApiBaseUrl(): string {
-  const runtimeCfg = (window as any).__SCHOOLFLOW_CONFIG__;
+  const runtimeCfg = (window as any).__GUINEE_ACADEMY_CONFIG__;
   if (runtimeCfg?.API_URL) return runtimeCfg.API_URL.trim();
   const buildUrl = import.meta.env.VITE_API_URL?.trim();
   if (buildUrl && !/localhost|127\.0\.0\.1/.test(buildUrl)) return buildUrl;
@@ -83,7 +83,7 @@ export const ChatBot = () => {
       role: 'user',
     } : null;
 
-    const token = localStorage.getItem('schoolflow:access_token') || sessionStorage.getItem('schoolflow:access_token');
+    const token = localStorage.getItem('guinee_academy:access_token') || sessionStorage.getItem('guinee_academy:access_token');
     const lastTenantId = localStorage.getItem('last_tenant_id');
     const headers: Record<string, string> = {
       "Content-Type": "application/json",

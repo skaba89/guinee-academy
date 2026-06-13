@@ -1,7 +1,7 @@
 # 📑 Project Files Index - Complete Reference
 
 **Date**: 26 Janvier 2026  
-**Project**: SchoolFlow Pro  
+**Project**: Guinée Academy  
 **Status**: ✅ Production Ready
 
 ---
@@ -138,7 +138,7 @@ docs/
 ## 📊 Project Structure
 
 ```
-schoolflow-pro/
+guinee-academy/
 ├── 📚 Documentation Files (Root)
 │   ├── START_HERE.md
 │   ├── GETTING_STARTED_FRESH.md .............. ⭐ READ THIS FIRST
@@ -281,7 +281,7 @@ schoolflow-pro/
 ---
 
 **Generated**: 26 Janvier 2026  
-**Project**: SchoolFlow Pro  
+**Project**: Guinée Academy  
 **Status**: ✅ Complete & Ready
 
 Happy reading! Bonne lecture!

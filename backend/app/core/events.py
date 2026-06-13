@@ -1,5 +1,5 @@
 """
-SchoolFlow Pro — Domain Event Bus
+Guinée Academy — Domain Event Bus
 ==================================
 Lightweight in-process pub/sub for domain events.
 

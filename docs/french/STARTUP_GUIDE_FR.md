@@ -1,4 +1,4 @@
-# 🚀 SchoolFlow Pro - DÉMARRAGE RAPIDE & REDÉMARRAGE
+# 🚀 Guinée Academy - DÉMARRAGE RAPIDE & REDÉMARRAGE
 
 **Date:** January 27, 2026  
 **Status:** ✅ **PROJET ENTIÈREMENT FONCTIONNEL**
@@ -157,20 +157,20 @@ curl -X POST http://localhost:8000/auth/v1/token \
 
 ### Problème: "Credentials invalides"
 **Solution:** 
-1. Vérifier que les comptes existent: `docker exec schoolflow-pro-supabase-db-1 psql -U postgres -d postgres -c "SELECT email FROM auth.users WHERE email LIKE '%sorbonne%';"`
+1. Vérifier que les comptes existent: `docker exec guinee-academy-supabase-db-1 psql -U postgres -d postgres -c "SELECT email FROM auth.users WHERE email LIKE '%sorbonne%';"`
 2. Si vide, réexécuter les scripts de seed
 
 ### Problème: Kong unhealthy
-**Solution:** `docker restart schoolflow-pro-supabase-kong-1`
+**Solution:** `docker restart guinee-academy-supabase-kong-1`
 
 ### Problème: Frontend ne charge pas
 **Solution:**
-1. `docker restart schoolflow-pro-frontend-1`
+1. `docker restart guinee-academy-frontend-1`
 2. Attendre 30 secondes
 3. Rafraîchir le navigateur
 
 ### Problème: API timeout
-**Solution:** `docker logs schoolflow-pro-supabase-kong-1 | tail -20`
+**Solution:** `docker logs guinee-academy-supabase-kong-1 | tail -20`
 
 ---
 
@@ -183,17 +183,17 @@ docker ps -a
 
 ### Logs d'un service spécifique
 ```bash
-docker logs -f schoolflow-pro-supabase-auth-1
+docker logs -f guinee-academy-supabase-auth-1
 ```
 
 ### Accéder à la base de données
 ```bash
-docker exec -it schoolflow-pro-supabase-db-1 psql -U postgres
+docker exec -it guinee-academy-supabase-db-1 psql -U postgres
 ```
 
 ### Compter les utilisateurs
 ```bash
-docker exec schoolflow-pro-supabase-db-1 psql -U postgres -d postgres \
+docker exec guinee-academy-supabase-db-1 psql -U postgres -d postgres \
   -c "SELECT COUNT(*) FROM auth.users;"
 ```
 
@@ -215,9 +215,9 @@ docker exec schoolflow-pro-supabase-db-1 psql -U postgres -d postgres \
 |----------|----------|
 | Services down | `docker-compose restart` |
 | Data corrompue | `docker-compose down -v && docker-compose up -d` |
-| Frontend crash | `docker restart schoolflow-pro-frontend-1` |
-| DB connexion | `docker exec schoolflow-pro-supabase-db-1 psql -U postgres` |
-| Kong logs | `docker logs schoolflow-pro-supabase-kong-1` |
+| Frontend crash | `docker restart guinee-academy-frontend-1` |
+| DB connexion | `docker exec guinee-academy-supabase-db-1 psql -U postgres` |
+| Kong logs | `docker logs guinee-academy-supabase-kong-1` |
 
 ---
 

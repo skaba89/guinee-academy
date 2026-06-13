@@ -73,7 +73,7 @@ logger = logging.getLogger(__name__)
 @router.get("/dashboard/")
 def get_student_dashboard(
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(require_permission("students:read"))
 ):
     """Retrieve metrics for the Student Dashboard."""
     user_id = current_user.get("id")
@@ -97,21 +97,21 @@ def get_student_dashboard(
         FROM enrollments e
         LEFT JOIN classrooms c ON e.class_id = c.id
         LEFT JOIN levels l ON e.level_id = l.id
-        WHERE e.student_id = :student_id AND e.status = 'active'
+        WHERE e.student_id = :student_id AND e.tenant_id = :tenant_id AND e.status = 'active'
         LIMIT 1
-    """), {"student_id": student_id}).mappings().first()
+    """), {"student_id": student_id, "tenant_id": tenant_id}).mappings().first()
     
     class_id = str(enrollment["class_id"]) if enrollment and enrollment["class_id"] else None
 
-    # Grades
+    # Grades — SECURITY: filter by tenant_id to prevent cross-tenant data leak
     grades = [dict(r) for r in db.execute(text("""
         SELECT g.id, g.score, g.created_at, a.name as assessment_name, a.max_score, s.name as subject_name
         FROM grades g
         JOIN assessments a ON g.assessment_id = a.id
         LEFT JOIN subjects s ON a.subject_id = s.id
-        WHERE g.student_id = :student_id AND g.score IS NOT NULL
+        WHERE g.student_id = :student_id AND g.tenant_id = :tenant_id AND g.score IS NOT NULL
         ORDER BY g.created_at DESC LIMIT 15
-    """), {"student_id": student_id}).mappings().all()]
+    """), {"student_id": student_id, "tenant_id": tenant_id}).mappings().all()]
     
     formatted_grades = []
     for g in grades:
@@ -120,21 +120,21 @@ def get_student_dashboard(
              "assessments": { "max_score": g["max_score"], "name": g["assessment_name"], "subjects": {"name": g["subject_name"]} }
          })
 
-    # Homework (assignments)
+    # Homework (assignments) — SECURITY: filter by tenant_id
     homework = []
     if class_id:
         homework = [dict(r) for r in db.execute(text("""
             SELECT h.*, s.name as subject_name
             FROM homework h
             LEFT JOIN subjects s ON h.subject_id = s.id
-            WHERE h.class_id = :class_id AND h.due_date >= CURRENT_DATE
+            WHERE h.class_id = :class_id AND h.tenant_id = :tenant_id AND h.due_date >= CURRENT_DATE
             ORDER BY h.due_date ASC LIMIT 5
-        """), {"class_id": class_id}).mappings().all()]
+        """), {"class_id": class_id, "tenant_id": tenant_id}).mappings().all()]
         
     for h in homework:
         if isinstance(h.get("due_date"), datetime): h["due_date"] = h["due_date"].isoformat()
 
-    # Schedule
+    # Schedule — SECURITY: filter by tenant_id
     schedule = []
     if class_id:
         schedule = [dict(r) for r in db.execute(text("""
@@ -142,15 +142,15 @@ def get_student_dashboard(
             FROM schedule sh
             LEFT JOIN subjects s ON sh.subject_id = s.id
             LEFT JOIN users p ON sh.teacher_id = p.id
-            WHERE sh.class_id = :class_id
-        """), {"class_id": class_id}).mappings().all()]
+            WHERE sh.class_id = :class_id AND sh.tenant_id = :tenant_id
+        """), {"class_id": class_id, "tenant_id": tenant_id}).mappings().all()]
 
-    # Checkins
+    # Checkins — SECURITY: filter by tenant_id
     checkins = [dict(r) for r in db.execute(text("""
         SELECT * FROM student_check_ins
-        WHERE student_id = :student_id
+        WHERE student_id = :student_id AND tenant_id = :tenant_id
         ORDER BY checked_at DESC LIMIT 10
-    """), {"student_id": student_id}).mappings().all()]
+    """), {"student_id": student_id, "tenant_id": tenant_id}).mappings().all()]
     for c in checkins:
         if isinstance(c.get("checked_at"), datetime): c["checked_at"] = c["checked_at"].isoformat()
 

@@ -1,7 +1,7 @@
 # PHASE 3b Load Testing - Complete File Index
 
 **Generated:** January 27, 2026  
-**Project:** SchoolFlow Pro - Badge System Load Testing  
+**Project:** Guinée Academy - Badge System Load Testing  
 **Status:** 90% Complete (Data prep done, HTTP testing blocked)
 
 ---
@@ -265,7 +265,7 @@ Thresholds: 6 (errors, success rate, latencies)
 **Execute in terminal:**
 ```bash
 # Navigate to project
-cd c:\Users\cheic\Documents\EduSchool\schoolflow-pro
+cd c:\Users\cheic\Documents\EduSchool\guinee-academy
 
 # Read transition guide
 notepad PHASE3B_TRANSITION_GUIDE.md

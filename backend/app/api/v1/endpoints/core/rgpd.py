@@ -109,7 +109,7 @@ def process_deletion_request(
         user_to_delete = db.query(User).filter(User.id == db_obj.user_id).first()
         if user_to_delete:
             # 1. Anonymize user in DB
-            user_to_delete.email = f"deleted_{str(user_to_delete.id)[:8]}@schoolflow.deleted"
+            user_to_delete.email = f"deleted_{str(user_to_delete.id)[:8]}@guinee-academy.deleted"
             user_to_delete.first_name = "Deleted"
             user_to_delete.last_name = "User"
             user_to_delete.is_active = False
@@ -337,7 +337,7 @@ def direct_delete_user(
         )
         
     # Reuse the same logic as process_deletion_request
-    user_to_delete.email = f"deleted_{str(user_to_delete.id)[:8]}@schoolflow.deleted"
+    user_to_delete.email = f"deleted_{str(user_to_delete.id)[:8]}@guinee-academy.deleted"
     user_to_delete.first_name = "Deleted"
     user_to_delete.last_name = "User"
     user_to_delete.is_active = False

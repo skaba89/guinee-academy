@@ -15,7 +15,7 @@ export type CookiePreferences = {
     minimized?: boolean;
 };
 
-const COOKIE_PREF_KEY = "schoolflow_cookie_preferences";
+const COOKIE_PREF_KEY = "guinee_academy_cookie_preferences";
 
 export const CookieConsentBanner = () => {
     const { t } = useTranslation();

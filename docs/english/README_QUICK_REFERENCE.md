@@ -296,7 +296,7 @@ Before going live, get sign-offs from:
 All files are at **project root** (`/`):
 
 ```
-schoolflow-pro/
+guinee-academy/
 ├─ DYNAMIC_SETTINGS_SYSTEM_GUIDE.md ........... Developer guide
 ├─ GUIDE_ADMIN_PARAMETRES.md ................ Admin guide
 ├─ DYNAMIC_SETTINGS_IMPLEMENTATION_SUMMARY.md Executive summary
@@ -339,7 +339,7 @@ Everything is:
 **Version**: 1.0  
 **Date**: January 20, 2025  
 **Status**: ✅ Production Ready  
-**Team**: SchoolFlow Pro  
+**Team**: Guinée Academy  
 
 ---
 

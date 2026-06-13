@@ -76,7 +76,7 @@ Step 1: Cleanup ✅
   • Successful shutdown
 
 Step 2: Reset Database ✅
-  • Deleted database volume (schoolflow-pro_db-data)
+  • Deleted database volume (guinee-academy_db-data)
   • Removed all test/seed data
   • Clean slate for fresh start
 
@@ -224,7 +224,7 @@ All metrics optimal ✅
 • Database Changes: Use Supabase Studio or direct SQL
 • Test Emails: Check MailHog at http://localhost:8026/
 • View Logs: docker logs <container-name>
-• Reset Again: docker volume rm schoolflow-pro_db-data && docker-compose up -d
+• Reset Again: docker volume rm guinee-academy_db-data && docker-compose up -d
 • Frontend Hot Reload: Works with all React/TypeScript changes
 • Multi-Tenant: Every table filters by tenant_id (RLS enforces this)
 
@@ -252,7 +252,7 @@ Everything is:
 ═══════════════════════════════════════════════════════════════════════════════
 
 Generated: 26 Janvier 2026 - 18:15 UTC+1
-Project: SchoolFlow Pro
+Project: Guinée Academy
 Status: ✅ Fully Operational
 
 🚀 Happy Developing! 🚀

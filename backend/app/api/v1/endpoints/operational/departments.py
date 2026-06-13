@@ -8,7 +8,7 @@ from pydantic import BaseModel
 import datetime
 
 from app.core.database import get_db
-from app.core.security import get_current_user
+from app.core.security import get_current_user, require_permission
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -66,7 +66,8 @@ def _get_department_classroom_ids(db: Session, department_id: str, tenant_id: st
 @router.get("/my-department/")
 def get_my_department(
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user),
+    _perm: None = Depends(require_permission("departments:read"))
 ):
     try:
         """Return the department associated with the current user."""
@@ -92,7 +93,8 @@ def get_my_department(
 @router.get("/dashboard/")
 def department_dashboard(
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user),
+    _perm: None = Depends(require_permission("departments:read"))
 ):
     try:
         """
@@ -199,7 +201,8 @@ def department_dashboard(
 @router.get("/classrooms/")
 def department_classrooms(
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user),
+    _perm: None = Depends(require_permission("departments:read"))
 ):
     try:
         """List classrooms linked to the current user's department."""
@@ -241,7 +244,8 @@ def department_students(
     classroom_id: Optional[str] = None,
     search: Optional[str] = None,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user),
+    _perm: None = Depends(require_permission("departments:read"))
 ):
     try:
         """List students enrolled in the department's classrooms."""
@@ -310,7 +314,8 @@ def department_students(
 @router.get("/teachers/")
 def department_teachers(
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user),
+    _perm: None = Depends(require_permission("departments:read"))
 ):
     try:
         """List teachers assigned to the department's classrooms with subjects & hours."""
@@ -383,7 +388,8 @@ def department_attendance(
     period: str = Query("week", pattern="^(week|month)$"),
     classroom_id: Optional[str] = None,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user),
+    _perm: None = Depends(require_permission("departments:read"))
 ):
     try:
         """Attendance records for the department's classrooms."""
@@ -475,7 +481,8 @@ def department_attendance(
 @router.get("/exams/")
 def department_exams(
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user),
+    _perm: None = Depends(require_permission("departments:read"))
 ):
     try:
         """List all exams for the department + subjects, terms, classrooms for the form."""
@@ -550,7 +557,8 @@ def department_exams(
 def create_exam(
     body: ExamCreate,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user),
+    _perm: None = Depends(require_permission("departments:write"))
 ):
     try:
         """Create an exam for the current user's department."""
@@ -596,7 +604,8 @@ def update_exam(
     exam_id: str,
     body: ExamCreate,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user),
+    _perm: None = Depends(require_permission("departments:write"))
 ):
     try:
         """Update an exam."""
@@ -640,7 +649,8 @@ def update_exam(
 def delete_exam(
     exam_id: str,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user),
+    _perm: None = Depends(require_permission("departments:write"))
 ):
     try:
         """Delete an exam."""
@@ -673,7 +683,8 @@ def delete_exam(
 @router.get("/schedule/")
 def department_schedule(
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user),
+    _perm: None = Depends(require_permission("departments:read"))
 ):
     try:
         """Return schedule for all department classrooms."""
@@ -728,7 +739,8 @@ def department_grades_report(
     term_id: Optional[str] = None,
     classroom_id: Optional[str] = None,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user),
+    _perm: None = Depends(require_permission("departments:read"))
 ):
     try:
         """Grade summary report for the department."""

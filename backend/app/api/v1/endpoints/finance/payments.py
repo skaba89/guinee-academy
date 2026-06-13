@@ -734,7 +734,7 @@ def send_invoice_email(
     if not invoice:
         raise HTTPException(status_code=404, detail="Invoice not found")
 
-    email_to = recipient_email or "parent@schoolflow.pro"
+    email_to = recipient_email or "parent@guinee-academy.com"
 
     # Audit log the action
     try:
@@ -776,6 +776,6 @@ def create_payment_intent(
     return {
         "status": "pending", "method": method, "amount": amount,
         "transaction_reference": reference,
-        "payment_url": f"https://mock-payment-gateway.schoolflow.pro/pay/{reference}",
+        "payment_url": f"https://mock-payment-gateway.guinee-academy.com/pay/{reference}",
         "message": "Intention de paiement créée avec succès."
     }

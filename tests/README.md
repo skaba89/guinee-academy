@@ -1,8 +1,8 @@
-# Tests E2E avec Playwright - SchoolFlow Pro
+# Tests E2E avec Playwright - Guinée Academy
 
 ## 📋 Vue d'ensemble
 
-Ce répertoire contient les tests End-to-End (E2E) pour l'application SchoolFlow Pro.
+Ce répertoire contient les tests End-to-End (E2E) pour l'application Guinée Academy.
 
 **Technologie**: [Playwright](https://playwright.dev) - Framework E2E moderne et performant
 

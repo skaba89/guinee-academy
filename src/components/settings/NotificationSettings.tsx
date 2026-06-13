@@ -687,7 +687,7 @@ const NotificationSettings = () => {
                       id="atSenderId"
                       value={config.africastalkingSenderId}
                       onChange={(e) => set({ africastalkingSenderId: e.target.value })}
-                      placeholder="SCHOOLFLOW"
+                      placeholder="GUINEE_ACADEMY"
                       className="font-mono text-sm"
                     />
                     <p className="text-xs text-muted-foreground">

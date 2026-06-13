@@ -106,7 +106,7 @@ describe("Auth page tenant-aware redirects", () => {
     fireEvent.click(screen.getByRole("button", { name: /Connexion Institutionnelle/i }));
 
     await waitFor(() => {
-      expect(sessionStorage.getItem("schoolflow:return_to")).toBe("/isc-paris/teacher");
+      expect(sessionStorage.getItem("guinee_academy:return_to")).toBe("/isc-paris/teacher");
       expect(mockSignIn).toHaveBeenCalled();
     });
   });

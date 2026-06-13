@@ -1,4 +1,4 @@
-# SchoolFlow Pro — Project Conventions
+# Guinée Academy — Project Conventions
 
 ## Stack
 - **Frontend**: React 18 + Vite 5 + TypeScript 5.8 + Tailwind CSS 3.4 + Radix UI (shadcn/ui)
@@ -53,7 +53,7 @@ src/                     # Frontend (React)
 - Auth managed via React Context (AuthContext) + Zustand sync
 - Tenant resolved from URL slug (/:tenantSlug/...) via TenantRoute component
 - API calls via `apiClient` (Axios with token refresh interceptor)
-- Token stored in localStorage key: `schoolflow:access_token`
+- Token stored in localStorage key: `guinee_academy:access_token`
 - UI: Radix primitives + Tailwind + Lucide icons
 - i18n: French default, with EN/ES/ZH/AR
 
@@ -101,4 +101,4 @@ alembic revision --autogenerate -m "description"
 - Never use @supabase/supabase-js — legacy dependency removed
 - Operational tables without ORM models are managed in `app/core/operational_tables.py`
 - npm install requires `--legacy-peer-deps` flag
-- Production build needs `VITE_API_URL` or runtime config via `window.__SCHOOLFLOW_CONFIG__`
+- Production build needs `VITE_API_URL` or runtime config via `window.__GUINEE_ACADEMY_CONFIG__`

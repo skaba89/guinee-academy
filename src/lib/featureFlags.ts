@@ -1,5 +1,5 @@
 /**
- * Feature flags for SchoolFlow Pro.
+ * Feature flags for Guinée Academy.
  *
  * Zero external dependencies — powered by Zustand.
  * Dev overrides via localStorage:

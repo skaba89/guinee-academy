@@ -1,4 +1,4 @@
-// SchoolFlow Pro — Simple Smoke Load Test
+// Guinée Academy — Simple Smoke Load Test
 // Usage: k6 run --env BASE_URL=http://localhost:8000 load-tests/badges-simple.js
 import http from 'k6/http';
 import { check } from 'k6';

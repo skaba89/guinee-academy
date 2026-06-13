@@ -1,16 +1,16 @@
-# SchoolFlow Pro — E2E test environment setup (Windows/PowerShell)
+# Guinée Academy — E2E test environment setup (Windows/PowerShell)
 # Usage: .\tests\seed.ps1
 
 $ErrorActionPreference = "Stop"
 $projectDir = Split-Path -Parent $PSScriptRoot
 
-Write-Host "`n🌱 SchoolFlow Pro — E2E Seed" -ForegroundColor Cyan
+Write-Host "`n🌱 Guinée Academy — E2E Seed" -ForegroundColor Cyan
 Write-Host "================================" -ForegroundColor Cyan
 
 # 1) Run SQL seed
 Write-Host "`n📦 Step 1/2 — Seeding PostgreSQL..." -ForegroundColor Yellow
-docker exec -i schoolflow-pro-postgres-1 `
-    psql -U schoolflow -d schoolflow `
+docker exec -i guinee-academy-postgres-1 `
+    psql -U guinee_academy -d guinee_academy `
     -f /dev/stdin < "$projectDir\tests\seed.sql"
 
 if ($LASTEXITCODE -ne 0) {

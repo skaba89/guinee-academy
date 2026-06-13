@@ -87,12 +87,12 @@ jobs:
       DEBUG: "False"
       LOG_LEVEL: INFO
       KEYCLOAK_URL: http://localhost:8080
-      KEYCLOAK_REALM: schoolflow
-      KEYCLOAK_CLIENT_ID: schoolflow-frontend
+      KEYCLOAK_REALM: guinee_academy
+      KEYCLOAK_CLIENT_ID: guinee-academy-frontend
       KEYCLOAK_CLIENT_SECRET: dummy-ci-secret
-      KEYCLOAK_ISSUER: http://localhost:8080/realms/schoolflow
-      KEYCLOAK_JWKS_URL: http://localhost:8080/realms/schoolflow/protocol/openid-connect/certs
-      KEYCLOAK_AUDIENCE: schoolflow-frontend
+      KEYCLOAK_ISSUER: http://localhost:8080/realms/guinee_academy
+      KEYCLOAK_JWKS_URL: http://localhost:8080/realms/guinee_academy/protocol/openid-connect/certs
+      KEYCLOAK_AUDIENCE: guinee-academy-frontend
       REDIS_URL: redis://localhost:6379/0
     steps:
       - name: Checkout
@@ -128,7 +128,7 @@ jobs:
         run: docker compose --env-file .env.docker config
 
       - name: Build frontend image
-        run: docker build -t schoolflow-frontend:ci .
+        run: docker build -t guinee-academy-frontend:ci .
 
       - name: Build backend image
-        run: docker build -t schoolflow-backend:ci ./backend
+        run: docker build -t guinee-academy-backend:ci ./backend

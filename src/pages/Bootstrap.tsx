@@ -50,7 +50,7 @@ export default function Bootstrap() {
       const data = response.data;
 
       setResult({
-        email: data.credentials?.email || "admin@schoolflow.local",
+        email: data.credentials?.email || "admin@guinee-academy.local",
         steps: data.steps || [],
       });
       setStep("success");
@@ -211,7 +211,7 @@ export default function Bootstrap() {
                   <p className="font-medium mb-1">Où trouver BOOTSTRAP_SECRET ?</p>
                   <ol className="list-decimal list-inside space-y-0.5 text-amber-600 dark:text-amber-500">
                     <li>Allez sur le dashboard Render</li>
-                    <li>Ouvrez le service <strong>schoolflow-api</strong></li>
+                    <li>Ouvrez le service <strong>guinee-academy-api</strong></li>
                     <li>Section <strong>Environment</strong></li>
                     <li>Copiez la valeur de <code>BOOTSTRAP_SECRET</code></li>
                   </ol>

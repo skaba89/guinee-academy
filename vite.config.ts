@@ -44,10 +44,10 @@ export default defineConfig(({ mode }) => {
       react(),
       mode === 'development' && componentTagger(),
       // ⚠️  NE PAS activer VITE_ENABLE_PWA=true — le projet utilise
-      // sw-schoolflow.js (custom SW, enregistré dans main.tsx).
+      // sw-guinee-academy.js (custom SW, enregistré dans main.tsx).
       // VitePWA génère un sw.js Workbox séparé qui INTERCEPTERAIT les appels API
       // et entrerait en conflit avec notre SW custom.
-      // Le mode offline est géré entièrement par sw-schoolflow.js + Dexie (offlineDb.ts).
+      // Le mode offline est géré entièrement par sw-guinee-academy.js + Dexie (offlineDb.ts).
       enablePwa && VitePWA({
         registerType: 'autoUpdate',
         // Exclusions API complètes — JAMAIS intercepter les appels backend
@@ -68,7 +68,7 @@ export default defineConfig(({ mode }) => {
                 request.destination !== 'document',
               handler: 'CacheFirst',
               options: {
-                cacheName: 'schoolflow-static-cache',
+                cacheName: 'guinee-academy-static-cache',
                 expiration: {
                   maxEntries: 100,
                   maxAgeSeconds: 7 * 24 * 60 * 60, // 7 jours

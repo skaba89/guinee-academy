@@ -112,7 +112,7 @@ doc = SimpleDocTemplate(
     leftMargin=2*cm, rightMargin=2*cm, topMargin=2.2*cm, bottomMargin=2*cm,
     title='guide-deploiement-render',
     author='Z.ai', creator='Z.ai',
-    subject='Guide de deploiement SchoolFlow Pro sur Render'
+    subject='Guide de deploiement Guinée Academy sur Render'
 )
 
 story = []
@@ -121,7 +121,7 @@ story = []
 # COVER PAGE
 # ═══════════════════════════════════════════════════════════════════════
 story.append(Spacer(1, 100))
-story.append(Paragraph('<b>SchoolFlow Pro</b>', cover_title))
+story.append(Paragraph('<b>Guinée Academy</b>', cover_title))
 story.append(Spacer(1, 16))
 story.append(Paragraph('Guide de Deploiement sur Render', cover_subtitle))
 story.append(Spacer(1, 40))
@@ -143,7 +143,7 @@ story.append(PageBreak())
 story.append(Paragraph('<b>1. Architecture de Deploiement</b>', h1_style))
 story.append(Spacer(1, 6))
 story.append(Paragraph(
-    'SchoolFlow Pro est une application <font name="Times New Roman">SaaS</font> multi-tenant composee de trois parties : '
+    'Guinée Academy est une application <font name="Times New Roman">SaaS</font> multi-tenant composee de trois parties : '
     'un frontend <font name="Times New Roman">React</font>, un backend <font name="Times New Roman">FastAPI (Python)</font>, '
     'et une base de donnees <font name="Times New Roman">PostgreSQL</font>. Actuellement, seul le frontend est deploye sur '
     '<font name="Times New Roman">Render</font>. Le login echoue avec une erreur <font name="Times New Roman">405</font> car '
@@ -163,11 +163,11 @@ story.append(Spacer(1, 12))
 arch_data = [
     [Paragraph('<b>Service</b>', tbl_header), Paragraph('<b>Runtim</b>', tbl_header),
      Paragraph('<b>Plan</b>', tbl_header), Paragraph('<b>Description</b>', tbl_header)],
-    [Paragraph('schoolflow-db', tbl_cell_code), Paragraph('PostgreSQL', tbl_cell),
+    [Paragraph('guinee-academy-db', tbl_cell_code), Paragraph('PostgreSQL', tbl_cell),
      Paragraph('Free', tbl_cell), Paragraph('Base de donnees geree par Render', tbl_cell)],
-    [Paragraph('schoolflow-api', tbl_cell_code), Paragraph('Python 3.11', tbl_cell),
+    [Paragraph('guinee-academy-api', tbl_cell_code), Paragraph('Python 3.11', tbl_cell),
      Paragraph('Free', tbl_cell), Paragraph('Backend API FastAPI (dossier backend/)', tbl_cell)],
-    [Paragraph('schoolflow-frontend', tbl_cell_code), Paragraph('Docker', tbl_cell),
+    [Paragraph('guinee-academy-frontend', tbl_cell_code), Paragraph('Docker', tbl_cell),
      Paragraph('Free', tbl_cell), Paragraph('Frontend React (deja deploye)', tbl_cell)],
 ]
 arch_table = Table(arch_data, colWidths=[3.2*cm, 2.5*cm, 2*cm, 9*cm])
@@ -213,9 +213,9 @@ for num, text in steps_db:
 # DB form fields
 db_fields = [
     [Paragraph('<b>Champ</b>', tbl_header), Paragraph('<b>Valeur a saisir</b>', tbl_header)],
-    [Paragraph('Name', tbl_cell), Paragraph('schoolflow-db', tbl_cell_code)],
-    [Paragraph('Database', tbl_cell), Paragraph('schoolflow', tbl_cell_code)],
-    [Paragraph('User', tbl_cell), Paragraph('schoolflow', tbl_cell_code)],
+    [Paragraph('Name', tbl_cell), Paragraph('guinee-academy-db', tbl_cell_code)],
+    [Paragraph('Database', tbl_cell), Paragraph('guinee_academy', tbl_cell_code)],
+    [Paragraph('User', tbl_cell), Paragraph('guinee_academy', tbl_cell_code)],
     [Paragraph('Region', tbl_cell), Paragraph('Frankfurt (EU) - ou la plus proche', tbl_cell)],
     [Paragraph('PostgreSQL Version', tbl_cell), Paragraph('16 (par defaut)', tbl_cell)],
     [Paragraph('Plan', tbl_cell), Paragraph('Free (pour tester) ou Starter ($7/mo)', tbl_cell)],
@@ -252,7 +252,7 @@ story.append(Paragraph(
 ))
 story.append(Spacer(1, 6))
 story.append(Paragraph(
-    '<font name="SarasaMonoSC">postgresql://schoolflow:xxxxx@region-postgresql-render.com:5432/schoolflow</font>',
+    '<font name="SarasaMonoSC">postgresql://guinee_academy:xxxxx@region-postgresql-render.com:5432/guinee_academy</font>',
     code_style
 ))
 story.append(Spacer(1, 6))
@@ -284,7 +284,7 @@ story.append(Spacer(1, 8))
 
 steps_api = [
     ('3.1', 'Sur le <font name="Times New Roman">Dashboard Render</font>, cliquer sur <b>New +</b> puis <b>Web Service</b>.'),
-    ('3.2', 'Connecter votre compte <font name="Times New Roman">GitHub</font> si ce n\'est pas deja fait, puis selectionner le depot <font name="Times New Roman">skaba89/gestion-scolaire-pro</font>.'),
+    ('3.2', 'Connecter votre compte <font name="Times New Roman">GitHub</font> si ce n\'est pas deja fait, puis selectionner le depot <font name="Times New Roman">skaba89/guinee-academy</font>.'),
     ('3.3', 'Remplir la configuration du service :'),
 ]
 for num, text in steps_api:
@@ -294,7 +294,7 @@ for num, text in steps_api:
 # API config table
 api_fields = [
     [Paragraph('<b>Champ</b>', tbl_header), Paragraph('<b>Valeur</b>', tbl_header)],
-    [Paragraph('Name', tbl_cell), Paragraph('schoolflow-api', tbl_cell_code)],
+    [Paragraph('Name', tbl_cell), Paragraph('guinee-academy-api', tbl_cell_code)],
     [Paragraph('Region', tbl_cell), Paragraph('Frankfurt (EU)', tbl_cell)],
     [Paragraph('Branch', tbl_cell), Paragraph('main', tbl_cell_code)],
     [Paragraph('Root Directory', tbl_cell), Paragraph('backend', tbl_cell_code)],
@@ -361,7 +361,7 @@ story.append(Paragraph(
 ))
 story.append(Spacer(1, 4))
 story.append(Paragraph(
-    '<font name="SarasaMonoSC">https://gestion-scolaire-pro.onrender.com</font>',
+    '<font name="SarasaMonoSC">https://guinee-academy.onrender.com</font>',
     code_style
 ))
 story.append(Spacer(1, 6))
@@ -388,7 +388,7 @@ story.append(Paragraph(
 ))
 story.append(Spacer(1, 4))
 story.append(Paragraph(
-    '<font name="SarasaMonoSC">https://schoolflow-api-xxxx.onrender.com</font>',
+    '<font name="SarasaMonoSC">https://guinee-academy-api-xxxx.onrender.com</font>',
     code_style
 ))
 story.append(Spacer(1, 6))
@@ -398,13 +398,13 @@ story.append(Paragraph(
 ))
 story.append(Spacer(1, 4))
 story.append(Paragraph(
-    '<font name="SarasaMonoSC">{"message": "SchoolFlow Pro API", "version": "1.0.0", "docs": "/docs"}</font>',
+    '<font name="SarasaMonoSC">{"message": "Guinée Academy API", "version": "1.0.0", "docs": "/docs"}</font>',
     code_style
 ))
 story.append(Spacer(1, 8))
 
 story.append(Paragraph(
-    'Vous pouvez aussi tester le health check : <font name="SarasaMonoSC">https://schoolflow-api-xxxx.onrender.com/health/</font>',
+    'Vous pouvez aussi tester le health check : <font name="SarasaMonoSC">https://guinee-academy-api-xxxx.onrender.com/health/</font>',
     ok_style
 ))
 story.append(Spacer(1, 18))
@@ -425,7 +425,7 @@ story.append(Spacer(1, 8))
 story.append(Paragraph('<b>4.1 - Methode A (recommandee) : Via le Dashboard Render</b>', h2_style))
 story.append(Spacer(1, 4))
 steps_fe = [
-    ('a', 'Aller sur le <font name="Times New Roman">Dashboard Render</font> et ouvrir le service <b>schoolflow-frontend</b> (votre frontend actuel).'),
+    ('a', 'Aller sur le <font name="Times New Roman">Dashboard Render</font> et ouvrir le service <b>guinee-academy-frontend</b> (votre frontend actuel).'),
     ('b', 'Aller dans la section <b>Environment</b>.'),
     ('c', 'Ajouter ou modifier la variable :'),
 ]
@@ -434,7 +434,7 @@ for num, text in steps_fe:
     story.append(Spacer(1, 2))
 
 story.append(Paragraph(
-    '<font name="SarasaMonoSC">VITE_API_URL = https://schoolflow-api-xxxx.onrender.com</font>',
+    '<font name="SarasaMonoSC">VITE_API_URL = https://guinee-academy-api-xxxx.onrender.com</font>',
     code_style
 ))
 story.append(Spacer(1, 4))
@@ -471,8 +471,8 @@ story.append(Spacer(1, 4))
 story.append(Paragraph('<b>c.</b>  Modifier le fichier pour mettre l\'URL de votre backend :', step_style))
 story.append(Spacer(1, 4))
 story.append(Paragraph(
-    '<font name="SarasaMonoSC">window.__SCHOOLFLOW_CONFIG__ = {<br/>'
-    '  API_URL: "https://schoolflow-api-xxxx.onrender.com",<br/>'
+    '<font name="SarasaMonoSC">window.__GUINEE_ACADEMY_CONFIG__ = {<br/>'
+    '  API_URL: "https://guinee-academy-api-xxxx.onrender.com",<br/>'
     '};</font>',
     code_style
 ))
@@ -499,7 +499,7 @@ story.append(Paragraph(
 ))
 story.append(Spacer(1, 8))
 
-story.append(Paragraph('<b>5.1</b>  Ouvrir le <b>Shell</b> du service <font name="Times New Roman">schoolflow-api</font> sur Render.', step_style))
+story.append(Paragraph('<b>5.1</b>  Ouvrir le <b>Shell</b> du service <font name="Times New Roman">guinee-academy-api</font> sur Render.', step_style))
 story.append(Spacer(1, 6))
 story.append(Paragraph('<b>5.2</b>  Lancer le script de creation du super admin :', step_style))
 story.append(Spacer(1, 4))
@@ -516,7 +516,7 @@ story.append(Spacer(1, 4))
 
 creds_data = [
     [Paragraph('<b>Champ</b>', tbl_header), Paragraph('<b>Valeur</b>', tbl_header)],
-    [Paragraph('Email', tbl_cell), Paragraph('admin@schoolflow.local', tbl_cell_code)],
+    [Paragraph('Email', tbl_cell), Paragraph('admin@guinee-academy.local', tbl_cell_code)],
     [Paragraph('Mot de passe', tbl_cell), Paragraph('Admin@123456', tbl_cell_code)],
     [Paragraph('Role', tbl_cell), Paragraph('super_admin', tbl_cell_code)],
     [Paragraph('Tenant', tbl_cell), Paragraph('Aucun (super admin global)', tbl_cell)],
@@ -561,9 +561,9 @@ story.append(Paragraph(
 story.append(Spacer(1, 8))
 
 test_steps = [
-    ('6.1', 'Ouvrir votre frontend : <font name="Times New Roman">https://gestion-scolaire-pro.onrender.com</font>'),
+    ('6.1', 'Ouvrir votre frontend : <font name="Times New Roman">https://guinee-academy.onrender.com</font>'),
     ('6.2', 'Vous devriez voir la page de connexion (login).'),
-    ('6.3', 'Saisir les identifiants du super admin : email <font name="Times New Roman">admin@schoolflow.local</font> et mot de passe <font name="Times New Roman">Admin@123456</font>.'),
+    ('6.3', 'Saisir les identifiants du super admin : email <font name="Times New Roman">admin@guinee-academy.local</font> et mot de passe <font name="Times New Roman">Admin@123456</font>.'),
     ('6.4', 'Cliquer sur <b>Se connecter</b>.'),
     ('6.5', 'Si tout est configure correctement, vous serez redirige vers le tableau de bord admin.'),
 ]
@@ -582,7 +582,7 @@ debug_data = [
     [Paragraph('CORS error', tbl_cell), Paragraph('BACKEND_CORS_ORIGINS mal configure', tbl_cell),
      Paragraph('Ajoutez l\'URL du frontend dans le backend', tbl_cell)],
     [Paragraph('401 Unauthorized', tbl_cell), Paragraph('Mauvais identifiants', tbl_cell),
-     Paragraph('Utilisez admin@schoolflow.local', tbl_cell)],
+     Paragraph('Utilisez admin@guinee-academy.local', tbl_cell)],
     [Paragraph('500 Internal Server', tbl_cell), Paragraph('Erreur backend (logs)', tbl_cell),
      Paragraph('Verifiez les logs Render', tbl_cell)],
     [Paragraph('Network Error', tbl_cell), Paragraph('Backend pas encore demarre', tbl_cell),
@@ -613,15 +613,15 @@ story.append(Paragraph('<b>7. Resume des Etapes</b>', h1_style))
 story.append(Spacer(1, 8))
 story.append(Paragraph(
     'Voici le recapitulatif complet des actions a effectuer sur <font name="Times New Roman">Render</font> pour deployer '
-    'l\'ensemble de l\'application <font name="Times New Roman">SchoolFlow Pro</font> :',
+    'l\'ensemble de l\'application <font name="Times New Roman">Guinée Academy</font> :',
     body_style
 ))
 story.append(Spacer(1, 8))
 
 summary_data = [
     [Paragraph('<b>Etape</b>', tbl_header), Paragraph('<b>Action</b>', tbl_header), Paragraph('<b>Lieu</b>', tbl_header), Paragraph('<b>Duree</b>', tbl_header)],
-    [Paragraph('1', tbl_cell), Paragraph('Creer PostgreSQL (schoolflow-db)', tbl_cell), Paragraph('Render Dashboard', tbl_cell), Paragraph('2 min', tbl_cell)],
-    [Paragraph('2', tbl_cell), Paragraph('Creer Web Service (schoolflow-api) avec env vars', tbl_cell), Paragraph('Render Dashboard', tbl_cell), Paragraph('5 min + 3 min build', tbl_cell)],
+    [Paragraph('1', tbl_cell), Paragraph('Creer PostgreSQL (guinee-academy-db)', tbl_cell), Paragraph('Render Dashboard', tbl_cell), Paragraph('2 min', tbl_cell)],
+    [Paragraph('2', tbl_cell), Paragraph('Creer Web Service (guinee-academy-api) avec env vars', tbl_cell), Paragraph('Render Dashboard', tbl_cell), Paragraph('5 min + 3 min build', tbl_cell)],
     [Paragraph('3', tbl_cell), Paragraph('Configurer VITE_API_URL dans le frontend', tbl_cell), Paragraph('Render Dashboard ou Shell', tbl_cell), Paragraph('1 min + 3 min rebuild', tbl_cell)],
     [Paragraph('4', tbl_cell), Paragraph('Creer le super admin via le Shell', tbl_cell), Paragraph('Shell Render', tbl_cell), Paragraph('1 min', tbl_cell)],
     [Paragraph('5', tbl_cell), Paragraph('Tester le login sur le frontend', tbl_cell), Paragraph('Navigateur', tbl_cell), Paragraph('1 min', tbl_cell)],

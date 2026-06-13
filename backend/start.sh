@@ -1,5 +1,5 @@
 #!/bin/bash
-# SchoolFlow Pro — API startup script
+# Guinée Academy — API startup script
 # Runs inside the container where env vars from .env.docker are available.
 set -e
 

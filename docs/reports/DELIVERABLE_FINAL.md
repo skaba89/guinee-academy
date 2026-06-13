@@ -158,7 +158,7 @@ Lire: Vue d'ensemble + Phase 1
 
 **3. Préparer les données**
 ```bash
-cd c:\Users\cheic\Documents\EduSchool\schoolflow-pro
+cd c:\Users\cheic\Documents\EduSchool\guinee-academy
 
 # SQL pour universités
 cat scripts/insert_2_universities_complete.sql | \

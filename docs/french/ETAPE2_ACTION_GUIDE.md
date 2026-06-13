@@ -17,7 +17,7 @@ URL: http://localhost:8080
 
 2️⃣ **Vérifier l'écran de connexion**
 Vous devez voir:
-- [ ] Logo SchoolFlow Pro
+- [ ] Logo Guinée Academy
 - [ ] Champ "Email"
 - [ ] Champ "Mot de passe"
 - [ ] Bouton "Se connecter"

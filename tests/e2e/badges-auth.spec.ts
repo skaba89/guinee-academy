@@ -27,7 +27,7 @@ test.describe('Badges - Authentification & Accès', () => {
   test('utilisateur non connecté est redirigé vers login', async ({ page }) => {
     await page.goto('/auth/login');
     // accès direct sans token
-    await page.evaluate(() => localStorage.removeItem('schoolflow:access_token'));
+    await page.evaluate(() => localStorage.removeItem('guinee_academy:access_token'));
 
     await page.goto('/admin/badges');
     await page.waitForLoadState('networkidle');
@@ -41,7 +41,7 @@ test.describe('Badges - Authentification & Accès', () => {
   test('le token JWT est stocké dans localStorage après connexion', async ({ loginAsAdmin, page }) => {
     await loginAsAdmin(page);
 
-    const token = await page.evaluate(() => localStorage.getItem('schoolflow:access_token'));
+    const token = await page.evaluate(() => localStorage.getItem('guinee_academy:access_token'));
     expect(token).toBeTruthy();
     expect(typeof token).toBe('string');
   });
@@ -55,11 +55,11 @@ test.describe('Badges - Authentification & Accès', () => {
       await logoutBtn.first().click();
       await page.waitForLoadState('networkidle');
 
-      const token = await page.evaluate(() => localStorage.getItem('schoolflow:access_token'));
+      const token = await page.evaluate(() => localStorage.getItem('guinee_academy:access_token'));
       expect(token).toBeNull();
     } else {
       // bouton non trouvé dans le viewport — vérifier juste que le token existe
-      const token = await page.evaluate(() => localStorage.getItem('schoolflow:access_token'));
+      const token = await page.evaluate(() => localStorage.getItem('guinee_academy:access_token'));
       expect(token).toBeTruthy();
     }
   });

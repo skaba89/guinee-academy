@@ -41,7 +41,7 @@ class SubmitResponse(BaseModel):
 # --- Existing endpoints ---
 
 @router.get("/")
-def list_surveys(db: Session = Depends(get_db), current_user: dict = Depends(get_current_user)):
+def list_surveys(db: Session = Depends(get_db), current_user: dict = Depends(require_permission("surveys:read"))):
     tenant_id = current_user.get("tenant_id")
     if not tenant_id:
         return []
@@ -56,7 +56,7 @@ def list_surveys(db: Session = Depends(get_db), current_user: dict = Depends(get
 
 
 @router.get("/{survey_id}/questions/")
-def list_survey_questions(survey_id: UUID, db: Session = Depends(get_db), current_user: dict = Depends(get_current_user)):
+def list_survey_questions(survey_id: UUID, db: Session = Depends(get_db), current_user: dict = Depends(require_permission("surveys:read"))):
     tenant_id = current_user.get("tenant_id")
     if not tenant_id:
         return []
@@ -69,7 +69,7 @@ def list_survey_questions(survey_id: UUID, db: Session = Depends(get_db), curren
 
 
 @router.get("/response-counts/")
-def get_survey_response_counts(db: Session = Depends(get_db), current_user: dict = Depends(get_current_user)):
+def get_survey_response_counts(db: Session = Depends(get_db), current_user: dict = Depends(require_permission("surveys:read"))):
     tenant_id = current_user.get("tenant_id")
     if not tenant_id:
         return {}
@@ -83,7 +83,7 @@ def get_survey_response_counts(db: Session = Depends(get_db), current_user: dict
 
 
 @router.post("/")
-def create_survey(survey_data: dict, db: Session = Depends(get_db), current_user: dict = Depends(get_current_user)):
+def create_survey(survey_data: dict, db: Session = Depends(get_db), current_user: dict = Depends(require_permission("surveys:write"))):
     tenant_id = current_user.get("tenant_id")
     user_id = current_user.get("id")
     if not tenant_id or not user_id:
@@ -105,7 +105,7 @@ def create_survey(survey_data: dict, db: Session = Depends(get_db), current_user
 
 
 @router.patch("/{survey_id}/")
-def update_survey(survey_id: UUID, survey_data: dict, db: Session = Depends(get_db), current_user: dict = Depends(get_current_user)):
+def update_survey(survey_id: UUID, survey_data: dict, db: Session = Depends(get_db), current_user: dict = Depends(require_permission("surveys:write"))):
     tenant_id = current_user.get("tenant_id")
     if not tenant_id:
         raise HTTPException(status_code=403, detail="No tenant context")
@@ -126,7 +126,7 @@ def update_survey(survey_id: UUID, survey_data: dict, db: Session = Depends(get_
 
 
 @router.delete("/{survey_id}/")
-def delete_survey(survey_id: UUID, db: Session = Depends(get_db), current_user: dict = Depends(get_current_user)):
+def delete_survey(survey_id: UUID, db: Session = Depends(get_db), current_user: dict = Depends(require_permission("surveys:write"))):
     tenant_id = current_user.get("tenant_id")
     if not tenant_id:
         raise HTTPException(status_code=403, detail="No tenant context")
@@ -271,7 +271,7 @@ def submit_survey_response(
     survey_id: UUID,
     submission: SubmitResponse,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(require_permission("surveys:read")),
 ):
     """Submit responses to a survey."""
     tenant_id = current_user.get("tenant_id")

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""SchoolFlow Pro - Comprehensive Security Audit Report Generator"""
+"""Guinée Academy - Comprehensive Security Audit Report Generator"""
 import os, sys, hashlib
 from reportlab.lib.pagesizes import A4
 from reportlab.lib.units import inch, cm, mm
@@ -131,16 +131,16 @@ def finding(id, sev, title, file, desc, impact='', reco=''):
     return elements
 
 # ━━ Build Document ━━
-OUTPUT = '/home/z/my-project/gestion-scolaire-pro/download/SchoolFlow_Pro_Security_Audit_Avril2026.pdf'
+OUTPUT = '/home/z/my-project/guinee-academy/download/Guinée Academy_Pro_Security_Audit_Avril2026.pdf'
 doc = SimpleDocTemplate(OUTPUT, pagesize=A4, leftMargin=LEFT_M, rightMargin=RIGHT_M,
-    topMargin=TOP_M, bottomMargin=BOTTOM_M, title='SchoolFlow Pro - Audit de Securite',
+    topMargin=TOP_M, bottomMargin=BOTTOM_M, title='Guinée Academy - Audit de Securite',
     author='Z.ai Security Audit', subject='Comprehensive Security Audit Report')
 
 story = []
 
 # ━━ COVER PAGE ━━
 story.append(Spacer(1, 120))
-story.append(Paragraph('SCHOOLFLOW PRO', ParagraphStyle('CoverTitle', fontName='Calibri',
+story.append(Paragraph('GUINEE_ACADEMY PRO', ParagraphStyle('CoverTitle', fontName='Calibri',
     fontSize=36, leading=42, alignment=TA_CENTER, textColor=ACCENT)))
 story.append(Spacer(1, 12))
 story.append(HRFlowable(width='40%', thickness=2, color=ACCENT, spaceAfter=12, hAlign='CENTER'))
@@ -205,7 +205,7 @@ story.append(PageBreak())
 # ━━ 1. RESUME EXECUTIF ━━
 story.append(Paragraph('<b>1. Resume Executif</b>', h1_style))
 story.append(Paragraph(
-    'Cet audit complet de la plateforme SchoolFlow Pro a ete realise sur la version du commit '
+    'Cet audit complet de la plateforme Guinée Academy a ete realise sur la version du commit '
     '69a73ea de la branche main. La plateforme est une application SaaS multi-tenant de gestion '
     'scolaire, deployee sur Render, comprenant un backend FastAPI (Python), un frontend React/TypeScript/Vite, '
     'et une base de donnees PostgreSQL avec Row Level Security (RLS). L\'audit couvre 5 domaines distincts : '
@@ -262,7 +262,7 @@ story.append(PageBreak())
 # ━━ 2. CARTOGRAPHIE ━━
 story.append(Paragraph('<b>2. Cartographie du Projet</b>', h1_style))
 story.append(Paragraph(
-    'Le projet SchoolFlow Pro est un repository monorepo contenant l\'ensemble du code source '
+    'Le projet Guinée Academy est un repository monorepo contenant l\'ensemble du code source '
     'de l\'application. La structure est organisee en trois zones principales : le backend Python/FastAPI, '
     'le frontend React/TypeScript, et les fichiers d\'infrastructure (Docker, Render, CI/CD). '
     'Le backend compte environ 93 000 lignes de code Python reparties sur plus de 100 fichiers, '
@@ -365,10 +365,10 @@ story.extend(finding('H-CORE-01', 'HIGH',
     'Pas de claims iss/aud dans les tokens JWT',
     'backend/app/core/security.py (lignes 42-43)',
     'Les tokens JWT ne contiennent que les claims exp et sub. L\'absence de claims iss (emetteur) '
-    'et aud (audience) signifie qu\'un token genere pour un deploiement SchoolFlow pourrait etre '
+    'et aud (audience) signifie qu\'un token genere pour un deploiement Guinée Academy pourrait etre '
     'rejoue contre un autre deploiement utilisant le meme SECRET_KEY.',
     'Rejeu de token entre deploiements, possible elevation de privileges si la cle est partagee.',
-    'Ajouter les claims "iss": "schoolflow-pro" et "aud": "schoolflow-api" lors de la generation '
+    'Ajouter les claims "iss": "guinee-academy" et "aud": "guinee-academy-api" lors de la generation '
     'du token, et les valider lors de la verification dans verify_token().'))
 
 story.extend(finding('H-CORE-02', 'HIGH',
@@ -618,7 +618,7 @@ story.append(Paragraph(
 story.extend(finding('H-FE-01', 'HIGH',
     'Tokens JWT stockes en localStorage - risque XSS amplifie',
     'src/contexts/AuthContext.tsx, src/api/client.ts',
-    'Le token d\'acces JWT est stocke dans localStorage sous la cle "schoolflow:access_token". '
+    'Le token d\'acces JWT est stocke dans localStorage sous la cle "guinee_academy:access_token". '
     'En cas de vulnerabilite XSS (meme via une dependance tierce), un attaquant peut exfiltrer '
     'le token avec un simple fetch() vers un serveur externe.',
     'Takeover complet du compte utilisateur si un vecteur XSS est trouve.',

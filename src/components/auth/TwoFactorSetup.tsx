@@ -57,7 +57,7 @@ export const TwoFactorSetup = ({ open, onOpenChange, onComplete }: TwoFactorSetu
         const url = URL.createObjectURL(blob);
         const link = document.createElement("a");
         link.href = url;
-        link.download = "schoolflow-backup-codes.txt";
+        link.download = "guinee-academy-backup-codes.txt";
         link.click();
         URL.revokeObjectURL(url);
         toast.success("Codes téléchargés");

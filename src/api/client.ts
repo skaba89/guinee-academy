@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const TOKEN_STORAGE_KEY = 'schoolflow:access_token';
+const TOKEN_STORAGE_KEY = 'guinee_academy:access_token';
 
 /** Timeout global toutes requêtes API : 15 secondes. */
 const API_TIMEOUT_MS = 15_000;
@@ -19,7 +19,7 @@ function isLocalHost(value: string): boolean {
 /**
  * Resolve the API base URL using this priority:
  *
- * 1. Runtime config  (window.__SCHOOLFLOW_CONFIG__.API_URL)
+ * 1. Runtime config  (window.__GUINEE_ACADEMY_CONFIG__.API_URL)
  *    → Set in dist/config.js on the server AFTER build.
  *      Supports any hosting (Render, Netlify, S3, Nginx…).
  *
@@ -32,7 +32,7 @@ function isLocalHost(value: string): boolean {
  */
 function resolveApiBaseUrl(rawValue?: string): string {
   // ── Priority 1: runtime config (editable without rebuild) ─────────────
-  const runtimeCfg = (window as any).__SCHOOLFLOW_CONFIG__;
+  const runtimeCfg = (window as any).__GUINEE_ACADEMY_CONFIG__;
   if (runtimeCfg?.API_URL && typeof runtimeCfg.API_URL === 'string') {
     const runtimeUrl = runtimeCfg.API_URL.trim();
     if (runtimeUrl) {

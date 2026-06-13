@@ -1,7 +1,7 @@
 ```
 ╔══════════════════════════════════════════════════════════════════════════════╗
 ║                                                                              ║
-║                  ✅ SCHOOLFLOW PRO - ÉTAPE 1 COMPLÉTÉE ✅                   ║
+║                  ✅ GUINEE_ACADEMY PRO - ÉTAPE 1 COMPLÉTÉE ✅                   ║
 ║                                                                              ║
 ║                    Plan de Test 2 Universités - Jour 1                      ║
 ║                         26 Janvier 2026 - 18h45 UTC+1                       ║

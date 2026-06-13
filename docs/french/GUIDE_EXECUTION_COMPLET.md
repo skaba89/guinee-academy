@@ -2,7 +2,7 @@
 
 **Date**: 26 Janvier 2026  
 **Durée Estimée**: 3-4 jours  
-**Objectif**: Tester complètement SchoolFlow Pro avec 2 universités distinctes + versions mobiles
+**Objectif**: Tester complètement Guinée Academy avec 2 universités distinctes + versions mobiles
 
 ---
 
@@ -56,7 +56,7 @@ Universidad Nacional de Colombia | unal-colombia
 
 **Générer les fichiers SQL et credentials:**
 ```bash
-cd c:\Users\cheic\Documents\EduSchool\schoolflow-pro
+cd c:\Users\cheic\Documents\EduSchool\guinee-academy
 
 # Exécuter le script Python
 python scripts/create_test_users.py
@@ -94,7 +94,7 @@ Total utilisateurs créés: 72
 **Ouvrir Adminer**: http://localhost:8082/
 
 Connexion:
-- **Serveur**: `schoolflow-pro-supabase-db-1` (ou `localhost`)
+- **Serveur**: `guinee-academy-supabase-db-1` (ou `localhost`)
 - **Utilisateur**: `postgres`
 - **Mot de passe**: `postgres`
 - **Base**: `postgres`
@@ -117,7 +117,7 @@ Connexion:
 **1. Ouvrir frontend**: http://localhost:8080/
 
 **2. Écran Login visible:**
-- [ ] Logo SchoolFlow Pro
+- [ ] Logo Guinée Academy
 - [ ] Champ Email
 - [ ] Champ Mot de passe
 - [ ] Bouton "Se connecter"
@@ -690,7 +690,7 @@ Université: Colombia
 ### 6.1 Préparer Build
 
 ```bash
-cd c:\Users\cheic\Documents\EduSchool\schoolflow-pro
+cd c:\Users\cheic\Documents\EduSchool\guinee-academy
 
 # Vérifier Capacitor installé
 npx cap --version
@@ -940,7 +940,7 @@ k6 run scripts/load-test.js
 
 ```markdown
 # 📋 RAPPORT DE TEST FINAL
-## 2 Universités Distinctes - SchoolFlow Pro
+## 2 Universités Distinctes - Guinée Academy
 Date: [Date]
 Durée Test: [3-4 jours]
 
@@ -1015,7 +1015,7 @@ Durée Test: [3-4 jours]
 
 **VERDICT: ✅ PRODUCTION READY**
 
-L'application SchoolFlow Pro est prête pour:
+L'application Guinée Academy est prête pour:
 - Déploiement production
 - 2+ universités simultanément
 - 100+ utilisateurs
@@ -1111,11 +1111,11 @@ INFRA:
    - Note URL + étapes reproduction
 
 2. **Bug Backend**:
-   - `docker logs schoolflow-pro-api-1`
-   - `docker logs schoolflow-pro-supabase-db-1`
+   - `docker logs guinee-academy-api-1`
+   - `docker logs guinee-academy-supabase-db-1`
 
 3. **Bug Mobile**:
-   - Android: `adb logcat | grep schoolflow`
+   - Android: `adb logcat | grep guinee_academy`
    - iOS: Xcode Console
 
 4. **Question**:

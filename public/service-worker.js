@@ -1,5 +1,5 @@
 // =============================================================================
-// SchoolFlow Pro — Service Worker Killer (alias)
+// Guinée Academy — Service Worker Killer (alias)
 // =============================================================================
 // Identical to sw.js. Some browsers/registrations may reference this filename.
 // =============================================================================

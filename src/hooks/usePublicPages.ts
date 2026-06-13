@@ -54,7 +54,7 @@ export interface PublicPageListItem {
 // ─── Axios instance (reuse the publicApi pattern) ────────────────────────
 
 function resolvePublicBaseUrl(): string {
-  const runtimeCfg = (window as any).__SCHOOLFLOW_CONFIG__;
+  const runtimeCfg = (window as any).__GUINEE_ACADEMY_CONFIG__;
   if (runtimeCfg?.API_URL && typeof runtimeCfg.API_URL === 'string') {
     const url = runtimeCfg.API_URL.trim();
     if (url) return `${url}/api/v1`;

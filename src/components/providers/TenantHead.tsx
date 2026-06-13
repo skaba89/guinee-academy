@@ -4,7 +4,7 @@ import { useTenant } from "@/contexts/TenantContext";
 import { useSettings } from "@/hooks/useSettings";
 import { resolveUploadUrl } from "@/utils/url";
 
-const PLATFORM_TITLE = "Academy Guinée";
+const PLATFORM_TITLE = "Guinée Academy";
 const DEFAULT_FAVICON = "/favicon.ico";
 
 /** Routes that are NOT tenant-scoped (platform-level pages) */
@@ -12,7 +12,7 @@ const PLATFORM_PREFIXES = ["/super-admin", "/auth", "/"];
 
 /**
  * Dynamically sets the page <title> and favicon based on context:
- * - Platform pages (/super-admin, /, /auth): "Academy Guinée" + default favicon
+ * - Platform pages (/super-admin, /, /auth): "Guinée Academy" + default favicon
  * - Inside a tenant (/:slug/admin, /:slug/teacher, etc.): slug as title + tenant logo
  */
 export function TenantHead() {

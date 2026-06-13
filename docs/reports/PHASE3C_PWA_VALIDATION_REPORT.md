@@ -9,7 +9,7 @@
 
 ## 🎯 Objectif PHASE 3C
 
-Valider que l'application SchoolFlow Pro fonctionne correctement en tant que **Progressive Web App** (PWA) et est prête pour le déploiement sur mobile.
+Valider que l'application Guinée Academy fonctionne correctement en tant que **Progressive Web App** (PWA) et est prête pour le déploiement sur mobile.
 
 ---
 
@@ -21,8 +21,8 @@ Valider que l'application SchoolFlow Pro fonctionne correctement en tant que **P
 
 | Propriété | Statut | Valeur |
 |-----------|--------|--------|
-| **name** | ✅ | SchoolFlow Pro |
-| **short_name** | ✅ | SchoolFlow |
+| **name** | ✅ | Guinée Academy |
+| **short_name** | ✅ | Guinée Academy |
 | **start_url** | ✅ | / |
 | **display** | ✅ | standalone |
 | **theme_color** | ✅ | #3b82f6 |
@@ -57,16 +57,16 @@ navigator.serviceWorker.register('/sw.js')
 
 ```
 Cache Buckets:
-├─ schoolflow-static-v1   (CSS, JS, fonts)
-├─ schoolflow-images-v1   (PNG, SVG, WebP)
-└─ schoolflow-api-v1      (API responses, 1h TTL)
+├─ guinee_academy-static-v1   (CSS, JS, fonts)
+├─ guinee_academy-images-v1   (PNG, SVG, WebP)
+└─ guinee-academy-api-v1      (API responses, 1h TTL)
 ```
 
 **Résultat:** ✅ Cache configuré pour offline support
 
 ### 4. IndexedDB Setup ✅
 
-**Base de données:** `schoolflow-db`
+**Base de données:** `guinee-academy-db`
 
 ```
 Collections:
@@ -238,7 +238,7 @@ default-src 'self';
 script-src 'self' 'wasm-unsafe-eval';
 style-src 'self' 'unsafe-inline';
 img-src 'self' data: https:;
-connect-src 'self' http://localhost:3000 https://api.schoolflow.pro;
+connect-src 'self' http://localhost:3000 https://api.guinee-academy.com;
 ```
 
 **Status:** ✅ Configured
@@ -246,7 +246,7 @@ connect-src 'self' http://localhost:3000 https://api.schoolflow.pro;
 ### HTTPS Enforcement ✅
 
 ```
-Production: https://schoolflow.pro (enforced)
+Production: https://guinee-academy.com (enforced)
 Development: http://localhost:8080 (allowed)
 Secure headers: Set-Cookie SameSite=Strict
 ```
@@ -339,7 +339,7 @@ Secure headers: Set-Cookie SameSite=Strict
 ### Medium-term (2-3 hours)
 - [ ] Initialize Capacitor projects
   ```bash
-  npx cap init SchoolFlow-Pro com.schoolflow.pro
+  npx cap init Guinée Academy-Pro com.guinee.academy
   npx cap add ios
   npx cap add android
   npx cap sync

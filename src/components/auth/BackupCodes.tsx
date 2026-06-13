@@ -34,7 +34,7 @@ Date de génération : ${new Date().toLocaleString('fr-FR')}
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = `schoolflow-backup-codes-${Date.now()}.txt`;
+        a.download = `guinee-academy-backup-codes-${Date.now()}.txt`;
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);

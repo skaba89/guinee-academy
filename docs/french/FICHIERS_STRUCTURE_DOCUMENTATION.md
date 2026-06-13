@@ -8,7 +8,7 @@
 
 ## 📖 Vue d'Ensemble
 
-Ce document vous aide à naviguer dans la codebase de SchoolFlow Pro. Vous allez apprendre:
+Ce document vous aide à naviguer dans la codebase de Guinée Academy. Vous allez apprendre:
 
 - ✅ Structure générale du projet
 - ✅ Où trouver chaque type de fichier
@@ -21,7 +21,7 @@ Ce document vous aide à naviguer dans la codebase de SchoolFlow Pro. Vous allez
 ## 🗂️ Arborescence Complète
 
 ```
-schoolflow-pro/
+guinee-academy/
 ├── 📁 src/
 │   ├── 📁 components/          # Composants React réutilisables
 │   ├── 📁 pages/               # Pages de l'application

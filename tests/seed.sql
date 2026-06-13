@@ -1,5 +1,5 @@
 -- =============================================================================
--- SchoolFlow Pro — E2E Test Seed  (v2 — colonnes vérifiées)
+-- Guinée Academy — E2E Test Seed  (v2 — colonnes vérifiées)
 -- Idempotent: ON CONFLICT DO NOTHING. UUIDs hex valides uniquement.
 -- =============================================================================
 

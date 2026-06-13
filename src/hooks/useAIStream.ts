@@ -55,7 +55,7 @@ export function useAIStream(options: UseAIStreamOptions = {}) {
     abortControllerRef.current = new AbortController();
 
     try {
-      const token = localStorage.getItem('schoolflow:access_token') || sessionStorage.getItem('schoolflow:access_token');
+      const token = localStorage.getItem('guinee_academy:access_token') || sessionStorage.getItem('guinee_academy:access_token');
       const lastTenantId = localStorage.getItem('last_tenant_id');
       const headers: Record<string, string> = {
         "Content-Type": "application/json",

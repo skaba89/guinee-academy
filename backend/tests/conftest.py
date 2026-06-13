@@ -1,5 +1,5 @@
 """
-Fixtures pytest pour les tests SchoolFlow Pro.
+Fixtures pytest pour les tests Guinée Academy.
 Utilise une base SQLite en mémoire pour isolation totale.
 """
 import pytest
@@ -13,10 +13,30 @@ from sqlalchemy.orm import sessionmaker
 # Patcher les dépendances externes avant l'import de l'app
 import sys
 import os
-os.environ.setdefault("DEBUG", "True")
-os.environ.setdefault("SECRET_KEY", "test-secret-key-for-testing-only-32chars")
-os.environ.setdefault("DATABASE_URL", "sqlite:///./test.db")
-os.environ.setdefault("REDIS_URL", "redis://localhost:6379/0")
+
+# Force-set env vars (don't use setdefault — shell env or .env may already
+# contain a DATABASE_URL that is not a valid SQLAlchemy connection string,
+# e.g. "file:/home/.../custom.db" which crashes create_engine).
+os.environ["DEBUG"] = "True"
+os.environ["SECRET_KEY"] = "test-secret-key-for-testing-only-32chars"
+os.environ["DATABASE_URL"] = "sqlite:///./test.db"
+os.environ["DATABASE_URL_SYNC"] = "sqlite:///./test.db"
+os.environ["DATABASE_URL_ASYNC"] = "sqlite+aiosqlite:///./test.db"
+os.environ["REDIS_URL"] = "redis://localhost:6379/0"
+
+# Mock slowapi if not installed (required by app.api.v1.endpoints.core.auth
+# and app.main at import time).  When slowapi is absent, importing these
+# modules would raise ModuleNotFoundError.
+try:
+    import slowapi  # noqa: F401
+except ImportError:
+    _mock_slowapi = MagicMock()
+    _mock_slowapi.Limiter = MagicMock
+    _mock_slowapi._rate_limit_exceeded_handler = MagicMock()
+    sys.modules.setdefault("slowapi", _mock_slowapi)
+    sys.modules.setdefault("slowapi.util", MagicMock())
+    sys.modules.setdefault("slowapi.errors", MagicMock())
+    sys.modules.setdefault("slowapi.middleware", MagicMock())
 
 
 # Shared no-op lifespan to skip DB/Redis startup in integration tests
@@ -35,7 +55,7 @@ def get_test_client():
     return client
 
 
-SQLALCHEMY_TEST_DATABASE_URL = "sqlite:///./test_schoolflow.db"
+SQLALCHEMY_TEST_DATABASE_URL = "sqlite:///./test_guinee_academy.db"
 
 # ─── Base de données test ───────────────────────────────────────────────────────
 
@@ -93,7 +113,7 @@ MOCK_USER = {
 
 MOCK_SUPER_ADMIN = {
     "id": str(uuid.uuid4()),
-    "email": "superadmin@schoolflow.com",
+    "email": "superadmin@guinee-academy.com",
     "first_name": "Super",
     "last_name": "Admin",
     "username": "superadmin",

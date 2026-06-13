@@ -1,11 +1,11 @@
 """
-SchoolFlow Pro — Webhook Management API
+Guinée Academy — Webhook Management API
 ========================================
 Tenants can register webhook URLs to receive event notifications.
 
 Security model:
 - Each webhook can optionally have a ``secret`` — the payload is signed
-  with HMAC-SHA256 and sent in the ``X-SchoolFlow-Signature`` header.
+  with HMAC-SHA256 and sent in the ``X-GuineeAcademy-Signature`` header.
 - Tenant isolation is enforced: tenants can only manage their own webhooks.
 - Maximum 25 webhooks per tenant.
 - Maximum 20 event subscriptions per webhook.
@@ -113,13 +113,13 @@ async def _deliver_webhook(url: str, payload: dict, secret: Optional[str] = None
     body = json.dumps(payload, ensure_ascii=False, default=str)
     headers = {
         "Content-Type": "application/json",
-        "User-Agent": "SchoolFlowPro-Webhooks/1.0",
-        "X-SchoolFlow-Event": payload.get("event", ""),
+        "User-Agent": "GuineeAcademy-Webhooks/1.0",
+        "X-GuineeAcademy-Event": payload.get("event", ""),
     }
 
     if secret:
         sig = _sign_payload(body, secret)
-        headers["X-SchoolFlow-Signature"] = f"sha256={sig}"
+        headers["X-GuineeAcademy-Signature"] = f"sha256={sig}"
 
     try:
         async with httpx.AsyncClient(timeout=10.0) as client:
@@ -229,7 +229,7 @@ def create_webhook(
     """Register a new webhook endpoint.
 
     If ``secret`` is provided, all deliveries will include an
-    ``X-SchoolFlow-Signature: sha256=<hmac>`` header for verification.
+    ``X-GuineeAcademy-Signature: sha256=<hmac>`` header for verification.
     """
     tenant_id = current_user.get("tenant_id")
     if not tenant_id:
@@ -387,7 +387,7 @@ async def test_webhook(
         "version": "1.0",
         "timestamp": __import__("datetime").datetime.now(__import__("datetime").timezone.utc).isoformat(),
         "tenant_id": tenant_id,
-        "data": {"message": "Test de connectivité SchoolFlow Pro"},
+        "data": {"message": "Test de connectivité Guinée Academy"},
     }
 
     success = await _deliver_webhook(row["url"], test_payload, row.get("secret"))

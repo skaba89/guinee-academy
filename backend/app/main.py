@@ -58,8 +58,8 @@ def _init_sentry() -> None:
 _init_sentry()
 from app.core.logging_config import setup_logging
 from app.core.exceptions import (
-    SchoolFlowException,
-    schoolflow_exception_handler,
+    GuineeAcademyException,
+    guinee_academy_exception_handler,
     http_exception_handler,
     unhandled_exception_handler,
 )
@@ -602,7 +602,7 @@ END $$;
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # ── STARTUP ──
-    logger.info("Academy Guinéenne API starting up...")
+    logger.info("Guinée Academy API starting up...")
 
     # Auto-run pending Alembic migrations
     from app.core.database import Base, engine
@@ -669,7 +669,7 @@ async def lifespan(app: FastAPI):
                 except Exception:
                     db.rollback()
 
-            admin_email = settings.ADMIN_DEFAULT_EMAIL or "admin@schoolflow.local"
+            admin_email = settings.ADMIN_DEFAULT_EMAIL or "admin@guinee-academy.local"
             admin_password = settings.ADMIN_DEFAULT_PASSWORD
             # SECURITY FIX: Refuse to use a hardcoded fallback password.
             # If no password is configured or it's too weak, skip admin creation.
@@ -751,14 +751,14 @@ async def lifespan(app: FastAPI):
         logger.warning("Super admin auto-creation skipped: %s", admin_err)
 
     logger.info(
-        "Academy Guinéenne API started",
+        "Guinée Academy API started",
         extra={"debug": settings.DEBUG, "log_level": settings.LOG_LEVEL},
     )
 
     yield  # App is running
 
     # ── SHUTDOWN ──
-    logger.info("Academy Guinéenne API shutting down...")
+    logger.info("Guinée Academy API shutting down...")
     try:
         from app.core.cache import redis_client
         if redis_client._client is not None:
@@ -771,14 +771,14 @@ async def lifespan(app: FastAPI):
         logger.info("Database engine disposed")
     except Exception as e:
         logger.warning("Database shutdown cleanup failed: %s", e)
-    logger.info("Academy Guinéenne API shutdown complete")
+    logger.info("Guinée Academy API shutdown complete")
 
 
 app = FastAPI(
     title=settings.PROJECT_NAME,
     lifespan=lifespan,
     description="""
-## Academy Guinéenne — School Management System API
+## Guinée Academy — School Management System API
 
 A comprehensive REST API for managing schools, students, teachers, grades,
 attendance, messaging, admissions and more.
@@ -787,7 +787,7 @@ attendance, messaging, admissions and more.
 All protected endpoints require a valid native JWT Bearer token except public endpoints.
 
 ### Multi-Tenancy
-Academy Guinéenne is fully multi-tenant. Every request is automatically scoped to
+Guinée Academy is fully multi-tenant. Every request is automatically scoped to
 the authenticated user's tenant via the `X-Tenant-ID` header.
 
 ### Rate Limiting
@@ -800,8 +800,8 @@ Every response includes an `X-Request-ID` header for distributed tracing.
     """,
     version=settings.APP_VERSION,
     contact={
-        "name": "Academy Guinéenne Support",
-        "url": "https://schoolflowpro.com/support",
+        "name": "Guinée Academy Support",
+        "url": "https://guinee-academy.com/support",
     },
     license_info={"name": "Proprietary"},
     openapi_tags=[
@@ -828,7 +828,7 @@ Every response includes an `X-Request-ID` header for distributed tracing.
     redoc_url="/redoc" if settings.DEBUG else None,
 )
 
-app.add_exception_handler(SchoolFlowException, schoolflow_exception_handler)  # type: ignore[arg-type]
+app.add_exception_handler(GuineeAcademyException, guinee_academy_exception_handler)  # type: ignore[arg-type]
 app.add_exception_handler(HTTPException, http_exception_handler)  # type: ignore[arg-type]
 app.add_exception_handler(Exception, unhandled_exception_handler)  # type: ignore[arg-type]
 
@@ -927,8 +927,8 @@ async def token_version_middleware(request: Request, call_next):
                 settings.SECRET_KEY,
                 algorithms=[settings.ALGORITHM],
                 options={"verify_exp": True},  # Always verify token expiry
-                audience="schoolflow-api",
-                issuer="schoolflow-pro",
+                audience="guinee-academy-api",
+                issuer="guinee-academy",
             )
             token_version = payload.get("tv", 0)
             user_id = payload.get("sub")
@@ -985,7 +985,7 @@ async def security_headers_middleware(request: Request, call_next):
 @app.get("/", include_in_schema=False)
 def root():
     return {
-        "service": "SchoolFlow Pro API",
+        "service": "Guinée Academy API",
         "version": settings.APP_VERSION,
         "status": "operational",
         "docs": "/docs" if settings.DEBUG else None,

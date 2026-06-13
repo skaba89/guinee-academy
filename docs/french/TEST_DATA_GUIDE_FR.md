@@ -119,10 +119,10 @@ WHERE u.email = 'admin@test.fr' AND t.slug = 'sorbonne';
 # 1. Sauvegarder dans un fichier: my-test-user.sql
 
 # 2. Copier dans le container
-docker cp my-test-user.sql schoolflow-pro-supabase-db-1:/tmp/
+docker cp my-test-user.sql guinee-academy-supabase-db-1:/tmp/
 
 # 3. Exécuter
-docker exec schoolflow-pro-supabase-db-1 psql -U postgres -d postgres -f /tmp/my-test-user.sql
+docker exec guinee-academy-supabase-db-1 psql -U postgres -d postgres -f /tmp/my-test-user.sql
 ```
 
 ---
@@ -154,7 +154,7 @@ curl -X POST http://localhost:8000/auth/v1/token \
 ### Via SQL:
 
 ```bash
-docker exec schoolflow-pro-supabase-db-1 psql -U postgres -d postgres \
+docker exec guinee-academy-supabase-db-1 psql -U postgres -d postgres \
   -c "SELECT email, created_at FROM auth.users ORDER BY created_at;"
 ```
 
@@ -194,12 +194,12 @@ docker exec schoolflow-pro-supabase-db-1 psql -U postgres -d postgres \
 
 ### Accéder à la DB:
 ```bash
-docker exec -it schoolflow-pro-supabase-db-1 psql -U postgres -d postgres
+docker exec -it guinee-academy-supabase-db-1 psql -U postgres -d postgres
 ```
 
 ### Compter les utilisateurs:
 ```bash
-docker exec schoolflow-pro-supabase-db-1 psql -U postgres -d postgres \
+docker exec guinee-academy-supabase-db-1 psql -U postgres -d postgres \
   -c "SELECT COUNT(*) FROM auth.users;"
 ```
 
@@ -212,7 +212,7 @@ DELETE FROM auth.users WHERE id = 'uuid-here';
 
 ### Voir tous les utilisateurs et leurs rôles:
 ```bash
-docker exec schoolflow-pro-supabase-db-1 psql -U postgres -d postgres << 'EOF'
+docker exec guinee-academy-supabase-db-1 psql -U postgres -d postgres << 'EOF'
 SELECT 
   u.email, 
   p.first_name, 

@@ -1,5 +1,5 @@
 // =============================================================================
-// SchoolFlow Pro — Service Worker Offline (Guinea Edition)
+// Guinée Academy — Service Worker Offline (Guinea Edition)
 // =============================================================================
 // Strategy:
 //   - Static assets (JS/CSS/fonts/images): Cache-First (serve from cache, update in background)
@@ -11,8 +11,8 @@
 // application layer via IndexedDB (Dexie). The SW only manages the app shell.
 // =============================================================================
 
-const CACHE_NAME = "schoolflow-offline-v3";
-const SHELL_CACHE = "schoolflow-shell-v3";
+const CACHE_NAME = "guinee-academy-offline-v3";
+const SHELL_CACHE = "guinee-academy-shell-v3";
 
 // API patterns to NEVER intercept — always pass through to network
 const API_PATTERNS = [

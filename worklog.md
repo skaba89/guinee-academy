@@ -1,4 +1,4 @@
-# SchoolFlow Pro — Worklog
+# Guinée Academy — Worklog
 
 ---
 Task ID: 1
@@ -6,7 +6,7 @@ Agent: Main Orchestrator
 Task: Full codebase audit, cartography, and critical deployment fixes
 
 Work Log:
-- Cloned repository from GitHub (skaba89/gestion-scolaire-pro)
+- Cloned repository from GitHub (skaba89/guinee-academy)
 - Performed comprehensive codebase cartography (102 pages, 270 components, 50 hooks, 100+ API endpoints, 35 data models)
 - Identified root cause of Render build failure: `import.meta.env` undefined in vite.config.ts on Node 20
 - Fixed vite.config.ts to use `loadEnv()` (official Vite API) instead of `import.meta.env`

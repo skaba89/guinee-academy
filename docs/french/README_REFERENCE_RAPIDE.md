@@ -296,7 +296,7 @@ Avant de passer à la production, obtenir les signatures de:
 Tous les fichiers sont à la **racine du projet** (`/`):
 
 ```
-schoolflow-pro/
+guinee-academy/
 ├─ GUIDE_SYSTEME_PARAMETRES_DYNAMIQUES.md ......... Guide développeur
 ├─ GUIDE_ADMIN_PARAMETRES.md ..................... Guide administrateur
 ├─ RESUME_IMPLEMENTATION_PARAMETRES_DYNAMIQUES.md . Résumé exécutif
@@ -339,7 +339,7 @@ Tout est:
 **Version**: 1.0  
 **Date**: 20 janvier 2025  
 **Statut**: ✅ Production Ready  
-**Équipe**: SchoolFlow Pro  
+**Équipe**: Guinée Academy  
 
 ---
 

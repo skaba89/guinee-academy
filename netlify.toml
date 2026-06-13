@@ -1,9 +1,9 @@
 # =============================================================================
-# SchoolFlow Pro — Netlify Deployment Configuration
+# Guinée Academy — Netlify Deployment Configuration
 # =============================================================================
 # IMPORTANT — AVANT DE DÉPLOYER :
-#   Remplacer l'URL backend (chercher SCHOOLFLOW_API_URL ci-dessous)
-#   Exemple : https://schoolflow-api-xxxx.onrender.com
+#   Remplacer l'URL backend (chercher GUINEE_ACADEMY_API_URL ci-dessous)
+#   Exemple : https://guinee-academy-api-xxxx.onrender.com
 #
 # Variables à définir dans Netlify Dashboard → Site settings → Env vars :
 #   VITE_ENABLE_PWA         = true
@@ -14,7 +14,7 @@
 [build]
   # Le script génère dist/_redirects avec les vraies URLs depuis VITE_API_URL
   # Variables à définir dans Netlify Dashboard → Site settings → Env vars :
-  #   VITE_API_URL = https://schoolflow-api-xxxx.onrender.com   ← OBLIGATOIRE
+  #   VITE_API_URL = https://guinee-academy-api-xxxx.onrender.com   ← OBLIGATOIRE
   command = "npm run build && node scripts/generate-redirects.mjs"
   publish = "dist"
 
@@ -44,7 +44,7 @@
 
 # ─── Cache: Service Worker (pas de cache — toujours frais) ─────────────────
 [[headers]]
-  for = "/sw-schoolflow.js"
+  for = "/sw-guinee-academy.js"
   [headers.values]
     Cache-Control = "no-cache, no-store, must-revalidate"
 

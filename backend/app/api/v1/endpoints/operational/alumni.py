@@ -30,7 +30,7 @@ class DocumentRequestCreate(BaseModel):
 @router.get("/dashboard/")
 def alumni_dashboard(
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(require_permission("alumni:read")),
 ):
     try:
         """
@@ -110,7 +110,7 @@ def alumni_dashboard(
 @router.get("/document-requests/")
 def list_document_requests(
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(require_permission("alumni:read")),
 ):
     try:
         """List all document requests for the current alumni user."""
@@ -153,7 +153,7 @@ def list_document_requests(
 def create_document_request(
     body: DocumentRequestCreate,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(require_permission("alumni:write")),
 ):
     try:
         """Submit a new document request."""
@@ -203,7 +203,7 @@ def create_document_request(
 def cancel_document_request(
     request_id: str,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(require_permission("alumni:write")),
 ):
     try:
         """Cancel a pending document request (alumni can only cancel their own pending requests)."""
@@ -244,7 +244,7 @@ def cancel_document_request(
 def get_request_history(
     request_id: str,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(require_permission("alumni:read")),
 ):
     try:
         """Get the action history for a specific document request."""
@@ -290,7 +290,7 @@ def get_request_history(
 @router.get("/careers/jobs/")
 def alumni_job_offers(
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(require_permission("alumni:read")),
 ):
     try:
         """List active job offers for the tenant."""
@@ -324,7 +324,7 @@ def alumni_job_offers(
 @router.get("/careers/mentors/")
 def alumni_mentors(
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(require_permission("alumni:read")),
 ):
     try:
         """List available alumni mentors for the tenant."""
@@ -356,7 +356,7 @@ def alumni_mentors(
 @router.get("/careers/events/")
 def alumni_career_events(
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(require_permission("alumni:read")),
 ):
     try:
         """List upcoming career events for the tenant."""
@@ -393,7 +393,7 @@ def alumni_career_events(
 def list_job_applications(
     student_id: Optional[str] = None,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(require_permission("alumni:read")),
 ):
     """GET /alumni/careers/applications/ — list job applications (scoped to student if provided)."""
     try:
@@ -431,7 +431,7 @@ def list_job_applications(
 def create_job_application(
     body: dict,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(require_permission("alumni:write")),
 ):
     """POST /alumni/careers/applications/ — apply to a job offer."""
     import uuid as _uuid
@@ -463,7 +463,7 @@ def create_job_application(
 def list_mentorship_requests_student(
     student_id: Optional[str] = None,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(require_permission("alumni:read")),
 ):
     """GET /alumni/mentorship-requests/ — student-facing list of mentorship requests."""
     try:
@@ -492,7 +492,7 @@ def list_mentorship_requests_student(
 @router.get("/messaging/staff-recipients/")
 def alumni_staff_recipients(
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(require_permission("alumni:read")),
 ):
     try:
         """
@@ -650,7 +650,7 @@ class MentorshipRequestCreate(BaseModel):
 def create_mentorship_request(
     payload: MentorshipRequestCreate,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(require_permission("alumni:write")),
 ):
     try:
         tenant_id = current_user.get("tenant_id")

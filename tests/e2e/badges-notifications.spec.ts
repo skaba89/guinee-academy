@@ -37,7 +37,7 @@ test.describe('Badges - Notifications & Interactions', () => {
     await page.goto('/admin/dashboard');
     await page.waitForLoadState('networkidle');
 
-    const token = await page.evaluate(() => localStorage.getItem('schoolflow:access_token'));
+    const token = await page.evaluate(() => localStorage.getItem('guinee_academy:access_token'));
     expect(token).toBeTruthy();
 
     if (token) {

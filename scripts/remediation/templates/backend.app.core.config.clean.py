@@ -52,7 +52,7 @@ _BASE_DATABASE_URL = get_secret("DATABASE_URL", "postgresql://postgres:postgres@
 
 
 class Settings(BaseSettings):
-    PROJECT_NAME: str = "SchoolFlow Pro"
+    PROJECT_NAME: str = "Guinée Academy"
     API_V1_STR: str = "/api/v1"
 
     # Logging
@@ -70,11 +70,11 @@ class Settings(BaseSettings):
 
     # Keycloak
     KEYCLOAK_URL: str = get_secret("KEYCLOAK_URL", "http://localhost:8080")
-    KEYCLOAK_REALM: str = get_secret("KEYCLOAK_REALM", "schoolflow")
-    KEYCLOAK_CLIENT_ID: str = get_secret("KEYCLOAK_CLIENT_ID", "schoolflow-backend")
+    KEYCLOAK_REALM: str = get_secret("KEYCLOAK_REALM", "guinee_academy")
+    KEYCLOAK_CLIENT_ID: str = get_secret("KEYCLOAK_CLIENT_ID", "guinee-academy-backend")
     KEYCLOAK_CLIENT_SECRET: str = get_secret("KEYCLOAK_CLIENT_SECRET", "")
     KEYCLOAK_ISSUER: str = get_secret("KEYCLOAK_ISSUER", "")
-    KEYCLOAK_AUDIENCE: str = get_secret("KEYCLOAK_AUDIENCE", "schoolflow-frontend")
+    KEYCLOAK_AUDIENCE: str = get_secret("KEYCLOAK_AUDIENCE", "guinee-academy-frontend")
     KEYCLOAK_JWKS_URL: str = get_secret("KEYCLOAK_JWKS_URL", "")
 
     # MinIO
@@ -82,14 +82,14 @@ class Settings(BaseSettings):
     MINIO_ACCESS_KEY: str = get_secret("MINIO_ACCESS_KEY", "minioadmin")
     MINIO_SECRET_KEY: str = get_secret("MINIO_SECRET_KEY", "minioadmin")
     MINIO_SECURE: bool = False
-    MINIO_BUCKET: str = get_secret("MINIO_BUCKET", "schoolflow")
+    MINIO_BUCKET: str = get_secret("MINIO_BUCKET", "guinee_academy")
 
     # Redis
     REDIS_URL: str = get_secret("REDIS_URL", "redis://localhost:6379/0")
 
     # Application
     DEBUG: bool = os.getenv("DEBUG", "True").lower() == "true"
-    APP_NAME: str = "SchoolFlow Pro API"
+    APP_NAME: str = "Guinée Academy API"
     APP_VERSION: str = "1.0.0"
 
     # Security

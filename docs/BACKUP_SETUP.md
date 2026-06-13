@@ -1,4 +1,4 @@
-# SchoolFlow Pro - Backup Configuration Guide
+# Guinée Academy - Backup Configuration Guide
 
 ## Overview
 
@@ -14,7 +14,7 @@ chmod +x scripts/backup-database.sh
 
 ### 2. Configure Environment Variables
 
-Create `/etc/schoolflow/backup.env`:
+Create `/etc/guinee_academy/backup.env`:
 
 ```bash
 # Database Configuration
@@ -25,20 +25,20 @@ DB_USER=postgres
 DB_PASSWORD=your-secure-password
 
 # Backup Configuration
-BACKUP_DIR=/var/backups/schoolflow
+BACKUP_DIR=/var/backups/guinee_academy
 RETENTION_DAYS=30
 
 # Alert Configuration
-ALERT_EMAIL=admin@schoolflow.com
+ALERT_EMAIL=admin@guinee-academy.com
 ALERT_WEBHOOK=https://hooks.slack.com/services/YOUR/WEBHOOK/URL
 ```
 
 ### 3. Create Backup Directory
 
 ```bash
-sudo mkdir -p /var/backups/schoolflow
-sudo chown postgres:postgres /var/backups/schoolflow
-sudo chmod 750 /var/backups/schoolflow
+sudo mkdir -p /var/backups/guinee_academy
+sudo chown postgres:postgres /var/backups/guinee_academy
+sudo chmod 750 /var/backups/guinee_academy
 ```
 
 ### 4. Setup Cron Job
@@ -50,33 +50,33 @@ Add to crontab (as postgres user or root):
 sudo crontab -e
 
 # Add daily backup at 2:00 AM
-0 2 * * * /usr/bin/env bash -c 'source /etc/schoolflow/backup.env && /path/to/schoolflow-pro/scripts/backup-database.sh >> /var/log/schoolflow-backup.log 2>&1'
+0 2 * * * /usr/bin/env bash -c 'source /etc/guinee_academy/backup.env && /path/to/guinee-academy/scripts/backup-database.sh >> /var/log/guinee_academy-backup.log 2>&1'
 ```
 
 **Alternative: Using systemd timer (recommended for production)**
 
-Create `/etc/systemd/system/schoolflow-backup.service`:
+Create `/etc/systemd/system/guinee_academy-backup.service`:
 
 ```ini
 [Unit]
-Description=SchoolFlow Pro Database Backup
+Description=Guinée Academy Database Backup
 After=postgresql.service
 
 [Service]
 Type=oneshot
 User=postgres
-EnvironmentFile=/etc/schoolflow/backup.env
-ExecStart=/path/to/schoolflow-pro/scripts/backup-database.sh
-StandardOutput=append:/var/log/schoolflow-backup.log
-StandardError=append:/var/log/schoolflow-backup.log
+EnvironmentFile=/etc/guinee_academy/backup.env
+ExecStart=/path/to/guinee-academy/scripts/backup-database.sh
+StandardOutput=append:/var/log/guinee_academy-backup.log
+StandardError=append:/var/log/guinee_academy-backup.log
 ```
 
-Create `/etc/systemd/system/schoolflow-backup.timer`:
+Create `/etc/systemd/system/guinee_academy-backup.timer`:
 
 ```ini
 [Unit]
-Description=SchoolFlow Pro Daily Backup Timer
-Requires=schoolflow-backup.service
+Description=Guinée Academy Daily Backup Timer
+Requires=guinee_academy-backup.service
 
 [Timer]
 OnCalendar=daily
@@ -91,11 +91,11 @@ Enable and start timer:
 
 ```bash
 sudo systemctl daemon-reload
-sudo systemctl enable schoolflow-backup.timer
-sudo systemctl start schoolflow-backup.timer
+sudo systemctl enable guinee_academy-backup.timer
+sudo systemctl start guinee_academy-backup.timer
 
 # Check timer status
-sudo systemctl status schoolflow-backup.timer
+sudo systemctl status guinee_academy-backup.timer
 sudo systemctl list-timers --all
 ```
 
@@ -105,7 +105,7 @@ Run backup manually:
 
 ```bash
 # With environment file
-source /etc/schoolflow/backup.env
+source /etc/guinee_academy/backup.env
 ./scripts/backup-database.sh
 
 # Or with inline variables
@@ -121,8 +121,8 @@ DB_HOST=localhost DB_NAME=postgres DB_USER=postgres DB_PASSWORD=yourpass ./scrip
 docker compose down
 
 # 2. Restore database
-gunzip -c /var/backups/schoolflow/schoolflow_backup_YYYYMMDD_HHMMSS.sql.gz | \
-    docker exec -i schoolflow-pro-supabase-db-1 psql -U postgres -d postgres
+gunzip -c /var/backups/guinee_academy/guinee_academy_backup_YYYYMMDD_HHMMSS.sql.gz | \
+    docker exec -i guinee-academy-supabase-db-1 psql -U postgres -d postgres
 
 # 3. Restart application
 docker compose up -d
@@ -132,17 +132,17 @@ docker compose up -d
 
 ```bash
 # Create test database
-docker exec -i schoolflow-pro-supabase-db-1 psql -U postgres -c "CREATE DATABASE schoolflow_test;"
+docker exec -i guinee-academy-supabase-db-1 psql -U postgres -c "CREATE DATABASE guinee_academy_test;"
 
 # Restore backup
-gunzip -c /var/backups/schoolflow/schoolflow_backup_YYYYMMDD_HHMMSS.sql.gz | \
-    docker exec -i schoolflow-pro-supabase-db-1 psql -U postgres -d schoolflow_test
+gunzip -c /var/backups/guinee_academy/guinee_academy_backup_YYYYMMDD_HHMMSS.sql.gz | \
+    docker exec -i guinee-academy-supabase-db-1 psql -U postgres -d guinee_academy_test
 
 # Verify data
-docker exec -i schoolflow-pro-supabase-db-1 psql -U postgres -d schoolflow_test -c "\dt"
+docker exec -i guinee-academy-supabase-db-1 psql -U postgres -d guinee_academy_test -c "\dt"
 
 # Drop test database when done
-docker exec -i schoolflow-pro-supabase-db-1 psql -U postgres -c "DROP DATABASE schoolflow_test;"
+docker exec -i guinee-academy-supabase-db-1 psql -U postgres -c "DROP DATABASE guinee_academy_test;"
 ```
 
 ## Monitoring
@@ -151,36 +151,36 @@ docker exec -i schoolflow-pro-supabase-db-1 psql -U postgres -c "DROP DATABASE s
 
 ```bash
 # View recent backups
-tail -f /var/log/schoolflow-backup.log
+tail -f /var/log/guinee_academy-backup.log
 
 # Check backup success
-grep "✅ Backup completed" /var/log/schoolflow-backup.log
+grep "✅ Backup completed" /var/log/guinee_academy-backup.log
 
 # Check for errors
-grep "❌" /var/log/schoolflow-backup.log
+grep "❌" /var/log/guinee_academy-backup.log
 ```
 
 ### List Backups
 
 ```bash
-ls -lh /var/backups/schoolflow/
+ls -lh /var/backups/guinee_academy/
 
 # Count backups
-ls -1 /var/backups/schoolflow/schoolflow_backup_*.sql.gz | wc -l
+ls -1 /var/backups/guinee_academy/guinee_academy_backup_*.sql.gz | wc -l
 
 # Show oldest and newest
-ls -lt /var/backups/schoolflow/schoolflow_backup_*.sql.gz | tail -1
-ls -lt /var/backups/schoolflow/schoolflow_backup_*.sql.gz | head -1
+ls -lt /var/backups/guinee_academy/guinee_academy_backup_*.sql.gz | tail -1
+ls -lt /var/backups/guinee_academy/guinee_academy_backup_*.sql.gz | head -1
 ```
 
 ### Disk Space
 
 ```bash
 # Check backup directory size
-du -sh /var/backups/schoolflow/
+du -sh /var/backups/guinee_academy/
 
 # Check available space
-df -h /var/backups/schoolflow/
+df -h /var/backups/guinee_academy/
 ```
 
 ## Alerting
@@ -194,12 +194,12 @@ Requires `mailx` or `sendmail`:
 sudo apt-get install mailutils
 
 # Test email
-echo "Test backup alert" | mail -s "SchoolFlow Backup Test" admin@schoolflow.com
+echo "Test backup alert" | mail -s "Guinée Academy Backup Test" admin@guinee-academy.com
 ```
 
 ### Slack/Discord Webhook
 
-Configure webhook URL in `/etc/schoolflow/backup.env`:
+Configure webhook URL in `/etc/guinee_academy/backup.env`:
 
 ```bash
 ALERT_WEBHOOK=https://hooks.slack.com/services/YOUR/WEBHOOK/URL
@@ -210,7 +210,7 @@ Test webhook:
 ```bash
 curl -X POST "$ALERT_WEBHOOK" \
     -H 'Content-Type: application/json' \
-    -d '{"text": "SchoolFlow Backup Test"}'
+    -d '{"text": "Guinée Academy Backup Test"}'
 ```
 
 ## Backup Retention Policy
@@ -228,13 +228,13 @@ curl -X POST "$ALERT_WEBHOOK" \
 
 ```bash
 # Check disk space
-df -h /var/backups/schoolflow/
+df -h /var/backups/guinee_academy/
 
 # Clean old backups manually
-find /var/backups/schoolflow/ -name "schoolflow_backup_*.sql.gz" -mtime +30 -delete
+find /var/backups/guinee_academy/ -name "guinee_academy_backup_*.sql.gz" -mtime +30 -delete
 
 # Increase retention period if needed
-# Edit /etc/schoolflow/backup.env
+# Edit /etc/guinee_academy/backup.env
 RETENTION_DAYS=15  # Reduce from 30 to 15 days
 ```
 
@@ -242,8 +242,8 @@ RETENTION_DAYS=15  # Reduce from 30 to 15 days
 
 ```bash
 # Fix permissions
-sudo chown -R postgres:postgres /var/backups/schoolflow/
-sudo chmod 750 /var/backups/schoolflow/
+sudo chown -R postgres:postgres /var/backups/guinee_academy/
+sudo chmod 750 /var/backups/guinee_academy/
 ```
 
 ### Backup Fails - Connection Refused
@@ -253,19 +253,19 @@ sudo chmod 750 /var/backups/schoolflow/
 docker ps | grep supabase-db
 
 # Check connection
-docker exec -i schoolflow-pro-supabase-db-1 psql -U postgres -c "SELECT version();"
+docker exec -i guinee-academy-supabase-db-1 psql -U postgres -c "SELECT version();"
 
-# Verify credentials in /etc/schoolflow/backup.env
+# Verify credentials in /etc/guinee_academy/backup.env
 ```
 
 ### Restore Fails - Integrity Check
 
 ```bash
 # Verify backup file integrity
-gunzip -t /var/backups/schoolflow/schoolflow_backup_YYYYMMDD_HHMMSS.sql.gz
+gunzip -t /var/backups/guinee_academy/guinee_academy_backup_YYYYMMDD_HHMMSS.sql.gz
 
 # If corrupted, use previous backup
-ls -lt /var/backups/schoolflow/schoolflow_backup_*.sql.gz
+ls -lt /var/backups/guinee_academy/guinee_academy_backup_*.sql.gz
 ```
 
 ## Security Best Practices
@@ -273,26 +273,26 @@ ls -lt /var/backups/schoolflow/schoolflow_backup_*.sql.gz
 1. **Encrypt Backups** (for off-site storage):
    ```bash
    # Encrypt backup
-   gpg --symmetric --cipher-algo AES256 schoolflow_backup_YYYYMMDD_HHMMSS.sql.gz
+   gpg --symmetric --cipher-algo AES256 guinee_academy_backup_YYYYMMDD_HHMMSS.sql.gz
    
    # Decrypt backup
-   gpg --decrypt schoolflow_backup_YYYYMMDD_HHMMSS.sql.gz.gpg > backup.sql.gz
+   gpg --decrypt guinee_academy_backup_YYYYMMDD_HHMMSS.sql.gz.gpg > backup.sql.gz
    ```
 
 2. **Restrict Permissions**:
    ```bash
-   chmod 600 /etc/schoolflow/backup.env
-   chmod 750 /var/backups/schoolflow/
-   chmod 640 /var/backups/schoolflow/*.sql.gz
+   chmod 600 /etc/guinee_academy/backup.env
+   chmod 750 /var/backups/guinee_academy/
+   chmod 640 /var/backups/guinee_academy/*.sql.gz
    ```
 
 3. **Off-site Backups**:
    ```bash
    # Sync to remote server (rsync)
-   rsync -avz --delete /var/backups/schoolflow/ backup-server:/backups/schoolflow/
+   rsync -avz --delete /var/backups/guinee_academy/ backup-server:/backups/guinee_academy/
    
    # Or upload to S3
-   aws s3 sync /var/backups/schoolflow/ s3://schoolflow-backups/
+   aws s3 sync /var/backups/guinee_academy/ s3://guinee_academy-backups/
    ```
 
 ## Performance Optimization
@@ -317,7 +317,7 @@ For very large databases, consider WAL archiving:
 # Enable WAL archiving in postgresql.conf
 wal_level = replica
 archive_mode = on
-archive_command = 'cp %p /var/backups/schoolflow/wal/%f'
+archive_command = 'cp %p /var/backups/guinee_academy/wal/%f'
 ```
 
 ## Next Steps

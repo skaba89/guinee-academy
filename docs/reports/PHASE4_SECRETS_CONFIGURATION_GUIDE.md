@@ -99,7 +99,7 @@ openssl rand -base64 16
 
 ```bash
 # 1. Login to AWS Console → IAM → Users
-# 2. Create new user: "schoolflow-prod"
+# 2. Create new user: "guinee-academyd"
 # 3. Attach policy: AmazonS3FullAccess (or custom policy)
 # 4. Generate access key pair
 # 5. Save securely:
@@ -139,7 +139,7 @@ curl --request POST \
 ### Step 5: Get Sentry DSN
 
 ```bash
-# 1. Sentry Dashboard → Projects → SchoolFlow Pro
+# 1. Sentry Dashboard → Projects → Guinée Academy
 # 2. Settings → Client Keys → Copy DSN
 # 3. Format: https://[key]@[server]/[projectid]
 
@@ -172,14 +172,14 @@ ls -la .env.production
 nano .env.production
 
 # Fill database section:
-DATABASE_URL=postgresql://schoolflow_prod:[PASSWORD]@host:5432/schoolflow_db?sslmode=require
+DATABASE_URL=postgresql://guinee_academy_prod:[PASSWORD]@host:5432/guinee_academy_db?sslmode=require
 POSTGRES_PASSWORD=[GENERATED_PASSWORD]
-PGBOUNCER_URL=postgresql://schoolflow_prod:[PASSWORD]@pgbouncer:6432/schoolflow_db
+PGBOUNCER_URL=postgresql://guinee_academy_prod:[PASSWORD]@pgbouncer:6432/guinee_academy_db
 ```
 
 **PostgreSQL Test:**
 ```bash
-psql -h prod-db.example.com -U schoolflow_prod -d schoolflow_db \
+psql -h prod-db.example.com -U guinee_academy_prod -d guinee_academy_db \
   -c "SELECT version();"
 ```
 
@@ -218,7 +218,7 @@ JWT_REFRESH_EXPIRY=604800
 # SendGrid
 SENDGRID_API_KEY=[your_sendgrid_key]
 SMTP_PASSWORD=[same_as_sendgrid_key]
-SMTP_FROM_ADDRESS=noreply@schoolflowpro.com
+SMTP_FROM_ADDRESS=noreply@guinee-academy.com
 SMTP_HOST=smtp.sendgrid.net
 
 # Test email:
@@ -226,7 +226,7 @@ curl --request POST \
   --url https://api.sendgrid.com/v3/mail/send \
   --header "Authorization: Bearer $SENDGRID_API_KEY" \
   --header "Content-Type: application/json" \
-  --data '{"personalizations":[{"to":[{"email":"test@example.com"}]}],"from":{"email":"noreply@schoolflowpro.com"},"subject":"Test"}'
+  --data '{"personalizations":[{"to":[{"email":"test@example.com"}]}],"from":{"email":"noreply@guinee-academy.com"},"subject":"Test"}'
 ```
 
 ### Step 6: Fill AWS S3 Secrets
@@ -236,7 +236,7 @@ curl --request POST \
 AWS_ACCESS_KEY_ID=AKIA...
 AWS_SECRET_ACCESS_KEY=wJal...
 AWS_REGION=eu-west-1
-AWS_S3_BUCKET=schoolflow-pro-production
+AWS_S3_BUCKET=guinee-academy-production
 
 # CloudFront
 AWS_CLOUDFRONT_DOMAIN=d123abc.cloudfront.net
@@ -244,7 +244,7 @@ AWS_CLOUDFRONT_KEY_PAIR_ID=APKAJ...
 AWS_CLOUDFRONT_PRIVATE_KEY=[base64_encoded_private_key]
 
 # Test S3 access:
-aws s3 ls s3://schoolflow-pro-production/ --region eu-west-1
+aws s3 ls s3://guinee-academy-production/ --region eu-west-1
 ```
 
 ### Step 7: Fill Monitoring Secrets
@@ -309,7 +309,7 @@ MIXPANEL_TOKEN=[token]
 LAUNCHDARKLY_SDK_KEY=[key]
 
 # Mobile (optional)
-CAPACITOR_PACKAGE_ID=com.schoolflowpro.app
+CAPACITOR_PACKAGE_ID=com.guinee_academypro.app
 FIREBASE_CONFIG={...}
 ```
 
@@ -492,7 +492,7 @@ Before running `deploy-production.sh`:
 
 ```bash
 # 1. Navigate to project
-cd /path/to/schoolflow-pro
+cd /path/to/guinee-academy
 
 # 2. Verify .env.production exists
 test -f .env.production && echo "✅ .env.production exists" || echo "❌ Missing!"
@@ -548,10 +548,10 @@ psql "$DATABASE_URL" -c "SELECT 1;"
 aws s3 ls --region eu-west-1
 
 # Check IAM policy
-aws iam get-user-policy --user-name schoolflow-prod --policy-name S3FullAccess
+aws iam get-user-policy --user-name guinee-academyd --policy-name S3FullAccess
 
 # Regenerate if needed
-# 1. AWS Console → IAM → Users → schoolflow-prod
+# 1. AWS Console → IAM → Users → guinee-academyd
 # 2. Delete old access keys
 # 3. Create new access key pair
 # 4. Update .env.production
@@ -603,9 +603,9 @@ Track all secrets created:
 If you encounter issues:
 
 1. **Check this guide first** - Most common issues are documented
-2. **Review logs** - Check `docker logs schoolflow-api`
+2. **Review logs** - Check `docker logs guinee-academy-api`
 3. **Contact DevOps** - Reach out to infrastructure team
-4. **Security incident?** - Contact security@schoolflowpro.com immediately
+4. **Security incident?** - Contact security@guinee-academy.com immediately
 
 ---
 

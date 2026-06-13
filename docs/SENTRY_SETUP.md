@@ -32,27 +32,27 @@ VITE_APP_VERSION=1.0.0
 
 ### 1. Payment Failures
 - **Condition**: Message contains "Payment failed"
-- **Action**: Email to finance@schoolflow.com
+- **Action**: Email to finance@guinee-academy.com
 - **Frequency**: Immediately
 
 ### 2. RLS Violations
 - **Condition**: Message contains "RLS violation"
-- **Action**: Email to security@schoolflow.com + Slack #security
+- **Action**: Email to security@guinee-academy.com + Slack #security
 - **Frequency**: Immediately
 
 ### 3. Authentication Failures (Brute Force)
 - **Condition**: "Auth login failed" > 5 times in 5 minutes from same IP
-- **Action**: Email to security@schoolflow.com
+- **Action**: Email to security@guinee-academy.com
 - **Frequency**: Once per hour
 
 ### 4. RGPD Export Failures
 - **Condition**: Message contains "Data export failed"
-- **Action**: Email to dpo@schoolflow.com
+- **Action**: Email to dpo@guinee-academy.com
 - **Frequency**: Immediately
 
 ### 5. Database Errors
 - **Condition**: Message contains "Database error"
-- **Action**: Email to tech@schoolflow.com + PagerDuty
+- **Action**: Email to tech@guinee-academy.com + PagerDuty
 - **Frequency**: Immediately
 
 ## Usage Examples
@@ -179,7 +179,7 @@ VITE_SENTRY_ENVIRONMENT=production
 
 ## Monitoring Dashboard
 
-Access Sentry dashboard: https://sentry.io/organizations/schoolflow/issues/
+Access Sentry dashboard: https://sentry.io/organizations/guinee_academy/issues/
 
 Key metrics to monitor:
 - Error rate (should be < 1%)

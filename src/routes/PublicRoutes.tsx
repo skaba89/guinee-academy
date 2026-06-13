@@ -18,7 +18,7 @@ const Install = lazy(() => import("@/pages/Install"));
 const Privacy = lazy(() => import("@/pages/public/Privacy"));
 const TermsOfService = lazy(() => import("@/pages/public/Terms"));
 const CreateTenant = lazy(() => import("@/pages/admin/CreateTenant"));
-const SchoolFlowHomePage = lazy(() => import("@/pages/public/SchoolFlowHomePage"));
+const GuineeAcademyHomePage = lazy(() => import("@/pages/public/GuineeAcademyHomePage"));
 const PublicDirectory = lazy(() => import("@/pages/public/PublicDirectory"));
 const ConnectionHub = lazy(() => import("@/pages/public/ConnectionHub"));
 const Bootstrap = lazy(() => import("@/pages/Bootstrap"));
@@ -30,8 +30,8 @@ const Register = lazy(() => import("@/pages/public/Register"));
 export const PublicRoutes = () => {
     return (
         <>
-            {/* SchoolFlow Pro marketing homepage */}
-            <Route path="/" element={<SchoolFlowHomePage />} />
+            {/* Guinée Academy marketing homepage */}
+            <Route path="/" element={<GuineeAcademyHomePage />} />
 
             {/* Connection hub — search school & open branded login */}
             <Route path="/connexion" element={<ConnectionHub />} />

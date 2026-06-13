@@ -47,7 +47,7 @@
 **Command:**
 ```bash
 # Test directly on PostgREST port 3000 (skip Kong)
-cd c:\Users\cheic\Documents\EduSchool\schoolflow-pro
+cd c:\Users\cheic\Documents\EduSchool\guinee-academy
 .\k6.exe run --env BASE_URL=http://localhost:3000 load-tests/badges-load.js
 ```
 
@@ -143,7 +143,7 @@ for (let i = 0; i < 100; i++) {
 
 ```powershell
 # From project directory
-cd c:\Users\cheic\Documents\EduSchool\schoolflow-pro
+cd c:\Users\cheic\Documents\EduSchool\guinee-academy
 
 # Run the full load test
 .\k6.exe run --env BASE_URL=http://localhost:3000 load-tests/badges-load.js
@@ -247,7 +247,7 @@ curl http://localhost:8000/rest/v1/badges_definitions?limit=1
 ### If k6 command not found:
 ```bash
 # Use full path to k6
-"c:\Users\cheic\Documents\EduSchool\schoolflow-pro\k6.exe" run load-tests/badges-load.js
+"c:\Users\cheic\Documents\EduSchool\guinee-academy\k6.exe" run load-tests/badges-load.js
 ```
 
 ---
@@ -295,7 +295,7 @@ All PHASE 3b documentation is complete:
 
 ```powershell
 # 1. Open terminal in project
-cd "c:\Users\cheic\Documents\EduSchool\schoolflow-pro"
+cd "c:\Users\cheic\Documents\EduSchool\guinee-academy"
 
 # 2. Run the PostgREST load test
 .\k6.exe run --env BASE_URL=http://localhost:3000 load-tests/badges-load.js

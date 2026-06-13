@@ -1,5 +1,5 @@
 """
-Stripe Billing — SchoolFlow Pro
+Stripe Billing — Guinée Academy
 ================================
 Endpoints:
   POST /billing/checkout/           — crée une session Stripe Checkout
@@ -103,6 +103,7 @@ class PortalRequest(BaseModel):
 async def get_subscription(
     current_user: dict = Depends(get_current_user),
     db: Session = Depends(get_db),
+    _perm: None = Depends(require_permission("billing:read"))
 ):
     """Retourne l'état d'abonnement du tenant courant."""
     tenant_id = current_user.get("tenant_id")
@@ -135,6 +136,7 @@ async def create_checkout_session(
     body: CheckoutRequest,
     current_user: dict = Depends(get_current_user),
     db: Session = Depends(get_db),
+    _perm: None = Depends(require_permission("billing:write"))
 ):
     """Crée une session Stripe Checkout et retourne l'URL de paiement."""
     _require_stripe_configured()
@@ -198,6 +200,7 @@ async def create_portal_session(
     body: PortalRequest,
     current_user: dict = Depends(get_current_user),
     db: Session = Depends(get_db),
+    _perm: None = Depends(require_permission("billing:read"))
 ):
     """Crée une session Stripe Customer Portal (gérer factures, annulation…)."""
     _require_stripe_configured()
@@ -235,6 +238,7 @@ async def create_portal_session(
 async def cancel_subscription(
     current_user: dict = Depends(get_current_user),
     db: Session = Depends(get_db),
+    _perm: None = Depends(require_permission("billing:write"))
 ):
     """Annule l'abonnement à la fin de la période en cours."""
     _require_stripe_configured()

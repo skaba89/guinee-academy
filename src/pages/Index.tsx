@@ -52,7 +52,7 @@ const Index = () => {
             <div className="w-10 h-10 rounded-xl bg-gradient-primary flex items-center justify-center shadow-lg shadow-primary/20">
               <GraduationCap className="w-6 h-6 text-primary-foreground" />
             </div>
-            <span className="text-xl font-display font-bold text-primary-foreground tracking-tight">SchoolFlow <span className="text-sky">Pro</span></span>
+            <span className="text-xl font-display font-bold text-primary-foreground tracking-tight">Guinée Academy <span className="text-sky">Pro</span></span>
           </div>
           <div className="flex items-center gap-4">
             <LanguageSwitcher />
@@ -121,7 +121,7 @@ const Index = () => {
             Prêt à Transformer Votre Établissement?
           </h2>
           <p className="text-primary-foreground/80 mb-10 max-w-xl mx-auto">
-            Rejoignez les établissements qui font confiance à SchoolFlow Pro pour leur gestion quotidienne.
+            Rejoignez les établissements qui font confiance à Guinée Academy pour leur gestion quotidienne.
           </p>
           <Link to="/auth">
             <Button variant="hero" size="xl">
@@ -134,7 +134,7 @@ const Index = () => {
       {/* Footer */}
       <footer className="bg-card border-t border-border py-16">
         <div className="container mx-auto px-6 text-center text-muted-foreground">
-          <p className="mb-2">&copy; 2026 SchoolFlow Pro. Un produit d'excellence technologique.</p>
+          <p className="mb-2">&copy; 2026 Guinée Academy. Un produit d'excellence technologique.</p>
           <p className="text-sm font-light">Souveraineté • Sécurité • Transparence</p>
         </div>
       </footer>

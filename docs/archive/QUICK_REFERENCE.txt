@@ -1,5 +1,5 @@
 ╔═══════════════════════════════════════════════════════════════════╗
-║           SCHOOLFLOW PRO - QUICK REFERENCE CARD                   ║
+║           GUINEE_ACADEMY PRO - QUICK REFERENCE CARD                   ║
 ║                  26 Janvier 2026 - Ready to Go!                   ║
 ╚═══════════════════════════════════════════════════════════════════╝
 
@@ -66,7 +66,7 @@ Restart Docker:
   $ docker-compose up -d
 
 Reset Database:
-  $ docker volume rm schoolflow-pro_db-data
+  $ docker volume rm guinee-academy_db-data
   $ docker-compose up -d
 
 
@@ -163,15 +163,15 @@ Test Emails:
   → http://localhost:8026/  (MailHog)
 
 Check Logs:
-  → docker logs schoolflow-pro-frontend-1
-  → docker logs schoolflow-pro-supabase-db-1
+  → docker logs guinee-academy-frontend-1
+  → docker logs guinee-academy-supabase-db-1
 
 Restart Service:
   → docker-compose restart <service-name>
 
 Full Reset:
   → docker-compose down
-  → docker volume rm schoolflow-pro_db-data
+  → docker volume rm guinee-academy_db-data
   → docker-compose up -d
 
 
@@ -185,7 +185,7 @@ Problem: Can't connect to frontend
 Problem: Database error
   → Check containers: docker-compose ps
   → Restart: docker-compose restart
-  → View logs: docker logs schoolflow-pro-supabase-db-1
+  → View logs: docker logs guinee-academy-supabase-db-1
 
 Problem: Hot reload not working
   → Clear: rm -r node_modules/.vite

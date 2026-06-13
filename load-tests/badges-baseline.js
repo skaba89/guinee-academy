@@ -1,4 +1,4 @@
-// SchoolFlow Pro — Baseline Load Test
+// Guinée Academy — Baseline Load Test
 // Usage: k6 run --env BASE_URL=http://localhost:8000 load-tests/badges-baseline.js
 import http from 'k6/http';
 import { check, sleep } from 'k6';

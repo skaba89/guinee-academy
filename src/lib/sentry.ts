@@ -1,7 +1,7 @@
 import * as Sentry from '@sentry/react';
 
 /**
- * Sentry Configuration for SchoolFlow Pro
+ * Sentry Configuration for Guinée Academy
  * 
  * Environment Variables Required:
  * - VITE_SENTRY_DSN: Sentry Data Source Name
@@ -27,7 +27,7 @@ export function initSentry() {
     Sentry.init({
         dsn: SENTRY_DSN,
         environment: ENVIRONMENT,
-        release: `schoolflow-pro@${APP_VERSION}`,
+        release: `guinee-academy@${APP_VERSION}`,
 
         // Performance Monitoring
         integrations: [

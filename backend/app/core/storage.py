@@ -11,7 +11,7 @@ logger = logging.getLogger(__name__)
 
 # ─── Storage directory for local fallback ──────────────────────────────────
 # Primary: <repo_root>/backend/uploads
-# Fallback: /tmp/schoolflow_uploads (always writable, even on read-only FS)
+# Fallback: /tmp/guinee_academy_uploads (always writable, even on read-only FS)
 _PRIMARY_UPLOAD_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "uploads")
 try:
     os.makedirs(_PRIMARY_UPLOAD_DIR, exist_ok=True)
@@ -21,7 +21,7 @@ try:
     os.remove(_test_path)
     _UPLOAD_DIR = _PRIMARY_UPLOAD_DIR
 except OSError:
-    _UPLOAD_DIR = os.path.join("/tmp", "schoolflow_uploads")
+    _UPLOAD_DIR = os.path.join("/tmp", "guinee_academy_uploads")
     os.makedirs(_UPLOAD_DIR, exist_ok=True)
     logger.info("Primary upload dir not writable — using /tmp fallback: %s", _UPLOAD_DIR)
 

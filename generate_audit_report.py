@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-SchoolFlow Pro - Rapport d'Audit Complet
+Guinée Academy - Rapport d'Audit Complet
 """
 import os
 from reportlab.lib.pagesizes import A4
@@ -41,15 +41,15 @@ ACCENT_ORANGE = colors.HexColor('#E65100')
 # ── Output ──
 OUTPUT_DIR = '/home/z/my-project/download'
 os.makedirs(OUTPUT_DIR, exist_ok=True)
-PDF_PATH = os.path.join(OUTPUT_DIR, 'SchoolFlow_Pro_Audit_Rapport.pdf')
+PDF_PATH = os.path.join(OUTPUT_DIR, 'Guinée Academy_Pro_Audit_Rapport.pdf')
 
 doc = SimpleDocTemplate(
     PDF_PATH,
     pagesize=A4,
-    title='SchoolFlow Pro - Rapport d Audit Complet',
+    title='Guinée Academy - Rapport d Audit Complet',
     author='Z.ai',
     creator='Z.ai',
-    subject='Audit complet du projet SchoolFlow Pro - Stabilisation post-migration JWT',
+    subject='Audit complet du projet Guinée Academy - Stabilisation post-migration JWT',
     leftMargin=2*cm,
     rightMargin=2*cm,
     topMargin=2*cm,
@@ -161,7 +161,7 @@ story = []
 
 # ═══════════════════════ COVER PAGE ═══════════════════════
 story.append(Spacer(1, 100))
-story.append(Paragraph('<b>SchoolFlow Pro</b>', cover_title_style))
+story.append(Paragraph('<b>Guinée Academy</b>', cover_title_style))
 story.append(Spacer(1, 20))
 story.append(Paragraph('Rapport d\'Audit Complet', cover_subtitle_style))
 story.append(Spacer(1, 36))
@@ -172,7 +172,7 @@ story.append(Paragraph('Correction, nettoyage et industrialisation', cover_info_
 story.append(Spacer(1, 48))
 story.append(Paragraph('Date : 6 avril 2026', cover_info_style))
 story.append(Paragraph('Version projet : 1.0.0', cover_info_style))
-story.append(Paragraph('Depot : github.com/skaba89/gestion-scolaire-pro', cover_info_style))
+story.append(Paragraph('Depot : github.com/skaba89/guinee-academy', cover_info_style))
 story.append(PageBreak())
 
 # ═══════════════════════ TABLE OF CONTENTS (manual) ═══════════════════════
@@ -344,7 +344,7 @@ story.append(heading('C. Correctifs appliques (detail)'))
 story.append(spacer(8))
 
 story.append(body(
-    'Cette section decrit en detail l\'ensemble des correctifs qui ont ete appliques au projet SchoolFlow Pro dans le cadre de cette mission. '
+    'Cette section decrit en detail l\'ensemble des correctifs qui ont ete appliques au projet Guinée Academy dans le cadre de cette mission. '
     'Chaque correctif a ete implemente de maniere pragmatique, en preservant l\'existant fonctionnel et en corrigeant specifiquement les problemes identifies.'
 ))
 
@@ -449,14 +449,14 @@ story.append(body(
     'Le repertoire infra/backups a ete cree avec un fichier .gitkeep pour garantir le bon fonctionnement du service de sauvegarde DB.'
 ))
 story.append(body(
-    '<b>tests/e2e/global-setup.ts :</b> Le bloc d\'attente de Keycloak (polling localhost:8080/realms/schoolflow/.well-known/openid-configuration) '
+    '<b>tests/e2e/global-setup.ts :</b> Le bloc d\'attente de Keycloak (polling localhost:8080/realms/guinee_academy/.well-known/openid-configuration) '
     'a ete supprime du setup E2E. Les tests ne dependent plus de Keycloak.'
 ))
 story.append(body(
     '<b>tests/seed.sql :</b> Les references a la colonne keycloak_id dans les requetes INSERT ont ete supprimees.'
 ))
 story.append(body(
-    '<b>scripts/schoolflow-backup.timer :</b> La directive OnCalendar dupliquee (daily + 02:00) a ete corrigee pour ne conserver '
+    '<b>scripts/guinee_academy-backup.timer :</b> La directive OnCalendar dupliquee (daily + 02:00) a ete corrigee pour ne conserver '
     'que OnCalendar=daily avec Persistent=true.'
 ))
 story.append(body(
@@ -474,7 +474,7 @@ test_plan = [
     ['T1', 'Demarrage Docker Compose', 'docker compose --env-file .env.docker up -d', 'Tous les services sont healthy (docker compose ps)'],
     ['T2', 'Migrations Alembic', 'docker compose exec api alembic upgrade head', 'La commande se termine sans erreur'],
     ['T3', 'Creation admin', 'docker compose exec api python -m app.scripts.create_admin', 'Message "[CREATED] SUPER_ADMIN user" affiche'],
-    ['T4', 'Login API', 'curl -X POST localhost:8000/api/v1/auth/login/ -d "username=admin@schoolflow.local&password=Admin@123456"', 'Retourne access_token'],
+    ['T4', 'Login API', 'curl -X POST localhost:8000/api/v1/auth/login/ -d "username=admin@guinee-academy.local&password=Admin@123456"', 'Retourne access_token'],
     ['T5', 'Profil utilisateur', 'curl -H "Authorization: Bearer TOKEN" localhost:8000/api/v1/users/me/', 'Retourne profil avec roles et tenant'],
     ['T6', 'Page login frontend', 'Ouvrir http://localhost:3000/auth', 'Formulaire email/mot de passe avec branding'],
     ['T7', 'Login frontend complet', 'Se connecter avec les identifiants admin', 'Redirection vers le dashboard'],
@@ -496,12 +496,12 @@ story.append(body('Voici la sequence complete et fiable pour lancer le projet en
 story.append(spacer(4))
 
 cmds = [
-    ('1. Cloner et configurer', 'git clone https://github.com/skaba89/gestion-scolaire-pro.git\ncd gestion-scolaire-pro\ncp .env.docker.example .env.docker\n# Editer .env.docker avec SECRET_KEY et mots de passe'),
+    ('1. Cloner et configurer', 'git clone https://github.com/skaba89/guinee-academy.git\ncd guinee-academy\ncp .env.docker.example .env.docker\n# Editer .env.docker avec SECRET_KEY et mots de passe'),
     ('2. Lancer Docker', 'docker compose --env-file .env.docker up -d'),
     ('3. Migrer la BDD', 'docker compose exec api alembic upgrade head'),
     ('4. Creer l\'admin', 'docker compose exec api python -m app.scripts.create_admin'),
     ('5. Acceder', 'Frontend : http://localhost:3000\nLogin : http://localhost:3000/auth\nAPI Docs : http://localhost:8000/docs'),
-    ('6. Se connecter', 'Email : admin@schoolflow.local\nMot de passe : Admin@123456'),
+    ('6. Se connecter', 'Email : admin@guinee-academy.local\nMot de passe : Admin@123456'),
 ]
 for title, cmd in cmds:
     story.append(Paragraph(f'<b>{title}</b>', ParagraphStyle(
@@ -581,7 +581,7 @@ story.append(heading('E.5 Industrialisation et demonstration', level=2))
 story.append(body(
     'Pour preparer le projet a une demonstration commerciale reussie, plusieurs actions sont recommandees. Un script de demonstration automatise '
     '(seed_demo_tenants.py) devrait creer un environnement complet avec des donnees realistes : 2-3 tenants, des classes, des enseignants, '
-    'des eleves avec notes et presences, et des paiements. Un environnement de demo publique (demo.schoolflow.pro) avec un reset quotidien '
+    'des eleves avec notes et presences, et des paiements. Un environnement de demo publique (demo.guinee-academy.com) avec un reset quotidien '
     'permettrait aux prospects d\'explorer le produit de maniere autonome.'
 ))
 story.append(body(

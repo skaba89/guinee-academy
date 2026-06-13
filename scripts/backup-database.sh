@@ -1,10 +1,10 @@
 #!/bin/bash
 
 # ============================================================================
-# SchoolFlow Pro - Automated PostgreSQL Backup Script
+# Guinée Academy - Automated PostgreSQL Backup Script
 # ============================================================================
 # Description: Daily backup with 30-day rotation and error alerting
-# Author: SchoolFlow DevOps Team
+# Author: Guinée Academy DevOps Team
 # Date: 2026-02-16
 # ============================================================================
 
@@ -22,14 +22,14 @@ DB_USER="${DB_USER:-postgres}"
 DB_PASSWORD="${DB_PASSWORD:-postgres}"
 
 # Backup configuration
-BACKUP_DIR="${BACKUP_DIR:-/var/backups/schoolflow}"
+BACKUP_DIR="${BACKUP_DIR:-/var/backups/guinee_academy}"
 RETENTION_DAYS="${RETENTION_DAYS:-30}"
 TIMESTAMP=$(date +"%Y%m%d_%H%M%S")
-BACKUP_FILE="schoolflow_backup_${TIMESTAMP}.sql.gz"
+BACKUP_FILE="guinee_academy_backup_${TIMESTAMP}.sql.gz"
 BACKUP_PATH="${BACKUP_DIR}/${BACKUP_FILE}"
 
 # Alert configuration
-ALERT_EMAIL="${ALERT_EMAIL:-admin@schoolflow.com}"
+ALERT_EMAIL="${ALERT_EMAIL:-admin@guinee-academy.com}"
 ALERT_WEBHOOK="${ALERT_WEBHOOK:-}"  # Optional Slack/Discord webhook
 
 # ============================================================================
@@ -122,7 +122,7 @@ rotate_backups() {
         log "Deleting old backup: $(basename "$old_backup")"
         rm -f "$old_backup"
         ((deleted_count++))
-    done < <(find "$BACKUP_DIR" -name "schoolflow_backup_*.sql.gz" -type f -mtime +$RETENTION_DAYS)
+    done < <(find "$BACKUP_DIR" -name "guinee_academy_backup_*.sql.gz" -type f -mtime +$RETENTION_DAYS)
     
     if [ $deleted_count -gt 0 ]; then
         log "Deleted $deleted_count old backup(s)"
@@ -131,7 +131,7 @@ rotate_backups() {
     fi
     
     # List current backups
-    local backup_count=$(find "$BACKUP_DIR" -name "schoolflow_backup_*.sql.gz" -type f | wc -l)
+    local backup_count=$(find "$BACKUP_DIR" -name "guinee_academy_backup_*.sql.gz" -type f | wc -l)
     log "Total backups: $backup_count"
 }
 
@@ -140,7 +140,7 @@ test_restore() {
     # This is commented out by default to avoid overhead
     # Uncomment for production environments
     
-    # local test_db="schoolflow_restore_test"
+    # local test_db="guinee_academy_restore_test"
     # log "Testing restore to database: $test_db"
     # 
     # export PGPASSWORD="$DB_PASSWORD"
@@ -170,7 +170,7 @@ test_restore() {
 
 main() {
     log "========================================="
-    log "SchoolFlow Pro - Backup Script"
+    log "Guinée Academy - Backup Script"
     log "========================================="
     
     # Pre-flight checks

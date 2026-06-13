@@ -1,4 +1,4 @@
-"""Standardized exception hierarchy for SchoolFlow Pro."""
+"""Standardized exception hierarchy for Guinée Academy."""
 from typing import Any, Optional
 import logging
 
@@ -65,8 +65,8 @@ def api_error(
 
 # ─── Base Exception ────────────────────────────────────────────────────────────
 
-class SchoolFlowException(Exception):
-    """Base exception for all SchoolFlow business logic errors."""
+class GuineeAcademyException(Exception):
+    """Base exception for all Guinée Academy business logic errors."""
 
     status_code: int = 500
     error_code: str = "INTERNAL_ERROR"
@@ -96,43 +96,43 @@ class SchoolFlowException(Exception):
 
 # ─── Typed Subclasses ──────────────────────────────────────────────────────────
 
-class NotFoundError(SchoolFlowException):
+class NotFoundError(GuineeAcademyException):
     status_code = 404
     error_code = "NOT_FOUND"
     message = "Resource not found"
 
 
-class ForbiddenError(SchoolFlowException):
+class ForbiddenError(GuineeAcademyException):
     status_code = 403
     error_code = "FORBIDDEN"
     message = "You do not have permission to perform this action"
 
 
-class UnauthorizedError(SchoolFlowException):
+class UnauthorizedError(GuineeAcademyException):
     status_code = 401
     error_code = "UNAUTHORIZED"
     message = "Authentication required"
 
 
-class ValidationError(SchoolFlowException):
+class ValidationError(GuineeAcademyException):
     status_code = 422
     error_code = "VALIDATION_ERROR"
     message = "Invalid input data"
 
 
-class ConflictError(SchoolFlowException):
+class ConflictError(GuineeAcademyException):
     status_code = 409
     error_code = "CONFLICT"
     message = "Resource already exists or conflicts with existing data"
 
 
-class QuotaExceededError(SchoolFlowException):
+class QuotaExceededError(GuineeAcademyException):
     status_code = 429
     error_code = "QUOTA_EXCEEDED"
     message = "Tenant quota limit exceeded"
 
 
-class ServiceUnavailableError(SchoolFlowException):
+class ServiceUnavailableError(GuineeAcademyException):
     status_code = 503
     error_code = "SERVICE_UNAVAILABLE"
     message = "Service temporarily unavailable"
@@ -171,10 +171,10 @@ def _cors_headers(request: Request) -> dict:
     return {}
 
 
-async def schoolflow_exception_handler(
-    request: Request, exc: SchoolFlowException
+async def guinee_academy_exception_handler(
+    request: Request, exc: GuineeAcademyException
 ) -> JSONResponse:
-    """Handle all SchoolFlowException subclasses with a unified JSON format."""
+    """Handle all GuineeAcademyException subclasses with a unified JSON format."""
     request_id = getattr(request.state, "request_id", "-")
     logger.warning(
         exc.message,

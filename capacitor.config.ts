@@ -1,8 +1,8 @@
 import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
-  appId: 'com.schoolflow.pro',
-  appName: 'SchoolFlow Pro',
+  appId: 'com.guinee.academy',
+  appName: 'Guinée Academy',
   webDir: 'dist',
   server: {
     url: 'http://localhost:3000',
@@ -35,7 +35,7 @@ const config: CapacitorConfig = {
   ios: {
     contentInset: 'automatic',
     preferredContentMode: 'mobile',
-    scheme: 'SchoolFlow Pro'
+    scheme: 'Guinée Academy'
   },
   android: {
     allowMixedContent: true,

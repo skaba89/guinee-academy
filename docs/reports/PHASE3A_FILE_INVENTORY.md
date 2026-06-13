@@ -173,7 +173,7 @@
 ## File Organization
 
 ```
-schoolflow-pro/
+guinee-academy/
 ├── tests/
 │   └── e2e/
 │       ├── badges-auth.spec.ts              [7 tests - Auth & Access]

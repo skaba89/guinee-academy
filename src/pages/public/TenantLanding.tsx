@@ -17,14 +17,14 @@ function detectCustomDomain(): string | undefined {
   const knownDomains = [
     'localhost',
     '127.0.0.1',
-    'schoolflow.pro',
-    'app.schoolflow.pro',
-    'www.schoolflow.pro',
+    'guinee-academy.com',
+    'app.guinee-academy.com',
+    'www.guinee-academy.com',
   ];
   if (knownDomains.some((d) => hostname === d || hostname.endsWith(`.${d}`))) {
     return undefined;
   }
-  if (hostname.includes('schoolflow')) return undefined;
+  if (hostname.includes('guinee_academy')) return undefined;
   return hostname;
 }
 

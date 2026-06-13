@@ -178,14 +178,14 @@ const TESTIMONIALS = [
     name: "Dr. Marie Leclerc",
     role: "Directrice, Institut Polytechnique",
     content:
-      "Academy Guinéenne a transformé notre gestion administrative. Nous économisons 15h par semaine sur les tâches répétitives.",
+      "Guinée Academy a transformé notre gestion administrative. Nous économisons 15h par semaine sur les tâches répétitives.",
     rating: 5,
   },
   {
     name: "Thomas Renard",
     role: "Proviseur, Lycée Jean Moulin",
     content:
-      "La conformité RGPD était notre plus grand défi. Avec Academy Guinéenne, tout est géré nativement. Un vrai soulagement.",
+      "La conformité RGPD était notre plus grand défi. Avec Guinée Academy, tout est géré nativement. Un vrai soulagement.",
     rating: 5,
   },
   {
@@ -387,7 +387,7 @@ function HeroIllustration() {
 // Main component
 // ---------------------------------------------------------------------------
 
-export default function SchoolFlowHomePage() {
+export default function GuineeAcademyHomePage() {
   const navigate = useNavigate();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
@@ -428,7 +428,7 @@ export default function SchoolFlowHomePage() {
                 <School className="w-4 h-4 text-white" />
               </div>
               <span className="font-bold text-[#1e3a5f] text-lg tracking-tight">
-                Academy Guinéenne
+                Guinée Academy
               </span>
             </button>
 
@@ -775,7 +775,7 @@ export default function SchoolFlowHomePage() {
             Prêt à moderniser votre établissement&nbsp;?
           </h2>
           <p className="text-blue-200 text-lg max-w-xl leading-relaxed">
-            Rejoignez les établissements qui font confiance à Academy Guinéenne. Déployez en 10 minutes,
+            Rejoignez les établissements qui font confiance à Guinée Academy. Déployez en 10 minutes,
             sans engagement, sans carte bancaire.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 w-full sm:w-auto">
@@ -810,7 +810,7 @@ export default function SchoolFlowHomePage() {
                 <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
                   <School className="w-4 h-4 text-white" />
                 </div>
-                <span className="font-bold text-white text-base">Academy Guinéenne</span>
+                <span className="font-bold text-white text-base">Guinée Academy</span>
               </div>
               <p className="text-sm leading-relaxed">
                 La plateforme SaaS tout-en-un pour les établissements scolaires et universitaires.
@@ -870,7 +870,7 @@ export default function SchoolFlowHomePage() {
 
           <div className="border-t border-gray-800 pt-8 flex flex-col sm:flex-row items-center justify-between gap-4">
             <p className="text-sm">
-              &copy; 2025 Academy Guinéenne. Tous droits réservés.
+              &copy; 2025 Guinée Academy. Tous droits réservés.
             </p>
             <div className="flex items-center gap-2 text-xs">
               <Shield className="w-3.5 h-3.5 text-green-400" />

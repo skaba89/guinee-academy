@@ -61,7 +61,7 @@ L'onboarding devrait maintenant fonctionner correctement.
 ## Alternative : Via CLI (si installé)
 
 ```powershell
-cd c:\Users\cheic\Documents\EduSchool\schoolflow-pro
+cd c:\Users\cheic\Documents\EduSchool\guinee-academy
 supabase db push
 ```
 
@@ -70,4 +70,4 @@ supabase db push
 ## Fichier de Migration
 
 Le fichier complet est disponible ici :
-[20260216220000_add_tenant_contact_fields.sql](file:///c:/Users/cheic/Documents/EduSchool/schoolflow-pro/supabase/migrations/20260216220000_add_tenant_contact_fields.sql)
+[20260216220000_add_tenant_contact_fields.sql](file:///c:/Users/cheic/Documents/EduSchool/guinee-academy/supabase/migrations/20260216220000_add_tenant_contact_fields.sql)

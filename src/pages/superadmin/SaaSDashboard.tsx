@@ -1,5 +1,5 @@
 /**
- * Super-admin SaaS Dashboard — SchoolFlow Pro
+ * Super-admin SaaS Dashboard — Guinée Academy
  * Affiche les métriques de la plateforme : MRR, tenants, conversions, etc.
  * Accessible uniquement aux SUPER_ADMIN.
  */
@@ -230,8 +230,8 @@ export default function SaaSDashboard() {
       apiClient.post(`/platform/tenants/${tenantId}/impersonate/`).then((r) => r.data),
     onSuccess: (data) => {
       // Store token and redirect to tenant dashboard
-      localStorage.setItem("schoolflow:access_token", data.access_token);
-      localStorage.setItem("schoolflow:impersonating", "true");
+      localStorage.setItem("guinee_academy:access_token", data.access_token);
+      localStorage.setItem("guinee_academy:impersonating", "true");
       toast.success(`Connexion en tant qu'admin de ${data.tenant_name} (15 min)`);
       window.location.href = `/${data.tenant_slug}/admin`;
     },
@@ -280,7 +280,7 @@ export default function SaaSDashboard() {
             </Badge>
           </div>
           <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-            Métriques de la plateforme SchoolFlow Pro
+            Métriques de la plateforme Guinée Academy
             {metrics?.generated_at && (
               <span className="ml-2 text-xs">
                 — Mis à jour à {new Date(metrics.generated_at).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })}

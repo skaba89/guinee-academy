@@ -13,7 +13,7 @@ async function testLevels() {
         // 1. Login as Admin
         console.log('Logging in as admin...');
         const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
-            email: 'admin@schoolflow.pro',
+            email: 'admin@guinee-academy.com',
             password: 'SuperAdmin123456',
         });
 

@@ -1,4 +1,4 @@
-# ─── SchoolFlow Pro — Frontend Dockerfile ──────────────────────────────────
+# ─── Guinée Academy — Frontend Dockerfile ──────────────────────────────────
 # Multi-stage build: Node builder → Nginx runtime
 # Used by docker-compose.yml for local development
 # ─────────────────────────────────────────────────────────────────────────────

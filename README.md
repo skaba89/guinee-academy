@@ -1,4 +1,4 @@
-﻿# SchoolFlow Pro — Plateforme de Gestion Scolaire
+﻿# Guinée Academy — Plateforme de Gestion Scolaire
 
 > Plateforme de gestion scolaire moderne, multi-tenant, conçue pour les établissements privés, publics et institutionnels. Architecture sécurisée, exploitation locale ou cloud.
 
@@ -54,8 +54,8 @@
 ### 1. Cloner le dépôt
 
 ```bash
-git clone https://github.com/skaba89/gestion-scolaire-pro.git
-cd gestion-scolaire-pro
+git clone https://github.com/skaba89/guinee-academy.git
+cd guinee-academy
 ```
 
 ### 2. Configurer les variables d'environnement
@@ -98,7 +98,7 @@ docker compose exec api python -m app.scripts.create_admin
 
 Cela crée automatiquement :
 - Un tenant par défaut (`Default School`, slug `default`)
-- Un utilisateur SUPER_ADMIN (`admin@schoolflow.local` / `Admin@123456`)
+- Un utilisateur SUPER_ADMIN (`admin@guinee-academy.local` / `Admin@123456`)
 
 ### 6. Accéder à l'application
 
@@ -157,7 +157,7 @@ Le script `create_admin` crée automatiquement un compte SUPER_ADMIN si aucun n'
 
 | Champ | Valeur |
 |-------|--------|
-| Email | `admin@schoolflow.local` |
+| Email | `admin@guinee-academy.local` |
 | Mot de passe | `Admin@123456` |
 | Rôle | SUPER_ADMIN |
 | Tenant | Default School (`default`) |
@@ -178,7 +178,7 @@ python -m app.scripts.create_admin
 ## Connexion
 
 1. Accédez à http://localhost:3000/auth
-2. Entrez l'email : `admin@schoolflow.local`
+2. Entrez l'email : `admin@guinee-academy.local`
 3. Entrez le mot de passe : `Admin@123456`
 4. Cliquez sur "Se connecter"
 5. Vous êtes redirigé vers le tableau de bord admin
@@ -250,18 +250,18 @@ L'authentification est **100% JWT natif** signée avec HS256. Aucun service d'id
 
 Le fichier `render.yaml` contient la configuration complète pour Render.com :
 
-- `schoolflow-frontend` : service Docker (port 10000)
-- `schoolflow-api` : service Python 3.11
-- `schoolflow-minio` : service Docker (stockage S3)
-- `schoolflow-redis` : Redis managé
-- `schoolflow-db` : PostgreSQL 16 managé
+- `guinee-academy-frontend` : service Docker (port 10000)
+- `guinee-academy-api` : service Python 3.11
+- `guinee_academy-minio` : service Docker (stockage S3)
+- `guinee-academy-redis` : Redis managé
+- `guinee-academy-db` : PostgreSQL 16 managé
 
 ---
 
 ## Structure du projet
 
 ```
-gestion-scolaire-pro/
+guinee-academy/
 ├── backend/
 │   ├── app/
 │   │   ├── api/v1/endpoints/     # Routes API (auth, users, tenants, etc.)
@@ -325,4 +325,4 @@ Le pipeline CI (`GitHub Actions`) s'exécute sur chaque push et PR :
 
 ## Licence
 
-Projet propriétaire — SchoolFlow Pro © 2024-2026
+Projet propriétaire — Guinée Academy © 2024-2026

@@ -1,5 +1,5 @@
 """
-AI endpoints for Academy Guinéenne.
+AI endpoints for Guinée Academy.
 
 Provides Groq-powered chat support and audit analysis.
 All endpoints require JWT authentication.
@@ -65,7 +65,7 @@ class AuditRequest(BaseModel):
     stream: bool = Field(False, description="Activer le streaming de la réponse")
     platform_name: Optional[str] = Field(
         None,
-        description="Nom de l'établissement à utiliser dans les réponses IA (remplace 'Academy Guinéenne')",
+        description="Nom de l'établissement à utiliser dans les réponses IA (remplace 'Guinée Academy')",
     )
 
 
@@ -141,13 +141,13 @@ async def chat(
         stream = req.stream
 
     # Determine the platform name to use in AI responses
-    # If tenant name is provided (tenant context), use it instead of "Academy Guinéenne"
-    platform_name = "Academy Guinéenne"
+    # If tenant name is provided (tenant context), use it instead of "Guinée Academy"
+    platform_name = "Guinée Academy"
     if isinstance(body, ChatRequestV2) and body.tenantName:
         platform_name = body.tenantName
 
     # Also check current_user tenant if available
-    if platform_name == "Academy Guinéenne" and current_user.get("tenant_name"):
+    if platform_name == "Guinée Academy" and current_user.get("tenant_name"):
         platform_name = current_user["tenant_name"]
 
     logger.info(
@@ -217,8 +217,8 @@ async def audit(
     audit report in French. Supports streaming via SSE when `stream=true`.
     """
     # Determine platform name for branded audit responses
-    platform_name = req.platform_name or "Academy Guinéenne"
-    if platform_name == "Academy Guinéenne" and current_user.get("tenant_name"):
+    platform_name = req.platform_name or "Guinée Academy"
+    if platform_name == "Guinée Academy" and current_user.get("tenant_name"):
         platform_name = current_user["tenant_name"]
 
     logger.info(

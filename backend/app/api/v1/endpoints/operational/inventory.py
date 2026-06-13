@@ -44,7 +44,7 @@ class OrderCreateBody(BaseModel):
 # --- Endpoints ---
 
 @router.get("/categories/")
-def list_categories(db: Session = Depends(get_db), current_user: dict = Depends(get_current_user)):
+def list_categories(db: Session = Depends(get_db), current_user: dict = Depends(require_permission("inventory:read"))):
     tenant_id = current_user.get("tenant_id")
     if not tenant_id:
         return []
@@ -71,7 +71,7 @@ def create_category(name: str, db: Session = Depends(get_db), current_user: dict
         raise HTTPException(status_code=500, detail="An internal error occurred.")
 
 @router.get("/items/")
-def list_items(db: Session = Depends(get_db), current_user: dict = Depends(get_current_user)):
+def list_items(db: Session = Depends(get_db), current_user: dict = Depends(require_permission("inventory:read"))):
     tenant_id = current_user.get("tenant_id")
     if not tenant_id:
         return []
@@ -153,7 +153,7 @@ def delete_item(item_id: str, db: Session = Depends(get_db), current_user: dict 
         raise HTTPException(status_code=500, detail="An internal error occurred.")
 
 @router.get("/transactions/")
-def list_transactions(db: Session = Depends(get_db), current_user: dict = Depends(get_current_user)):
+def list_transactions(db: Session = Depends(get_db), current_user: dict = Depends(require_permission("inventory:read"))):
     tenant_id = current_user.get("tenant_id")
     if not tenant_id:
         return []
@@ -172,20 +172,74 @@ def list_transactions(db: Session = Depends(get_db), current_user: dict = Depend
 
 @router.post("/adjust/")
 def adjust_stock(body: AdjustmentBody, db: Session = Depends(get_db), current_user: dict = Depends(require_permission("inventory:write"))):
+    """Adjust stock quantity.
+
+    SECURITY: For OUT adjustments, uses atomic conditional UPDATE to prevent
+    race conditions where concurrent requests could cause negative stock.
+    The UPDATE only succeeds if stock_quantity >= requested quantity.
+    """
     tenant_id = current_user.get("tenant_id")
     if not tenant_id:
         raise HTTPException(status_code=403, detail="No tenant context")
     try:
-        # Check item
-        item = db.execute(text("SELECT stock_quantity FROM inventory_items WHERE id = :iid AND tenant_id = :tid"), {"iid": body.item_id, "tid": tenant_id}).mappings().first()
-        if not item: raise HTTPException(status_code=404, detail="Item not found")
-        
-        new_qty = item["stock_quantity"]
-        if body.type == "IN": new_qty += body.quantity
-        elif body.type == "OUT": new_qty -= body.quantity
-        elif body.type == "ADJUST": new_qty = body.quantity
-        
-        db.execute(text("UPDATE inventory_items SET stock_quantity = :qty WHERE id = :iid AND tenant_id = :tid"), {"qty": new_qty, "iid": body.item_id, "tid": tenant_id})
+        if body.type == "OUT":
+            # SECURITY: Atomic conditional decrement — prevents overselling
+            # Only decrements if enough stock is available
+            result = db.execute(text("""
+                UPDATE inventory_items
+                SET stock_quantity = stock_quantity - :qty
+                WHERE id = :iid AND tenant_id = :tid AND stock_quantity >= :qty
+                RETURNING stock_quantity
+            """), {"qty": body.quantity, "iid": body.item_id, "tid": tenant_id}).mappings().first()
+
+            if not result:
+                # Either item doesn't exist or insufficient stock
+                item = db.execute(text(
+                    "SELECT stock_quantity FROM inventory_items WHERE id = :iid AND tenant_id = :tid"
+                ), {"iid": body.item_id, "tid": tenant_id}).mappings().first()
+                if not item:
+                    raise HTTPException(status_code=404, detail="Item not found")
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"Stock insuffisant (disponible: {item['stock_quantity']}, demandé: {body.quantity})"
+                )
+            new_qty = result["stock_quantity"]
+
+        elif body.type == "IN":
+            # Atomic increment — always safe
+            result = db.execute(text("""
+                UPDATE inventory_items
+                SET stock_quantity = stock_quantity + :qty
+                WHERE id = :iid AND tenant_id = :tid
+                RETURNING stock_quantity
+            """), {"qty": body.quantity, "iid": body.item_id, "tid": tenant_id}).mappings().first()
+            if not result:
+                raise HTTPException(status_code=404, detail="Item not found")
+            new_qty = result["stock_quantity"]
+
+        elif body.type == "ADJUST":
+            # Direct set — validate non-negative
+            if body.quantity < 0:
+                raise HTTPException(status_code=400, detail="Stock quantity cannot be negative")
+            db.execute(text(
+                "UPDATE inventory_items SET stock_quantity = :qty WHERE id = :iid AND tenant_id = :tid"
+            ), {"qty": body.quantity, "iid": body.item_id, "tid": tenant_id})
+            new_qty = body.quantity
+        else:
+            raise HTTPException(status_code=400, detail=f"Invalid adjustment type: {body.type}")
+
+        # Record the transaction
+        try:
+            db.execute(text("""
+                INSERT INTO inventory_transactions (tenant_id, item_id, type, quantity, created_by)
+                VALUES (:tid, :iid, :type, :qty, :uid)
+            """), {
+                "tid": tenant_id, "iid": body.item_id, "type": body.type,
+                "qty": body.quantity, "uid": current_user.get("id"),
+            })
+        except Exception:
+            pass  # Transaction log is best-effort
+
         db.commit()
         return {"stock_quantity": new_qty}
     except HTTPException:
@@ -197,7 +251,7 @@ def adjust_stock(body: AdjustmentBody, db: Session = Depends(get_db), current_us
         raise HTTPException(status_code=500, detail="An internal error occurred.")
 
 @router.get("/orders/")
-def list_orders(db: Session = Depends(get_db), current_user: dict = Depends(get_current_user)):
+def list_orders(db: Session = Depends(get_db), current_user: dict = Depends(require_permission("inventory:read"))):
     tenant_id = current_user.get("tenant_id")
     if not tenant_id:
         return []
@@ -239,7 +293,13 @@ def create_order(body: OrderCreateBody, db: Session = Depends(get_db), current_u
             })
             # Stock adjustment
             if item.get("item_id"):
-                db.execute(text("UPDATE inventory_items SET stock_quantity = stock_quantity - :qty WHERE id = :iid AND tenant_id = :tid"), {"qty": item.get("quantity"), "iid": item.get("item_id"), "tid": tenant_id})
+                stock_result = db.execute(text(
+                    "UPDATE inventory_items SET stock_quantity = stock_quantity - :qty "
+                    "WHERE id = :iid AND tenant_id = :tid AND stock_quantity >= :qty "
+                    "RETURNING id"
+                ), {"qty": item.get("quantity"), "iid": item.get("item_id"), "tid": tenant_id}).scalar()
+                if not stock_result:
+                    raise HTTPException(status_code=400, detail=f"Stock insuffisant pour l'article {item.get('item_name', item.get('item_id'))}")
 
         db.commit()
         return {"id": str(order_id), "message": "Order created"}

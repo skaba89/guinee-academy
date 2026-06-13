@@ -1,14 +1,14 @@
 # =============================================================================
-# SchoolFlow Pro — Render Blueprint (render.yaml)
+# Guinée Academy — Render Blueprint (render.yaml)
 # =============================================================================
 # Deploy to Render with:  render blueprint apply
 # Documentation: https://render.com/docs/blueprint-spec
 # =============================================================================
 #
 # ARCHITECTURE on Render:
-#   - schoolflow-db   (PostgreSQL) — managed database
-#   - schoolflow-api  (FastAPI)    — backend API
-#   - gestion-scolaire-pro (Node)  — frontend SPA + API proxy
+#   - guinee-academy-db   (PostgreSQL) — managed database
+#   - guinee-academy-api  (FastAPI)    — backend API
+#   - guinee-academy (Node)  — frontend SPA + API proxy
 #
 # The frontend proxies /api/* to the backend, so the browser only talks
 # to one domain. No CORS issues.
@@ -17,8 +17,8 @@
 
 databases:
   # ─── PostgreSQL (Render Managed) ─────────────────────────────────────────
-  - name: schoolflow-db
-    databaseName: schoolflow
+  - name: guinee-academy-db
+    databaseName: guinee_academy
     region: frankfurt
     plan: starter
 
@@ -26,7 +26,7 @@ databases:
 services:
   # ─── Redis (token versioning, session mutex) ─────────────────────────────
   - type: redis
-    name: schoolflow-redis
+    name: guinee-academy-redis
     region: frankfurt
     plan: free
     maxmemoryPolicy: allkeys-lru
@@ -34,7 +34,7 @@ services:
 
   # ─── Backend API (FastAPI) ───────────────────────────────────────────────
   - type: web
-    name: schoolflow-api
+    name: guinee-academy-api
     runtime: python
     region: frankfurt
     plan: free
@@ -46,18 +46,18 @@ services:
     startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
     rootDir: ./backend
     envVars:
-      # --- Database (auto-linked by Render from schoolflow-db) ---
+      # --- Database (auto-linked by Render from guinee-academy-db) ---
       - key: DATABASE_URL
         fromDatabase:
-          name: schoolflow-db
+          name: guinee-academy-db
           property: connectionString
       - key: DATABASE_URL_ASYNC
         fromDatabase:
-          name: schoolflow-db
+          name: guinee-academy-db
           property: connectionString
       - key: DATABASE_URL_SYNC
         fromDatabase:
-          name: schoolflow-db
+          name: guinee-academy-db
           property: connectionString
 
       # --- Application ---
@@ -74,7 +74,7 @@ services:
 
       # --- Admin (CHANGEZ ce mot de passe apres le 1er login!) ---
       - key: ADMIN_DEFAULT_EMAIL
-        value: admin@schoolflow.local
+        value: admin@guinee-academy.local
       - key: ADMIN_DEFAULT_PASSWORD
         generateValue: true  # Secure auto-generated password — check Render dashboard after deploy
 
@@ -89,14 +89,14 @@ services:
       # --- CORS ---
       - key: BACKEND_CORS_ORIGINS
         fromService:
-          name: gestion-scolaire-pro
+          name: guinee-academy
           type: web
           property: host
 
       # --- Redis (token versioning, session mutex) ---
       - key: REDIS_URL
         fromService:
-          name: schoolflow-redis
+          name: guinee-academy-redis
           type: redis
           property: connectionString
 
@@ -106,7 +106,7 @@ services:
 
   # ─── Frontend (React SPA + API proxy via server.mjs) ─────────────────────
   - type: web
-    name: gestion-scolaire-pro
+    name: guinee-academy
     runtime: node
     region: frankfurt
     plan: free
@@ -122,6 +122,6 @@ services:
       # server.mjs prepends https:// and uses it as the proxy target.
       - key: VITE_API_URL
         fromService:
-          name: schoolflow-api
+          name: guinee-academy-api
           type: web
           property: host

@@ -71,8 +71,8 @@ class TenantMiddleware(BaseHTTPMiddleware):
                     settings.SECRET_KEY,
                     algorithms=[settings.ALGORITHM],
                     options={"verify_exp": False},  # Don't reject expired tokens here — let downstream auth handle 401
-                    audience="schoolflow-api",
-                    issuer="schoolflow-pro",
+                    audience="guinee-academy-api",
+                    issuer="guinee-academy",
                 )
                 tenant_id = payload.get("tenant_id")
                 user_roles = payload.get("roles", []) or []

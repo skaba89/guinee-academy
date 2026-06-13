@@ -109,7 +109,7 @@ src/
 ## Vue d'Ensemble (Tree View)
 
 ```
-PROJECT ROOT (schoolflow-pro)
+PROJECT ROOT (guinee-academy)
 │
 ├── src/
 │   ├── hooks/
@@ -312,4 +312,4 @@ function NewComponent() {
 **Status**: ✅ Production Ready  
 **Date**: Janvier 20, 2025  
 **Version**: 1.0  
-**Maintainer**: SchoolFlow Pro Team
+**Maintainer**: Guinée Academy Team

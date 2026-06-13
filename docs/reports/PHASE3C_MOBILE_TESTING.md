@@ -60,7 +60,7 @@ npm run build  # Vite build → dist/
 
 ### Step 3: Initialize Capacitor Project
 ```bash
-npx cap init SchoolFlow-Pro com.schoolflow.pro
+npx cap init Guinée Academy-Pro com.guinee.academy
 npx cap add ios
 npx cap add android
 ```
@@ -145,16 +145,16 @@ npx cap open android  # Opens Android Studio
 Team ID: Required
 Certificate: iOS Distribution
 Provisioning Profile: Match
-App ID: com.schoolflow.pro
-Bundle ID: com.schoolflow.pro
+App ID: com.guinee.academy
+Bundle ID: com.guinee.academy
 Version: 1.0.0
 Build: 1
 ```
 
 ### Android Signing
 ```
-Keystore: schoolflow-pro.keystore
-Alias: schoolflow
+Keystore: guinee-academy.keystore
+Alias: guinee_academy
 Key Password: [secure]
 Store Password: [secure]
 Validity: 25 years
@@ -179,7 +179,7 @@ Algorithm: RSA 2048
 
 ### PWA (Web)
 - Deployment: Auto via GitHub Actions
-- URL: https://schoolflow.pro
+- URL: https://guinee-academy.com
 - Add to home screen: Chrome, Firefox, Safari
 - No review process needed
 

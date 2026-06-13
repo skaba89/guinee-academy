@@ -26,7 +26,7 @@
 
 ## 🎯 RÉSUMÉ RAPIDE
 
-**Vous avez un plan complet pour tester SchoolFlow Pro avec:**
+**Vous avez un plan complet pour tester Guinée Academy avec:**
 
 ✅ **2 Universités Distinctes**
 - Université 1: Sorbonne (Paris) - Devise EUR, Français
@@ -73,7 +73,7 @@
 
 ### 1️⃣ Créer les Données (10 minutes)
 ```bash
-cd c:\Users\cheic\Documents\EduSchool\schoolflow-pro
+cd c:\Users\cheic\Documents\EduSchool\guinee-academy
 
 # Universités + structures
 psql -h localhost -U postgres -d postgres < scripts/insert_2_universities_complete.sql

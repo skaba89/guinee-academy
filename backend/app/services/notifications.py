@@ -1,5 +1,5 @@
 """
-Unified Notification Service — SchoolFlow Pro
+Unified Notification Service — Guinée Academy
 
 Free-tier stack:
   - WhatsApp Cloud API (Meta)  → 1 000 conversations/mois gratuites
@@ -475,8 +475,8 @@ class EmailSender:
         smtp_port: int = 587,
         smtp_user: str = "",
         smtp_pass: str = "",
-        from_email: str = "noreply@schoolflow.pro",
-        from_name: str = "SchoolFlow Pro",
+        from_email: str = "noreply@guinee-academy.com",
+        from_name: str = "Guinée Academy",
     ):
         self.resend_key = resend_api_key
         self.smtp_host = smtp_host
@@ -660,7 +660,7 @@ class Templates:
     def password_reset(
         user_name: str,
         reset_url: str,
-        school_name: str = "SchoolFlow Pro",
+        school_name: str = "Guinée Academy",
         expires_minutes: int = 15,
     ) -> dict:
         """Password reset email — sent when a user requests a new password."""
@@ -767,7 +767,7 @@ class NotificationService:
       fromName                   — Sender display name
     """
 
-    def __init__(self, tenant_settings: dict, school_name: str = "SchoolFlow Pro"):
+    def __init__(self, tenant_settings: dict, school_name: str = "Guinée Academy"):
         self.school_name = school_name
         self._settings = tenant_settings
 
@@ -802,7 +802,7 @@ class NotificationService:
             smtp_port=int(tenant_settings.get("smtpPort", 587)),
             smtp_user=tenant_settings.get("smtpUser", ""),
             smtp_pass=tenant_settings.get("smtpPass", ""),
-            from_email=tenant_settings.get("fromEmail", "noreply@schoolflow.pro"),
+            from_email=tenant_settings.get("fromEmail", "noreply@guinee-academy.com"),
             from_name=tenant_settings.get("fromName", school_name),
         )
 
@@ -965,7 +965,7 @@ def build_service_from_db(db, tenant_id: str) -> Optional["NotificationService"]
         settings_dict: dict = raw if isinstance(raw, dict) else (
             json.loads(raw) if raw else {}
         )
-        return NotificationService(settings_dict, school_name=row["name"] or "SchoolFlow Pro")
+        return NotificationService(settings_dict, school_name=row["name"] or "Guinée Academy")
     except Exception as e:
         logger.error("build_service_from_db failed: %s", e)
         return None

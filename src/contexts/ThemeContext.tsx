@@ -28,7 +28,7 @@ interface ThemeProviderProps {
 export const ThemeProvider = ({
   children,
   defaultTheme = "system",
-  storageKey = "schoolflow-pro-theme",
+  storageKey = "guinee-academy-theme",
 }: ThemeProviderProps) => {
   const [theme, setThemeState] = useState<Theme>(() => {
     if (typeof window !== "undefined") {

@@ -3,7 +3,7 @@ setlocal enabledelayedexpansion
 
 echo.
 echo ============================================================
-echo   SchoolFlow Pro  —  Setup complet avec Neon PostgreSQL
+echo   Guinée Academy  —  Setup complet avec Neon PostgreSQL
 echo ============================================================
 echo.
 
@@ -56,7 +56,7 @@ if exist ".env" (
     echo [SKIP] .env existe deja. Supprimez-le et relancez pour le recreer.
 ) else (
     (
-        echo # SchoolFlow Pro - Configuration avec Neon
+        echo # Guinée Academy - Configuration avec Neon
         echo DEBUG=True
         echo LOG_LEVEL=DEBUG
         echo.
@@ -105,7 +105,7 @@ echo.
 
 REM Backend
 echo [BACKEND] Demarrage sur http://localhost:8000 ...
-start "SchoolFlow Backend" cmd /k "cd backend && python -m uvicorn app.main:app --reload --port 8000"
+start "Guinée Academy Backend" cmd /k "cd backend && python -m uvicorn app.main:app --reload --port 8000"
 
 timeout /t 3 /nobreak >nul
 
@@ -114,11 +114,11 @@ where node >nul 2>&1
 if %ERRORLEVEL% equ 0 (
     if exist "node_modules" (
         echo [FRONTEND] Demarrage sur http://localhost:3000 ...
-        start "SchoolFlow Frontend" cmd /k "npm run dev"
+        start "Guinée Academy Frontend" cmd /k "npm run dev"
     ) else (
         echo [FRONTEND] Installation des dependances et demarrage ...
         call npm install
-        start "SchoolFlow Frontend" cmd /k "npm run dev"
+        start "Guinée Academy Frontend" cmd /k "npm run dev"
     )
 ) else (
     echo [SKIP] Node.js non installe. Frontend non demarre.

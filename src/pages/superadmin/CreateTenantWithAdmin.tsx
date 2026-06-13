@@ -226,7 +226,7 @@ const CreateTenantWithAdmin = () => {
                   className="font-mono"
                 />
                 <p className="text-xs text-muted-foreground">
-                  Utilisé dans l'URL : schoolflow.local/ecole/{slug || "..."}
+                  Utilisé dans l'URL : guinee-academy.local/ecole/{slug || "..."}
                 </p>
               </div>
             </div>

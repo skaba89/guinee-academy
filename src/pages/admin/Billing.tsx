@@ -297,7 +297,7 @@ export default function Billing() {
 
                   {plan.id === "enterprise" ? (
                     <Button variant="outline" size="sm" asChild className="w-full">
-                      <a href="mailto:sales@schoolflow.pro">Nous contacter</a>
+                      <a href="mailto:sales@guinee-academy.com">Nous contacter</a>
                     </Button>
                   ) : isCurrent ? (
                     <Button variant="outline" size="sm" disabled className="w-full">
@@ -329,7 +329,7 @@ export default function Billing() {
         <Shield className="w-5 h-5 flex-shrink-0 text-gray-400 mt-0.5" />
         <p>
           Les paiements sont traités de manière sécurisée par <strong>Stripe</strong>.
-          SchoolFlow Pro ne stocke jamais vos coordonnées bancaires.
+          Guinée Academy ne stocke jamais vos coordonnées bancaires.
           Vos factures sont disponibles directement sur le portail Stripe.
         </p>
       </div>

@@ -1,5 +1,5 @@
 # DÉPANNAGE: Problème de Connexion & Création de Compte Admin
-**SchoolFlow Pro - Authentification Problématique**
+**Guinée Academy - Authentification Problématique**
 
 **Date:** January 27, 2026  
 **Problème:** Impossible de se connecter ou créer un compte admin  
@@ -53,7 +53,7 @@ Role: STUDENT
 
 #### Solution 1a: Redémarrer le service Studio
 ```bash
-docker restart schoolflow-pro-supabase-studio-1
+docker restart guinee-academy-supabase-studio-1
 # Attendre 30 secondes
 # Puis accéder à: http://localhost:3001
 ```
@@ -119,7 +119,7 @@ GOTRUE_JWT_SECRET=[secret valide]
 #### Solution 2b: Réinitialiser la authentification
 ```bash
 # Supprimer les tables auth
-docker exec schoolflow-pro-supabase-db-1 psql \
+docker exec guinee-academy-supabase-db-1 psql \
   -U postgres -d postgres \
   -c "TRUNCATE TABLE auth.users CASCADE;"
 
@@ -260,7 +260,7 @@ psql -h localhost -U postgres -d postgres \
 
 ```bash
 # Accéder au container PostgreSQL
-docker exec -it schoolflow-pro-supabase-db-1 bash
+docker exec -it guinee-academy-supabase-db-1 bash
 
 # Accéder à psql
 psql -U postgres -d postgres
@@ -384,7 +384,7 @@ SELECT email, created_at FROM auth.users;
 | "Connection refused" | Docker pas lancé | `docker-compose up -d` |
 | "CORS error" | Configuration CORS | Vérifier `CORS_ORIGIN` en .env |
 | "JWT invalid" | Secret ne correspond pas | Vérifier `JWT_SECRET` |
-| "Studio unhealthy" | Container redémarre | `docker restart schoolflow-pro-supabase-studio-1` |
+| "Studio unhealthy" | Container redémarre | `docker restart guinee-academy-supabase-studio-1` |
 | "Signup disabled" | GoTrue non configuré | Vérifier `GOTRUE_EXTERNAL_EMAIL_ENABLED` |
 | "Email unconfirmed" | Confirmation requise | Vérifier `GOTRUE_EMAIL_AUTOCONFIRM` |
 
@@ -413,13 +413,13 @@ docker-compose ps
 ### Étape 2: Vérifier les Logs Complets
 ```bash
 # Logs GoTrue
-docker logs -f schoolflow-pro-supabase-auth-1
+docker logs -f guinee-academy-supabase-auth-1
 
 # Logs Kong
-docker logs -f schoolflow-pro-supabase-kong-1
+docker logs -f guinee-academy-supabase-kong-1
 
 # Logs Studio
-docker logs -f schoolflow-pro-supabase-studio-1
+docker logs -f guinee-academy-supabase-studio-1
 ```
 
 ### Étape 3: Réinitialiser les Secrets

@@ -20,12 +20,12 @@ export interface SyncOperation {
     retry_count: number;
 }
 
-export class SchoolFlowDB extends Dexie {
+export class GuineeAcademyDB extends Dexie {
     students!: Table<LocalStudent>;
     syncQueue!: Table<SyncOperation>;
 
     constructor() {
-        super('SchoolFlowDB');
+        super('GuineeAcademyDB');
         this.version(1).stores({
             students: 'id, registration_number, tenant_id, last_updated',
             syncQueue: '++id, table, action, timestamp'
@@ -33,4 +33,4 @@ export class SchoolFlowDB extends Dexie {
     }
 }
 
-export const db = new SchoolFlowDB();
+export const db = new GuineeAcademyDB();

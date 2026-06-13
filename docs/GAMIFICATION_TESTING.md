@@ -253,6 +253,6 @@ Une fois tous les tests validés :
 ## Support
 
 Pour toute question ou problème :
-- Consulter le [Guide de Déploiement](file:///c:/Users/cheic/Documents/EduSchool/schoolflow-pro/docs/GAMIFICATION_DEPLOYMENT.md)
+- Consulter le [Guide de Déploiement](file:///c:/Users/cheic/Documents/EduSchool/guinee-academy/docs/GAMIFICATION_DEPLOYMENT.md)
 - Consulter le [Walkthrough](file:///C:/Users/cheic/.gemini/antigravity/brain/16a38927-7f73-4f8e-9c1b-c4c1858b373d/walkthrough.md)
 - Vérifier les logs de l'Edge Function : `supabase functions logs process-gamification-event`

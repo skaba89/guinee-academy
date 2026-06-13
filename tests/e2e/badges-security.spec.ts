@@ -8,7 +8,7 @@ test.describe('Badges - Sécurité & Isolation Tenant', () => {
   test('le JWT ne contient pas de données en clair sensibles', async ({ loginAsAdmin, page }) => {
     await loginAsAdmin(page);
 
-    const token = await page.evaluate(() => localStorage.getItem('schoolflow:access_token'));
+    const token = await page.evaluate(() => localStorage.getItem('guinee_academy:access_token'));
     expect(token).toBeTruthy();
 
     if (token) {
@@ -26,7 +26,7 @@ test.describe('Badges - Sécurité & Isolation Tenant', () => {
     await loginAsAdmin(page);
 
     // simuler expiration en effaçant le token
-    await page.evaluate(() => localStorage.removeItem('schoolflow:access_token'));
+    await page.evaluate(() => localStorage.removeItem('guinee_academy:access_token'));
 
     // tenter de naviguer vers une page protégée
     await page.goto('/admin/badges');

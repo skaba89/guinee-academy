@@ -87,7 +87,7 @@ ON CONFLICT (user_id, tenant_id) DO UPDATE SET role = 'TENANT_ADMIN';
 
 ### Using psql (Command Line)
 ```bash
-docker exec -it schoolflow-pro-supabase-db-1 psql -U postgres -d postgres
+docker exec -it guinee-academy-supabase-db-1 psql -U postgres -d postgres
 ```
 
 ### Using DBeaver or Similar Tools
@@ -242,7 +242,7 @@ npm run build
 docker-compose ps
 
 # Check database logs
-docker logs schoolflow-pro-supabase-db-1
+docker logs guinee-academy-supabase-db-1
 
 # Restart containers
 docker-compose restart
@@ -266,7 +266,7 @@ npm run dev
 
 ### "Studio unhealthy"
 - Wait 30 seconds for it to start
-- Or restart: `docker-compose restart schoolflow-pro-supabase-studio-1`
+- Or restart: `docker-compose restart guinee-academy-supabase-studio-1`
 
 ---
 
@@ -335,8 +335,8 @@ npm run dev
 - **Multi-tenant**: Every table has `tenant_id` - always filter by it
 - **RLS**: Row-Level Security is enabled - users see only their tenant's data
 - **Hot Reload**: Changes in src/ reload instantly
-- **Reset DB**: `docker volume rm schoolflow-pro_db-data && docker-compose up -d`
-- **View Logs**: `docker logs schoolflow-pro-frontend-1`
+- **Reset DB**: `docker volume rm guinee-academy_db-data && docker-compose up -d`
+- **View Logs**: `docker logs guinee-academy-frontend-1`
 
 ---
 
@@ -355,5 +355,5 @@ Everything is set up and ready to use:
 ---
 
 Generated: 26 Janvier 2026  
-Project: SchoolFlow Pro  
+Project: Guinée Academy  
 Status: ✅ Ready for Development

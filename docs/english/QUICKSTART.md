@@ -26,7 +26,7 @@
 ### Étape 1: Créer les Universités + Utilisateurs (10 min)
 
 ```bash
-cd c:\Users\cheic\Documents\EduSchool\schoolflow-pro
+cd c:\Users\cheic\Documents\EduSchool\guinee-academy
 
 # Créer universités
 cat scripts/insert_2_universities_complete.sql | \
@@ -199,7 +199,7 @@ Suivre **ÉTAPE 1** complètement.
 1. Reread le guide (réponse probable dedans)
 2. Vérifier Docker running: `docker-compose ps`
 3. Vérifier DB: http://localhost:8082/
-4. Vérifier logs: `docker logs schoolflow-pro-supabase-db-1`
+4. Vérifier logs: `docker logs guinee-academy-supabase-db-1`
 5. Lire Troubleshooting dans GUIDE_CONFIG_MOBILE_CAPACITOR.md
 
 ---

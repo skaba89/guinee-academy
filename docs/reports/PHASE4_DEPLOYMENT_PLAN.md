@@ -200,12 +200,12 @@ services:
 
 ```bash
 # Database
-DATABASE_URL=postgresql://user:pass@db-prod:5432/schoolflow
+DATABASE_URL=postgresql://user:pass@db-prod:5432/guinee_academy
 PGSSLMODE=require
 
 # API
-API_URL=https://api.schoolflow.pro
-SUPABASE_URL=https://schoolflow.supabase.co
+API_URL=https://api.guinee-academy.com
+SUPABASE_URL=https://guinee_academy.supabase.co
 SUPABASE_KEY=ey...
 
 # Auth
@@ -214,7 +214,7 @@ GOTRUE_JWT_EXPIRY=3600
 GOTRUE_JWT_AUD=authenticated
 
 # Storage
-S3_BUCKET=schoolflow-prod
+S3_BUCKET=guinee-academyd
 S3_REGION=eu-west-1
 S3_ACCESS_KEY=<secret>
 S3_SECRET_KEY=<secret>
@@ -254,7 +254,7 @@ PING redis → PONG
 pg_dump -h db-prod > backup-$(date +%Y%m%d_%H%M%S).sql
 
 # 2. Verify health
-curl https://api.schoolflow.pro/health
+curl https://api.guinee-academy.com/health
 
 # 3. Alert team
 # "Deployment starting - no new changes"
@@ -273,7 +273,7 @@ npm run build:production
 npm run migrate:prod
 
 # 3. Update docker images
-docker pull schoolflow:v1.0.0
+docker pull guinee_academy:v1.0.0
 
 # 4. Rolling restart (1 container at a time)
 docker-compose up -d --no-deps --build api-1

@@ -249,7 +249,7 @@ async def login(request: Request, form_data: OAuth2PasswordRequestForm = Depends
         try:
             from app.core.cache import redis_client
             client = await redis_client.client
-            version_str = await client.get(f"sfp:user_token_version:{user.id}")
+            version_str = await client.get(f"ga:user_token_version:{user.id}")
             if version_str:
                 token_version = int(version_str)
         except Exception:
@@ -395,7 +395,7 @@ async def refresh_token(request: Request, db: Session = Depends(get_db)):
     try:
         from app.core.cache import redis_client
         client = await redis_client.client
-        version_str = await client.get(f"sfp:user_token_version:{user_id}")
+        version_str = await client.get(f"ga:user_token_version:{user_id}")
         if version_str:
             token_version = int(version_str)
         # SECURITY: Track active sessions — enforce max concurrent sessions (5)
@@ -452,8 +452,8 @@ async def logout(request: Request, current_user: dict = Depends(get_current_user
                 settings.SECRET_KEY,
                 algorithms=[settings.ALGORITHM],
                 options={"verify_exp": False},
-                audience="schoolflow-api",
-                issuer="schoolflow-pro",
+                audience="guinee-academy-api",
+                issuer="guinee-academy",
             )
             token_jti = payload.get("jti")
             if token_jti:
@@ -893,7 +893,7 @@ async def register_school(
         dashboard_url = f"{settings.FRONTEND_URL}/{slug}/admin/onboarding"
         html = f"""
         <div style="font-family:Arial,sans-serif;max-width:600px;margin:auto;padding:32px">
-          <h2 style="color:#1a56db">🎉 Bienvenue sur SchoolFlow Pro !</h2>
+          <h2 style="color:#1a56db">🎉 Bienvenue sur Guinée Academy !</h2>
           <p>Bonjour <strong>{body.first_name}</strong>,</p>
           <p>Votre établissement <strong>{body.school_name}</strong> a bien été créé.</p>
           <p>Vous bénéficiez de <strong>30 jours d'essai gratuit Pro</strong> pour découvrir toutes les fonctionnalités.</p>
@@ -905,9 +905,9 @@ async def register_school(
           </div>
           <p style="color:#6b7280;font-size:13px">Votre URL de connexion : <strong>{settings.FRONTEND_URL}/{slug}/admin</strong></p>
           <hr style="border:none;border-top:1px solid #e5e7eb;margin:24px 0">
-          <p style="color:#9ca3af;font-size:12px">SchoolFlow Pro — L'ERP scolaire pour l'Afrique francophone</p>
+          <p style="color:#9ca3af;font-size:12px">Guinée Academy — L'ERP scolaire pour l'Afrique francophone</p>
         </div>"""
-        sender.send(to=body.email, subject=f"🎉 Bienvenue sur SchoolFlow Pro — {body.school_name}", html=html)
+        sender.send(to=body.email, subject=f"🎉 Bienvenue sur Guinée Academy — {body.school_name}", html=html)
     except Exception as exc:
         logger.warning("Welcome email failed: %s", exc)
 
@@ -977,7 +977,7 @@ def bootstrap_admin(
     import uuid as _uuid
     from app.core.security import get_password_hash
 
-    admin_email = settings.ADMIN_DEFAULT_EMAIL or "admin@schoolflow.local"
+    admin_email = settings.ADMIN_DEFAULT_EMAIL or "admin@guinee-academy.local"
     # new_password param takes priority over env var
     admin_password = body.new_password or settings.ADMIN_DEFAULT_PASSWORD
     steps = []
@@ -1222,7 +1222,7 @@ async def login_diagnostics(
             result["errors"].append(f"Table {table}: {e}")
 
     # 3. Check admin user
-    admin_email = settings.ADMIN_DEFAULT_EMAIL or "admin@schoolflow.local"
+    admin_email = settings.ADMIN_DEFAULT_EMAIL or "admin@guinee-academy.local"
     try:
         admin_row = db.execute(
             sqlalchemy.text("SELECT id, email, username, is_active, is_superuser, password_hash IS NOT NULL as has_password FROM users WHERE email = :email"),

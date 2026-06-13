@@ -35,7 +35,7 @@ async def create_tenant(
     tenant_in: TenantCreate,
     db: Session = Depends(get_db),
     current_user: dict = Depends(get_current_user),
-    _perm: None = Depends(lambda: require_permission("tenants:write"))
+    _perm: None = Depends(require_permission("tenants:write"))
 ):
     """
     Create a new tenant and initialize default data (academic year, campus, levels, subjects).
@@ -262,6 +262,7 @@ async def list_tenants(
 async def get_tenant_infos(
     db: Session = Depends(get_db),
     current_user: dict = Depends(get_current_user),
+    _perm: None = Depends(require_permission("tenants:read"))
 ):
     """GET /tenants/INFOS/ — returns current tenant info as a flat dict.
 
@@ -320,7 +321,8 @@ async def get_tenant_by_slug(
 @router.get("/settings/")
 async def get_tenant_settings(
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user),
+    _perm: None = Depends(require_permission("settings:read"))
 ):
     """Retrieve settings for the current tenant.
 
@@ -708,6 +710,7 @@ async def create_tenant_with_admin(
     tenant_in: TenantWithAdminCreate,
     db: Session = Depends(get_db),
     current_user: dict = Depends(get_current_user),
+    _perm: None = Depends(require_permission("tenants:write"))
 ):
     """
     SUPER_ADMIN only: Create a new tenant AND its first admin user in one transaction.
@@ -846,6 +849,7 @@ async def create_tenant_admin_user(
     body: TenantAdminUserCreate,
     db: Session = Depends(get_db),
     current_user: dict = Depends(get_current_user),
+    _perm: None = Depends(require_permission("tenants:write"))
 ):
     """
     SUPER_ADMIN only: Create an admin user for a specific existing tenant.
@@ -918,6 +922,7 @@ async def create_tenant_admin_user(
 async def get_super_admin_tenant_stats(
     db: Session = Depends(get_db),
     current_user: dict = Depends(get_current_user),
+    _perm: None = Depends(require_permission("tenants:read"))
 ):
     """
     SUPER_ADMIN only: Get aggregate stats across all tenants.
@@ -1003,7 +1008,7 @@ async def toggle_tenant_status(
                 from app.core.cache import redis_client
                 redis_async = await redis_client.client
                 for (uid,) in tenant_users:
-                    key = f"sfp:user_token_version:{uid}"
+                    key = f"ga:user_token_version:{uid}"
                     await redis_async.incr(key)
                 logger.info(
                     "Revoked sessions for %d users of tenant %s",
@@ -1084,7 +1089,8 @@ async def delete_tenant(
 async def get_tenant(
     tenant_id: UUID,  # Enforce UUID type to avoid matching static routes like "settings"
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user),
+    _perm: None = Depends(require_permission("tenants:read"))
 ):
     """Fetch specific tenant details."""
     tenant = db.query(Tenant).filter(Tenant.id == tenant_id).first()

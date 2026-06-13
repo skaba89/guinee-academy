@@ -35,7 +35,7 @@
 
 **Vérifier Capacitor:**
 ```bash
-cd c:\Users\cheic\Documents\EduSchool\schoolflow-pro
+cd c:\Users\cheic\Documents\EduSchool\guinee-academy
 npx capacitor --version
 ```
 
@@ -119,7 +119,7 @@ Attendu:
 
 **Option B: Terminal Gradle**
 ```bash
-cd c:\Users\cheic\Documents\EduSchool\schoolflow-pro\android
+cd c:\Users\cheic\Documents\EduSchool\guinee-academy\android
 .\gradlew assembleRelease
 ```
 
@@ -299,7 +299,7 @@ pip install locust
 ```python
 from locust import HttpUser, task, between
 
-class SchoolFlowUser(HttpUser):
+class Guinée AcademyUser(HttpUser):
     wait_time = between(1, 3)
     
     @task

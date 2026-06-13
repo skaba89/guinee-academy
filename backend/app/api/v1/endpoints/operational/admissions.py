@@ -187,7 +187,7 @@ def get_admission(
 def create_admission(
     payload: AdmissionCreate,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(require_permission("admissions:write")),
 ):
     """Create a new admission application (starts as DRAFT)."""
     tenant_id = current_user.get("tenant_id")

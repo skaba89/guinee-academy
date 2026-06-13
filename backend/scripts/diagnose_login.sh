@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # =============================================================================
-# SchoolFlow Pro — Login Diagnostic Script
+# Guinée Academy — Login Diagnostic Script
 # =============================================================================
 # Checks all common login failure causes from network to JWT token validation.
 #
@@ -42,7 +42,7 @@ fi
 print_header() {
     echo ""
     echo -e "${CYAN}╔══════════════════════════════════════════════════════════════╗${NC}"
-    echo -e "${CYAN}║${BOLD}  SchoolFlow Pro — Login Diagnostic Script${NC}               ${CYAN}║${NC}"
+    echo -e "${CYAN}║${BOLD}  Guinée Academy — Login Diagnostic Script${NC}               ${CYAN}║${NC}"
     echo -e "${CYAN}╚══════════════════════════════════════════════════════════════╝${NC}"
     echo -e "${DIM}  $(date '+%Y-%m-%d %H:%M:%S')${NC}"
 }
@@ -124,12 +124,12 @@ print_header
 # ═══════════════════════════════════════════════════════════════════════════════
 print_step "1" "Backend Reachable (http://localhost:${BACKEND_PORT}/health/)"
 
-BACKEND_HTTP_CODE=$(curl -s -o /tmp/schoolflow_health.json -w "%{http_code}" \
+BACKEND_HTTP_CODE=$(curl -s -o /tmp/guinee_academy_health.json -w "%{http_code}" \
     --connect-timeout 5 --max-time 10 \
     "http://localhost:${BACKEND_PORT}/health/" 2>/dev/null || true)
 
 if [[ "${BACKEND_HTTP_CODE}" == "200" ]]; then
-    BACKEND_BODY=$(cat /tmp/schoolflow_health.json 2>/dev/null || echo "{}")
+    BACKEND_BODY=$(cat /tmp/guinee_academy_health.json 2>/dev/null || echo "{}")
     BACKEND_STATUS=$(echo "${BACKEND_BODY}" | python3 -c "import sys,json; print(json.load(sys.stdin).get('status','?'))" 2>/dev/null || echo "?")
     BACKEND_VERSION=$(echo "${BACKEND_BODY}" | python3 -c "import sys,json; print(json.load(sys.stdin).get('version','?'))" 2>/dev/null || echo "?")
     print_ok "Backend is responding (HTTP 200, status=${BACKEND_STATUS}, v${BACKEND_VERSION})"
@@ -138,7 +138,7 @@ elif [[ "${BACKEND_HTTP_CODE}" == "000" ]]; then
     print_remediation "Start the backend server: cd backend && uvicorn app.main:app --reload --port ${BACKEND_PORT}"
 else
     print_fail "Backend returned HTTP ${BACKEND_HTTP_CODE}"
-    BACKEND_BODY=$(cat /tmp/schoolflow_health.json 2>/dev/null || echo "(no body)")
+    BACKEND_BODY=$(cat /tmp/guinee_academy_health.json 2>/dev/null || echo "(no body)")
     print_info "Response: ${BACKEND_BODY:0:200}"
     print_remediation "Check uvicorn logs for errors. Try: curl -v http://localhost:${BACKEND_PORT}/health/"
 fi
@@ -350,7 +350,7 @@ else:
     elif [[ "${ADMIN_CHECK}" == NOT_FOUND ]]; then
         print_fail "No SUPER_ADMIN user found in database"
         print_remediation "Create the super admin: cd backend && python -m scripts.create_admin"
-        print_info "Default credentials: admin@schoolflow.local / Admin@123456"
+        print_info "Default credentials: admin@guinee-academy.local / Admin@123456"
     else
         ADMIN_EMAIL="${ADMIN_CHECK#FOUND:}"
         ADMIN_FLAGS="${ADMIN_EMAIL#*|}"
@@ -382,7 +382,7 @@ fi
 # ═══════════════════════════════════════════════════════════════════════════════
 print_step "6" "Login API Works (POST /api/v1/auth/login/)"
 
-LOGIN_EMAIL="admin@schoolflow.local"
+LOGIN_EMAIL="admin@guinee-academy.local"
 LOGIN_PASSWORD="Admin@123456"
 LOGIN_RESPONSE=$(curl -s -w "\n%{http_code}" \
     --connect-timeout 5 --max-time 10 \
@@ -416,7 +416,7 @@ print(d.get('expires_in', ''))
     print_info "Access token (first 40 chars): ${ACCESS_TOKEN:0:40}..."
 
     # Save token for subsequent steps
-    echo "${ACCESS_TOKEN}" > /tmp/schoolflow_diagnostic_token.txt
+    echo "${ACCESS_TOKEN}" > /tmp/guinee_academy_diagnostic_token.txt
 else
     print_fail "Login returned HTTP ${LOGIN_HTTP_CODE}"
     LOGIN_DETAIL=$(echo "${LOGIN_BODY}" | python3 -c "
@@ -431,7 +431,7 @@ except:
 
     if [[ "${LOGIN_HTTP_CODE}" == "401" ]]; then
         print_remediation "1. Verify the admin user exists and is active (Step 5 above)"
-        print_remediation "2. Check the password is correct: admin@schoolflow.local / Admin@123456"
+        print_remediation "2. Check the password is correct: admin@guinee-academy.local / Admin@123456"
         print_remediation "3. Ensure password_hash is set (not NULL) for the admin user"
         print_remediation "4. Check bcrypt hash is valid: the hash must start with \$2b\$"
     elif [[ "${LOGIN_HTTP_CODE}" == "403" ]]; then
@@ -443,7 +443,7 @@ except:
     fi
 
     # No token means subsequent steps cannot run
-    echo "" > /tmp/schoolflow_diagnostic_token.txt
+    echo "" > /tmp/guinee_academy_diagnostic_token.txt
 fi
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -451,7 +451,7 @@ fi
 # ═══════════════════════════════════════════════════════════════════════════════
 print_step "7" "JWT Token Valid (Decode & Verify)"
 
-ACCESS_TOKEN=$(cat /tmp/schoolflow_diagnostic_token.txt 2>/dev/null || echo "")
+ACCESS_TOKEN=$(cat /tmp/guinee_academy_diagnostic_token.txt 2>/dev/null || echo "")
 
 if [[ -z "${ACCESS_TOKEN}" ]]; then
     print_warn "Skipped — no access token available (login failed in Step 6)"
@@ -545,7 +545,7 @@ fi
 # ═══════════════════════════════════════════════════════════════════════════════
 print_step "8" "Protected Endpoint Works (GET /api/v1/users/me/)"
 
-ACCESS_TOKEN=$(cat /tmp/schoolflow_diagnostic_token.txt 2>/dev/null || echo "")
+ACCESS_TOKEN=$(cat /tmp/guinee_academy_diagnostic_token.txt 2>/dev/null || echo "")
 
 if [[ -z "${ACCESS_TOKEN}" ]]; then
     print_warn "Skipped — no access token available (login failed in Step 6)"
@@ -606,7 +606,7 @@ except:
 fi
 
 # ── Cleanup ────────────────────────────────────────────────────────────────────
-rm -f /tmp/schoolflow_health.json /tmp/schoolflow_diagnostic_token.txt
+rm -f /tmp/guinee_academy_health.json /tmp/guinee_academy_diagnostic_token.txt
 
 # ── Summary ────────────────────────────────────────────────────────────────────
 print_summary

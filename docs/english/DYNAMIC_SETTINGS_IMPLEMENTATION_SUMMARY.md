@@ -548,7 +548,7 @@ Real-time:   Subscriptions (low server cost)
 
 ### Cas 1: Personnaliser Branding
 
-**Scénario**: Nouvelle école utilise SchoolFlow
+**Scénario**: Nouvelle école utilise Guinée Academy
 
 1. Admin va à `/admin/settings` → "Identité Visuelle"
 2. Upload le logo de l'école
@@ -653,7 +653,7 @@ Le **système de paramètres dynamiques** est maintenant:
 
 ---
 
-**Auteur**: SchoolFlow Pro Team  
+**Auteur**: Guinée Academy Team  
 **Date**: Janvier 20, 2025  
 **Version**: 1.0  
 **Status**: ✅ Production Ready

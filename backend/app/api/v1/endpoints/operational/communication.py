@@ -8,7 +8,7 @@ from uuid import UUID
 import datetime, json
 
 from app.core.database import get_db
-from app.core.security import get_current_user
+from app.core.security import get_current_user, require_permission
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -36,7 +36,8 @@ class ConversationCreate(BaseModel):
 @router.get("/announcements/")
 def get_announcements(
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user),
+    _=Depends(require_permission("communications:read"))
 ):
     try:
         tenant_id = current_user.get("tenant_id")
@@ -58,7 +59,8 @@ def get_announcements(
 def create_announcement(
     announcement: AnnouncementCreate,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user),
+    _=Depends(require_permission("communications:write"))
 ):
     try:
         tenant_id = current_user.get("tenant_id")
@@ -102,7 +104,8 @@ def create_announcement(
 def delete_announcement(
     announcement_id: UUID,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user),
+    _=Depends(require_permission("communications:write"))
 ):
     try:
         tenant_id = current_user.get("tenant_id")
@@ -124,7 +127,8 @@ def delete_announcement(
 @router.get("/messaging/users/")
 def get_messaging_users(
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user),
+    _=Depends(require_permission("communications:read"))
 ):
     try:
         tenant_id = current_user.get("tenant_id")
@@ -142,7 +146,8 @@ def get_messaging_users(
 @router.get("/messaging/teacher-recipients/")
 def get_teacher_recipients(
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user),
+    _=Depends(require_permission("communications:read"))
 ):
     try:
         user_id = current_user.get("id")
@@ -186,7 +191,8 @@ def get_teacher_recipients(
 @router.get("/conversations/")
 def list_conversations(
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user),
+    _=Depends(require_permission("communications:read"))
 ):
     try:
         """List all conversations for the current user with last message preview."""
@@ -245,7 +251,8 @@ def list_conversations(
 def create_or_find_conversation(
     body: ConversationCreate,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user),
+    _=Depends(require_permission("communications:write"))
 ):
     try:
         """Find or create a direct 1-on-1 conversation. Returns conversation_id."""
@@ -306,7 +313,8 @@ def get_messages(
     before: Optional[str] = None,
     limit: int = Query(50, ge=1, le=100),
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user),
+    _=Depends(require_permission("communications:read"))
 ):
     try:
         """Get messages for a conversation with pagination. Also marks messages as read."""
@@ -376,7 +384,8 @@ def send_message(
     conversation_id: str,
     body: MessageCreate,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user),
+    _=Depends(require_permission("communications:write"))
 ):
     try:
         """Send a message in a conversation."""
@@ -421,7 +430,8 @@ def send_message(
 @router.get("/messaging/unread-count/")
 def get_unread_count(
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user),
+    _=Depends(require_permission("communications:read"))
 ):
     try:
         """Return total unread message count for the current user — used for polling."""
@@ -442,7 +452,8 @@ def get_unread_count(
 def poll_new_messages(
     since: str = Query(..., description="ISO timestamp: return messages after this"),
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user),
+    _=Depends(require_permission("communications:read"))
 ):
     try:
         """Long-poll endpoint: returns new messages since timestamp — replaces Supabase Realtime."""
@@ -476,7 +487,7 @@ def poll_new_messages(
 # --- Forums ---
 
 @router.get("/forums/")
-def list_forums(db: Session = Depends(get_db), current_user: dict = Depends(get_current_user)):
+def list_forums(db: Session = Depends(get_db), current_user: dict = Depends(get_current_user), _=Depends(require_permission("communications:read"))):
     try:
         tenant_id = current_user.get("tenant_id")
         if not tenant_id:
@@ -495,7 +506,7 @@ def list_forums(db: Session = Depends(get_db), current_user: dict = Depends(get_
         raise HTTPException(status_code=500, detail="An internal error occurred.")
 
 @router.get("/forums/post-counts/")
-def get_forum_post_counts(db: Session = Depends(get_db), current_user: dict = Depends(get_current_user)):
+def get_forum_post_counts(db: Session = Depends(get_db), current_user: dict = Depends(get_current_user), _=Depends(require_permission("communications:read"))):
     try:
         tenant_id = current_user.get("tenant_id")
         if not tenant_id:
@@ -514,7 +525,7 @@ def get_forum_post_counts(db: Session = Depends(get_db), current_user: dict = De
         raise HTTPException(status_code=500, detail="An internal error occurred.")
 
 @router.post("/forums/")
-def create_forum(body: dict, db: Session = Depends(get_db), current_user: dict = Depends(get_current_user)):
+def create_forum(body: dict, db: Session = Depends(get_db), current_user: dict = Depends(get_current_user), _=Depends(require_permission("communications:write"))):
     try:
         tenant_id = current_user.get("tenant_id")
         user_id = current_user.get("id")
@@ -540,7 +551,7 @@ def create_forum(body: dict, db: Session = Depends(get_db), current_user: dict =
         raise HTTPException(status_code=500, detail="An internal error occurred.")
 
 @router.patch("/forums/{forum_id}/")
-def update_forum(forum_id: UUID, body: dict, db: Session = Depends(get_db), current_user: dict = Depends(get_current_user)):
+def update_forum(forum_id: UUID, body: dict, db: Session = Depends(get_db), current_user: dict = Depends(get_current_user), _=Depends(require_permission("communications:write"))):
     try:
         tenant_id = current_user.get("tenant_id")
         if not tenant_id:
@@ -565,7 +576,7 @@ def update_forum(forum_id: UUID, body: dict, db: Session = Depends(get_db), curr
         raise HTTPException(status_code=500, detail="An internal error occurred.")
 
 @router.delete("/forums/{forum_id}/")
-def delete_forum(forum_id: UUID, db: Session = Depends(get_db), current_user: dict = Depends(get_current_user)):
+def delete_forum(forum_id: UUID, db: Session = Depends(get_db), current_user: dict = Depends(get_current_user), _=Depends(require_permission("communications:write"))):
     try:
         tenant_id = current_user.get("tenant_id")
         if not tenant_id:
@@ -598,6 +609,7 @@ def send_notification_email(
     payload: NotificationEmailPayload,
     db: Session = Depends(get_db),
     current_user: dict = Depends(get_current_user),
+    _=Depends(require_permission("communications:write")),
 ):
     """
     POST /communication/send-notification-email/

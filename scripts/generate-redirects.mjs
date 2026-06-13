@@ -9,10 +9,10 @@
  *   de redirection. Ce script les injecte au moment du build.
  *
  * Usage (local) :
- *   VITE_API_URL=https://schoolflow-api.onrender.com node scripts/generate-redirects.mjs
+ *   VITE_API_URL=https://guinee-academy-api.onrender.com node scripts/generate-redirects.mjs
  *
  * Netlify Dashboard → Site settings → Env vars :
- *   VITE_API_URL = https://schoolflow-api-xxxx.onrender.com   ← OBLIGATOIRE
+ *   VITE_API_URL = https://guinee-academy-api-xxxx.onrender.com   ← OBLIGATOIRE
  */
 
 import fs from "fs";
@@ -29,7 +29,7 @@ if (!apiUrl) {
   console.warn(
     "⚠️  VITE_API_URL non défini — les règles de proxy API ne seront pas générées.\n" +
     "   Définis VITE_API_URL dans Netlify Dashboard → Site settings → Env vars.\n" +
-    "   Exemple : VITE_API_URL=https://schoolflow-api-xxxx.onrender.com"
+    "   Exemple : VITE_API_URL=https://guinee-academy-api-xxxx.onrender.com"
   );
 }
 

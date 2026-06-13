@@ -1,5 +1,5 @@
 /**
- * SchoolFlow Pro — E2E Global Setup
+ * Guinée Academy — E2E Global Setup
  * Waits for all services to be ready before running tests.
  */
 
@@ -25,15 +25,15 @@ async function waitForUrl(url: string, maxAttempts = 40, label = url): Promise<v
 }
 
 export default async () => {
-  console.log('\n🧪 SchoolFlow Pro — E2E environment setup\n');
+  console.log('\n🧪 Guinée Academy — E2E environment setup\n');
 
   // ── 1. Check required Docker containers ──────────────────────────────────
-  const REQUIRED = ['schoolflow-pro-postgres-1', 'schoolflow-pro-api-1'];
+  const REQUIRED = ['guinee-academy-postgres-1', 'guinee-academy-api-1'];
   try {
     const { stdout } = await execAsync('docker ps --format "{{.Names}}"');
     const running = stdout.split('\n');
     for (const name of REQUIRED) {
-      if (!running.some(n => n.includes(name.replace('schoolflow-pro-', '')))) {
+      if (!running.some(n => n.includes(name.replace('guinee-academy-', '')))) {
         console.warn(`  ⚠️  Container '${name}' not detected — tests may fail.`);
       }
     }
