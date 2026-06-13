@@ -17,7 +17,7 @@ from sqlalchemy import text
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
-from app.core.security import get_current_user
+from app.core.security import get_current_user, require_permission
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -140,7 +140,7 @@ def global_search(
     types: Optional[str] = Query(None, description="Comma-separated resource types. Default: all"),
     limit: int = Query(5, ge=1, le=20, description="Max results per resource type"),
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(require_permission("search:read")),
 ):
     """Global search across all tenant resources.
 
@@ -217,7 +217,7 @@ def global_search(
 
 @router.get("/types/")
 def list_searchable_types(
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(require_permission("search:read")),
 ):
     """List all searchable resource types."""
     return {

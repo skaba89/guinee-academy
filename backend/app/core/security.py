@@ -255,6 +255,7 @@ ROLE_PERMISSIONS: dict = {
         "attendance:read", "attendance:write",
         "homework:read", "homework:write",
         "assessments:read", "assessments:write",
+        "enrollments:read", "enrollments:write",
         # Academic structure
         "academic_years:read", "academic_years:write",
         "terms:read", "terms:write",
@@ -287,6 +288,12 @@ ROLE_PERMISSIONS: dict = {
         "mfa:manage",
         "analytics:read",
         "audit:read",
+        # Gamification & Achievements
+        "achievements:read", "achievements:write",
+        "gamification:read", "gamification:write",
+        # Search & Storage
+        "search:read",
+        "storage:write",
         # Settings (but NOT RGPD deletion)
         "settings:read", "settings:write",
         # EXPLICITLY EXCLUDED: "rgpd:delete", "tenants:write", "tenants:delete"
@@ -316,6 +323,13 @@ ROLE_PERMISSIONS: dict = {
         "alumni:read",
         "billing:read",
         "mfa:manage",
+        # Gamification & Achievements
+        "achievements:read", "achievements:write",
+        "gamification:read", "gamification:write",
+        # Search & Storage
+        "search:read",
+        "storage:write",
+        "enrollments:read", "enrollments:write",
     ],
     "DEPARTMENT_HEAD": [
         "users:read",
@@ -334,6 +348,8 @@ ROLE_PERMISSIONS: dict = {
         "homework:read", "homework:write",
         "assessments:read", "assessments:write",
         "incidents:read",
+        "achievements:read", "gamification:read",
+        "search:read", "enrollments:read",
     ],
     "TEACHER": [
         "users:read",
@@ -351,17 +367,22 @@ ROLE_PERMISSIONS: dict = {
         "incidents:read", "incidents:write",
         "departments:read",
         "surveys:read",
+        "achievements:read", "achievements:write", "gamification:read",
+        "search:read", "storage:write", "enrollments:read",
     ],
     "STUDENT": ["me:read", "grades:read", "attendance:read", "schedule:read", "settings:read",
                 "homework:read", "library:read", "school_life:read", "communications:read",
-                "surveys:read", "clubs:read", "alumni:read"],
+                "surveys:read", "clubs:read", "alumni:read",
+                "achievements:read", "gamification:read", "search:read"],
     "PARENT": ["me:read", "students:read", "grades:read", "attendance:read", "settings:read",
                "parents:read", "parents:write", "payments:write", "library:read",
                "school_life:read", "communications:read", "surveys:read",
-               "clubs:read", "incidents:read", "billing:read"],
+               "clubs:read", "incidents:read", "billing:read",
+               "achievements:read", "gamification:read", "search:read"],
     "ALUMNI": ["students:read", "grades:read", "attendance:read", "schedule:read", "subjects:read",
                 "library:read", "alumni:read", "alumni:write", "communications:read",
-                "surveys:read", "clubs:read"],
+                "surveys:read", "clubs:read",
+                "achievements:read", "gamification:read", "search:read"],
     "STAFF": ["users:read", "students:read", "students:write", "attendance:read",
               "settings:read",
               "admissions:read", "admissions:write", "inventory:read", "inventory:write",
@@ -369,10 +390,13 @@ ROLE_PERMISSIONS: dict = {
               "school_life:read", "school_life:write",
               "communications:read", "incidents:read", "incidents:write",
               "clubs:read", "clubs:write",
-              "surveys:read"],
+              "surveys:read",
+              "achievements:read", "achievements:write", "gamification:read",
+              "search:read", "storage:write", "enrollments:read"],
     "ACCOUNTANT": ["finance:read", "finance:write", "students:read", "payments:read", "payments:write",
                     "inventory:read", "settings:read", "parents:read",
-                    "billing:read", "admissions:read"],
+                    "billing:read", "admissions:read",
+                    "search:read", "enrollments:read"],
     "SECRETARY": ["users:read", "students:read", "students:write", "attendance:read", "attendance:write",
                   "grades:read", "settings:read",
                   "admissions:read", "admissions:write",
@@ -387,7 +411,9 @@ ROLE_PERMISSIONS: dict = {
                   "departments:read",
                   "billing:read",
                   "homework:read",
-                  "assessments:read"],
+                  "assessments:read",
+                  "achievements:read", "achievements:write", "gamification:read",
+                  "search:read", "storage:write"],
 }
 
 def require_permission(permission: str):

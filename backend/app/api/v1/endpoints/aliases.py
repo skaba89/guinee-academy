@@ -65,7 +65,7 @@ def create_enrollment_alias(
 def enrollment_counts_alias(
     class_ids: List[UUID] = Query(...),
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(require_permission("enrollments:read")),
 ):
     """GET /enrollments/counts/ — mirrors GET /infrastructure/enrollments/counts/"""
     tenant_id = current_user.get("tenant_id")
@@ -268,7 +268,7 @@ class_sessions_router = APIRouter()
 @class_sessions_router.get("/")
 def list_class_sessions(
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(require_permission("schedule:read")),
 ):
     """GET /class-sessions/ — list class sessions."""
     tenant_id = current_user.get("tenant_id")
@@ -308,7 +308,7 @@ def list_class_sessions(
 @class_sessions_router.get("/active/")
 def list_active_class_sessions(
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(require_permission("schedule:read")),
 ):
     """GET /class-sessions/active/ — list currently active sessions."""
     tenant_id = current_user.get("tenant_id")
@@ -354,7 +354,7 @@ school_events_router = APIRouter()
 @school_events_router.get("/")
 def list_school_events(
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(require_permission("school_life:read")),
     start_after: Optional[datetime] = Query(None),
 ):
     """GET /school-events/ — mirrors GET /school-life/events/"""
@@ -756,7 +756,7 @@ def list_rooms_alias(
     tenant_id: Optional[str] = Query(None),
     ordering: Optional[str] = Query(None, description="Field to order by (e.g. name)"),
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(require_permission("rooms:read")),
 ):
     """GET /rooms/ — mirrors GET /infrastructure/rooms/"""
     from app.crud import academic as crud
@@ -791,7 +791,7 @@ def create_room_alias(
 @rooms_alias_router.get("/count/")
 def count_rooms_alias(
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(require_permission("rooms:read")),
 ):
     """GET /rooms/count/ — mirrors GET /infrastructure/rooms/count/"""
     from sqlalchemy import text
@@ -819,7 +819,7 @@ def list_classrooms_alias(
     level_id: Optional[str] = Query(None),
     department_id: Optional[str] = Query(None),
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(require_permission("rooms:read")),
 ):
     """GET /classrooms/ — mirrors GET /infrastructure/classrooms/ with optional filters."""
     from app.crud import academic as crud
@@ -868,7 +868,7 @@ def list_schedule_slots_alias(
     class_id: Optional[str] = Query(None),
     tenant_id: Optional[str] = Query(None),
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(require_permission("schedule:read")),
 ):
     """GET /schedule-slots/ — mirrors GET /schedule/"""
     from sqlalchemy import text as sql_text
@@ -926,7 +926,7 @@ parents_list_alias_router = APIRouter()
 @parents_list_alias_router.get("/")
 def list_all_parents(
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(require_permission("parents:read")),
     search: Optional[str] = Query(None),
 ):
     """GET /parents/ — list all parents for the tenant."""
@@ -973,7 +973,7 @@ class AchievementDefCreate(BaseModel):
 @achievement_router.get("/")
 def list_achievement_definitions(
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(require_permission("achievements:read")),
 ):
     tenant_id = current_user.get("tenant_id")
     rows = db.execute(text("""
@@ -989,7 +989,7 @@ def list_achievement_definitions(
 def create_achievement_definition(
     body: AchievementDefCreate,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(require_permission("achievements:write")),
 ):
     tenant_id = current_user.get("tenant_id")
     row = db.execute(text("""
@@ -1012,7 +1012,7 @@ def update_achievement_definition(
     achievement_id: str,
     body: dict,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(require_permission("achievements:write")),
 ):
     tenant_id = current_user.get("tenant_id")
     allowed = {"name", "description", "icon", "category", "points_value", "trigger_type", "trigger_threshold", "is_active"}
@@ -1037,7 +1037,7 @@ def update_achievement_definition(
 def delete_achievement_definition(
     achievement_id: str,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(require_permission("achievements:write")),
 ):
     tenant_id = current_user.get("tenant_id")
     db.execute(text("DELETE FROM achievement_definitions WHERE id = :id AND tenant_id = :tid"),
@@ -1055,7 +1055,7 @@ student_achievement_router = APIRouter()
 @student_achievement_router.get("/")
 def list_student_achievements(
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(require_permission("achievements:read")),
     student_id: Optional[str] = Query(None),
 ):
     tenant_id = current_user.get("tenant_id")
@@ -1079,7 +1079,7 @@ def list_student_achievements(
 def award_student_achievement(
     body: dict,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(require_permission("achievements:write")),
 ):
     tenant_id = current_user.get("tenant_id")
     user_id = current_user.get("id")
@@ -1113,7 +1113,7 @@ gamification_router = APIRouter()
 def process_gamification_event(
     body: dict,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(require_permission("gamification:write")),
 ):
     """Process a gamification event and award matching achievements."""
     tenant_id = current_user.get("tenant_id")
@@ -1151,7 +1151,7 @@ def process_gamification_event(
 def list_gamification_rules(
     is_active: Optional[str] = None,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(require_permission("gamification:read")),
 ):
     """GET /gamification/rules/ — list tenant's gamification rules."""
     tenant_id = current_user.get("tenant_id")
@@ -1267,7 +1267,7 @@ def delete_gamification_rule(
 def list_gamification_event_logs(
     limit: int = Query(100, le=500),
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(require_permission("gamification:read")),
 ):
     """GET /gamification/event-logs/ — list recent gamification events."""
     tenant_id = current_user.get("tenant_id")
@@ -1433,7 +1433,7 @@ def list_shared_notes(
     ordering: str = "-is_pinned,-created_at",
     limit: int = Query(50, le=200),
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(require_permission("school_life:read")),
 ):
     """GET /shared-notes/"""
     tenant_id = current_user.get("tenant_id")
@@ -1466,7 +1466,7 @@ def list_shared_notes(
 def create_shared_note(
     body: dict,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(require_permission("school_life:write")),
 ):
     """POST /shared-notes/"""
     tenant_id = current_user.get("tenant_id")
@@ -1495,7 +1495,7 @@ def create_shared_note(
 def delete_shared_note(
     note_id: str,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(require_permission("school_life:write")),
 ):
     """DELETE /shared-notes/{id}"""
     tenant_id = current_user.get("tenant_id")
@@ -1512,7 +1512,7 @@ def list_note_likes(
     note_id__in: Optional[str] = None,
     user_id: Optional[str] = None,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(require_permission("school_life:read")),
 ):
     """GET /shared-note-likes/"""
     where = []
@@ -1540,7 +1540,7 @@ def list_note_likes(
 def like_note(
     body: dict,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(require_permission("school_life:write")),
 ):
     """POST /shared-note-likes/"""
     user_id = current_user.get("id")
@@ -1562,7 +1562,7 @@ def like_note(
 def unlike_note(
     note_id: str,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(require_permission("school_life:write")),
 ):
     """DELETE /shared-note-likes/?note_id=X"""
     user_id = current_user.get("id")
@@ -1581,7 +1581,7 @@ def list_note_comments(
     note_id__in: Optional[str] = None,
     ordering: str = "created_at",
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(require_permission("school_life:read")),
 ):
     """GET /shared-note-comments/"""
     where = []
@@ -1624,7 +1624,7 @@ def list_note_comments(
 def create_note_comment(
     body: dict,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(require_permission("school_life:write")),
 ):
     """POST /shared-note-comments/"""
     user_id = current_user.get("id")
@@ -1653,7 +1653,7 @@ def list_courses_alias(
     ordering: str = "-created_at",
     limit: int = Query(20, le=100),
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(require_permission("school_life:read")),
 ):
     """GET /courses/ — alias for /analytics/elearning/courses/"""
     tenant_id = current_user.get("tenant_id")
@@ -1695,7 +1695,7 @@ def list_course_discussions(
     ordering: str = "-created_at",
     limit: int = Query(10, le=100),
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(require_permission("communications:read")),
 ):
     """GET /course-discussions/"""
     tenant_id = current_user.get("tenant_id")
@@ -1733,7 +1733,7 @@ def list_course_discussions(
 def create_course_discussion(
     body: dict,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(require_permission("communications:write")),
 ):
     """POST /course-discussions/"""
     tenant_id = current_user.get("tenant_id")
@@ -1767,7 +1767,7 @@ def list_student_check_ins(
     student_id: Optional[str] = None,
     classroom_id: Optional[str] = None,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(require_permission("attendance:read")),
 ):
     """GET /student-check-ins/ — list check-in records."""
     tenant_id = current_user.get("tenant_id")
@@ -1814,7 +1814,7 @@ def list_student_badges(
     student_id: Optional[str] = None,
     classroom_id: Optional[str] = None,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(require_permission("school_life:read")),
 ):
     """GET /student-badges/"""
     tenant_id = current_user.get("tenant_id")
@@ -1954,7 +1954,7 @@ def list_point_transactions(
     student_id: Optional[str] = None,
     limit: int = Query(100, le=500),
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(require_permission("gamification:read")),
 ):
     """GET /point-transactions/ — list gamification point transactions."""
     tenant_id = current_user.get("tenant_id")
@@ -2021,7 +2021,7 @@ quiz_questions_router = APIRouter()
 def list_quiz_questions(
     quiz_id: Optional[str] = None,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(require_permission("homework:read")),
 ):
     """GET /quiz-questions/?quiz_id=X"""
     tenant_id = current_user.get("tenant_id")

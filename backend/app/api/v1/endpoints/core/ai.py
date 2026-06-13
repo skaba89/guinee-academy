@@ -85,7 +85,7 @@ class AIRequest(BaseModel):
 @router.post("/generate/")
 def generate_ai_content(
     req: AIRequest,
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(require_plan("pro")),
 ):
     """Legacy mock AI content generation (kept for backward compatibility)."""
     if req.type == "SUMMARY":

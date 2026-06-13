@@ -250,7 +250,7 @@ class ParentAlertRequest(BaseModel):
 def send_parent_alert(
     body: ParentAlertRequest,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(require_permission("communications:write"))
 ):
     """
     Send a notification to parents of a student.
