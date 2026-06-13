@@ -91,7 +91,7 @@ async def upload_file(request: Request, file: UploadFile = File(...), current_us
 @router.get("/presigned-url/{object_name:path}/")
 @router.get("/presigned-url/{object_name:path}")
 @limiter.limit("10/minute")
-async def get_presigned_url(request: Request, object_name: str, current_user: dict = Depends(get_current_user)):
+async def get_presigned_url(request: Request, object_name: str, current_user: dict = Depends(require_permission("storage:write"))):
     try:
         # SECURITY: Sanitize object_name to prevent path traversal
         if ".." in object_name or object_name.startswith("/"):

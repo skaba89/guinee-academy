@@ -9,7 +9,7 @@ function resolvePublicBaseUrl(): string {
   const runtimeCfg = (window as any).__GUINEE_ACADEMY_CONFIG__;
   if (runtimeCfg?.API_URL && typeof runtimeCfg.API_URL === 'string') {
     const url = runtimeCfg.API_URL.trim();
-    if (url) return `${url}/api/v1`;
+    if (url) return `${url.replace(/\/api\/?$/, '')}/api/v1`;
   }
 
   // Priority 2: build-time env
@@ -19,7 +19,7 @@ function resolvePublicBaseUrl(): string {
     if (!isBrowserLocal && /localhost|127\.0\.0\.1/.test(envUrl)) {
       return '/api/v1'; // fall back to proxy
     }
-    return `${envUrl}/api/v1`;
+    return `${envUrl.replace(/\/api\/?$/, '')}/api/v1`;
   }
 
   // Priority 3: defaults

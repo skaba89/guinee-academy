@@ -517,7 +517,7 @@ class PushSubscriptionUpsert(BaseModel):
 def upsert_push_subscription(
     subscription_in: PushSubscriptionUpsert,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(require_permission("notifications:write")),
 ):
     """POST /push-subscriptions/upsert/ — mirrors POST /notifications/subscriptions/"""
     from app.models import PushSubscription
@@ -559,7 +559,7 @@ def upsert_push_subscription(
 def delete_push_subscription(
     endpoint: Optional[str] = Query(None),
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(require_permission("notifications:write")),
 ):
     """DELETE /push-subscriptions/ — mirrors DELETE /notifications/subscriptions/"""
     from app.models import PushSubscription
@@ -582,7 +582,7 @@ class OneSignalLinkPayload(BaseModel):
 async def onesignal_link_user(
     payload: OneSignalLinkPayload,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(require_permission("notifications:write")),
 ):
     """
     POST /push-subscriptions/onesignal-link/
@@ -666,7 +666,7 @@ class PresenceUpdate(BaseModel):
 def update_presence(
     body: PresenceUpdate,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(require_permission("communications:write")),
 ):
     """PUT /presence/ — update user presence status.
 

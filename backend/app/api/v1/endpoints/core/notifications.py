@@ -18,7 +18,7 @@ router = APIRouter()
 @router.get("/subscriptions/", response_model=List[PushSubscriptionInDB])
 def read_subscriptions(
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(require_permission("notifications:read")),
 ):
     """Get all push subscriptions for the current user."""
     user_id = current_user.get("id")
@@ -29,7 +29,7 @@ def read_subscriptions(
 def create_subscription(
     subscription_in: PushSubscriptionCreate,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(require_permission("notifications:write")),
 ):
     """Create or update a push subscription."""
     user_id = current_user.get("id")
@@ -67,7 +67,7 @@ def create_subscription(
 def delete_subscription(
     endpoint: str = None,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(require_permission("notifications:write")),
 ):
     """Delete push subscriptions."""
     user_id = current_user.get("id")
@@ -83,7 +83,7 @@ def delete_subscription(
 @router.get("/")
 def read_notifications(
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(require_permission("notifications:read")),
     limit: int = Query(50, ge=1, le=100),
     unread_only: bool = False,
 ):
@@ -169,7 +169,7 @@ def update_notification(
     notification_id: UUID,
     update_in: NotificationUpdate,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(require_permission("notifications:write"))
 ):
     """Update notification status (mark as read)."""
     user_id = current_user.get("id")
@@ -191,7 +191,7 @@ def update_notification(
 @router.post("/mark-all-read/")
 def mark_all_as_read(
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(require_permission("notifications:write"))
 ):
     """Mark all notifications as read for current user."""
     user_id = current_user.get("id")
@@ -206,7 +206,7 @@ def mark_all_as_read(
 def delete_notification(
     notification_id: UUID,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(require_permission("notifications:write"))
 ):
     """Delete a specific notification."""
     user_id = current_user.get("id")
@@ -220,7 +220,7 @@ def delete_notification(
 @router.delete("/clear-read/", status_code=status.HTTP_204_NO_CONTENT)
 def clear_read_notifications(
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(require_permission("notifications:write"))
 ):
     """Delete all read notifications for current user."""
     user_id = current_user.get("id")

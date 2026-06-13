@@ -204,7 +204,7 @@ def delete_teacher_assignment(
 @router.get("/dashboard/")
 def get_teacher_dashboard(
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(require_permission("hr:read"))
 ):
     """Retrieve all aggregated metrics for the Teacher Dashboard."""
     teacher_id = current_user.get("id")

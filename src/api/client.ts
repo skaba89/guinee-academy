@@ -57,7 +57,7 @@ function resolveApiBaseUrl(rawValue?: string): string {
 }
 
 export const apiClient = axios.create({
-  baseURL: `${resolveApiBaseUrl(import.meta.env.VITE_API_URL)}/api/v1`,
+  baseURL: `${resolveApiBaseUrl(import.meta.env.VITE_API_URL).replace(/\/api\/?$/, '')}/api/v1`,
   timeout: API_TIMEOUT_MS,
   headers: {
     'Content-Type': 'application/json',

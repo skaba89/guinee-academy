@@ -619,13 +619,20 @@ async def lifespan(app: FastAPI):
         command.upgrade(alembic_cfg, "head")
         logger.info("Alembic auto-migration: upgrade head succeeded")
     except Exception as alembic_err:
-        logger.critical(
-            "Alembic migration FAILED: %s — refusing to start. "
-            "Fix the migration and retry. Do NOT use create_all as a fallback "
-            "as it may create an incomplete or inconsistent schema.",
-            alembic_err,
-        )
-        raise SystemExit(1)
+        if settings.is_sqlite:
+            logger.warning(
+                "Alembic migration skipped for SQLite (PostgreSQL-specific SQL): %s. "
+                "Falling back to create_all.",
+                alembic_err,
+            )
+        else:
+            logger.critical(
+                "Alembic migration FAILED: %s — refusing to start. "
+                "Fix the migration and retry. Do NOT use create_all as a fallback "
+                "as it may create an incomplete or inconsistent schema.",
+                alembic_err,
+            )
+            raise SystemExit(1)
 
     # create_all uniquement en mode SQLite/développement local sans Alembic
     # En production PostgreSQL, Alembic est l'unique source de vérité.
@@ -705,7 +712,7 @@ async def lifespan(app: FastAPI):
                     db.flush()
                     db.execute(
                         text("INSERT INTO user_roles (id, user_id, role, tenant_id, created_at, updated_at) "
-                             "VALUES (:id, :uid, 'SUPER_ADMIN', NULL, NOW(), NOW())"),
+                             "VALUES (:id, :uid, 'SUPER_ADMIN', NULL, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)"),
                         {"id": str(uuid.uuid4()), "uid": admin_id}
                     )
                     db.commit()

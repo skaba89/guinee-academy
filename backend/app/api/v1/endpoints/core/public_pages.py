@@ -13,7 +13,7 @@ import traceback
 import logging
 
 from app.core.database import get_db
-from app.core.security import get_current_user
+from app.core.security import get_current_user, require_permission
 from app.utils.audit import log_audit
 from app.schemas.public_pages import (
     PublicPageCreate,
@@ -85,7 +85,7 @@ admin_router = APIRouter()
 async def create_public_page(
     page_in: PublicPageCreate,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(require_permission("settings:write")),
 ):
     """
     Create a new public page for the current tenant.
@@ -226,7 +226,7 @@ async def update_public_page(
     page_id: UUID,
     page_in: PublicPageUpdate,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(require_permission("settings:write")),
 ):
     """
     Update an existing public page.
@@ -297,7 +297,7 @@ async def update_public_page(
 async def delete_public_page(
     page_id: UUID,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(require_permission("settings:write")),
 ):
     """
     Delete a public page.
@@ -335,7 +335,7 @@ async def delete_public_page(
 async def reorder_public_pages(
     reorder_in: PageReorderRequest,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(require_permission("settings:write")),
 ):
     """
     Reorder pages by updating sort_order for multiple pages.

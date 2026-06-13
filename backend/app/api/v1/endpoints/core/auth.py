@@ -288,14 +288,25 @@ async def login(request: Request, form_data: OAuth2PasswordRequestForm = Depends
 
             if not mfa_enabled:
                 if enforce_mfa:
-                    logger.warning(
-                        "Login blocked: user '%s' has privileged role(s) %s but MFA is not enabled (ENFORCE_MFA=true)",
-                        user.email, user_privileged_roles
-                    )
-                    raise HTTPException(
-                        status_code=status.HTTP_403_FORBIDDEN,
-                        detail="L'authentification multi-facteurs (MFA) est obligatoire pour ce compte. Veuillez activer le MFA via les paramètres de sécurité.",
-                    )
+                    # SECURITY: Allow SUPER_ADMIN a grace login to configure MFA
+                    # This prevents a chicken-and-egg deadlock where the admin
+                    # cannot log in to enable MFA because MFA is required to log in.
+                    is_super_admin = "SUPER_ADMIN" in user_privileged_roles
+                    if is_super_admin:
+                        logger.warning(
+                            "Grace login: user '%s' is SUPER_ADMIN without MFA — "
+                            "allowing one-time access to configure MFA",
+                            user.email
+                        )
+                    else:
+                        logger.warning(
+                            "Login blocked: user '%s' has privileged role(s) %s but MFA is not enabled (ENFORCE_MFA=true)",
+                            user.email, user_privileged_roles
+                        )
+                        raise HTTPException(
+                            status_code=status.HTTP_403_FORBIDDEN,
+                            detail="L'authentification multi-facteurs (MFA) est obligatoire pour ce compte. Veuillez activer le MFA via les paramètres de sécurité.",
+                        )
                 else:
                     logger.warning(
                         "MFA not enabled for user '%s' with privileged roles %s. "

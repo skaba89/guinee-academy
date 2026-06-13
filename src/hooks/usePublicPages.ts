@@ -57,7 +57,7 @@ function resolvePublicBaseUrl(): string {
   const runtimeCfg = (window as any).__GUINEE_ACADEMY_CONFIG__;
   if (runtimeCfg?.API_URL && typeof runtimeCfg.API_URL === 'string') {
     const url = runtimeCfg.API_URL.trim();
-    if (url) return `${url}/api/v1`;
+    if (url) return `${url.replace(/\/api\/?$/, '')}/api/v1`;
   }
   const envUrl = import.meta.env.VITE_API_URL?.trim();
   if (envUrl) {
@@ -65,7 +65,7 @@ function resolvePublicBaseUrl(): string {
     if (!isBrowserLocal && /localhost|127\.0\.0\.1/.test(envUrl)) {
       return '/api/v1';
     }
-    return `${envUrl}/api/v1`;
+    return `${envUrl.replace(/\/api\/?$/, '')}/api/v1`;
   }
   const isBrowserLocal = /localhost|127\.0\.0\.1/.test(window.location.hostname);
   return isBrowserLocal ? 'http://localhost:8000/api/v1' : '/api/v1';
