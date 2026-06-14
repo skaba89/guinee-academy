@@ -93,6 +93,12 @@ class TenantMiddleware(BaseHTTPMiddleware):
         if "SUPER_ADMIN" in user_roles and not tenant_id:
             return await call_next(request)
 
+        # If no tenant_id in JWT but user has is_superuser flag, allow through.
+        # This handles bootstrap scenarios where the roles table may be empty
+        # but is_superuser=True is set on the user record.
+        if payload and payload.get("is_superuser") and not tenant_id:
+            return await call_next(request)
+
         if not tenant_id:
             # SECURITY: Reject authenticated requests without tenant_id
             if auth_header and auth_header.startswith("Bearer "):

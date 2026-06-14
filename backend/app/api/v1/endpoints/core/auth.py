@@ -268,6 +268,7 @@ async def login(request: Request, form_data: OAuth2PasswordRequestForm = Depends
                     "preferred_username": user.username,
                     "tenant_id": str(user.tenant_id) if user.tenant_id else None,
                     "roles": roles,
+                    "is_superuser": getattr(user, "is_superuser", False),
                     "jti": token_jti,
                     "tv": token_version,
                 }

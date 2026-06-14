@@ -745,6 +745,21 @@ async def lifespan(app: FastAPI):
                     existing.is_superuser = True
                     db.commit()
                     logger.info("Super admin password updated successfully")
+
+                # Ensure SUPER_ADMIN role exists (may be missing after DB reset/migration)
+                from app.models.user_role import UserRole
+                existing_role = db.query(UserRole).filter(
+                    UserRole.user_id == existing.id,
+                    UserRole.role == "SUPER_ADMIN"
+                ).first()
+                if not existing_role:
+                    db.execute(
+                        text("INSERT INTO user_roles (id, user_id, role, tenant_id, created_at, updated_at) "
+                             "VALUES (:id, :uid, 'SUPER_ADMIN', NULL, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)"),
+                        {"id": str(uuid.uuid4()), "uid": str(existing.id)}
+                    )
+                    db.commit()
+                    logger.info("Super admin role SUPER_ADMIN re-created for %s", admin_email)
                 elif needs_update:
                     logger.warning(
                         "Super admin needs password reset but ADMIN_DEFAULT_PASSWORD is not set "
