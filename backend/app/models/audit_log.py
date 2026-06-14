@@ -1,9 +1,12 @@
 """Audit log model for tracking system actions"""
-from sqlalchemy import Column, String, JSON, Text
-from app.models.base import Base, GUID, UUIDMixin, TimestampMixin, TenantMixin
+from sqlalchemy import Column, String, JSON, Text, ForeignKey
+from app.models.base import Base, GUID, UUIDMixin, TimestampMixin
 
-class AuditLog(Base, UUIDMixin, TimestampMixin, TenantMixin):
+class AuditLog(Base, UUIDMixin, TimestampMixin):
     __tablename__ = "audit_logs"
+
+    # Tenant ID — nullable for platform-level actions (SUPER_ADMIN without tenant)
+    tenant_id = Column(GUID(), ForeignKey("tenants.id", ondelete="CASCADE"), nullable=True, index=True)
 
     # User who performed the action (User ID)
     user_id = Column(String(255), nullable=False, index=True)

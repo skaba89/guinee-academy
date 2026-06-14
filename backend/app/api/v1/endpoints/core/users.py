@@ -5,6 +5,7 @@ from pydantic import BaseModel, EmailStr, Field
 from sqlalchemy.orm import Session
 from sqlalchemy import text
 from uuid import UUID
+import uuid
 import math
 
 from app.core.database import get_db
@@ -16,6 +17,22 @@ import logging
 logger = logging.getLogger(__name__)
 
 router = APIRouter()
+
+
+def _guid(value):
+    """Convert a UUID value to the correct format for raw SQL parameters.
+
+    SQLAlchemy's GUID type stores UUIDs as hex (32-char, no hyphens) on SQLite,
+    but as native UUID on PostgreSQL.  When using raw SQL (``text()``) we bypass
+    SQLAlchemy's type-conversion layer, so we must normalise manually.
+    """
+    if value is None:
+        return value
+    from uuid import UUID as _UUID
+    try:
+        return _UUID(str(value)).hex if settings.is_sqlite else str(value)
+    except (ValueError, AttributeError):
+        return value
 
 
 # ─── Schemas (inline for simplicity) ─────────────────────────────────────────
@@ -74,36 +91,36 @@ def read_users_me(
     try:
         sql_user = text("""
             SELECT 
-                CAST(u.id AS VARCHAR), u.email, u.first_name, u.last_name, 
+                CAST(u.id AS VARCHAR) as id, u.email, u.first_name, u.last_name, 
                 u.is_active, u.avatar_url, u.created_at, u.tenant_id,
                 t.slug as tenant_slug, t.name as tenant_name,
                 t.settings as tenant_settings, t.type as tenant_type,
                 u.mfa_enabled,
                 COALESCE(u.must_change_password, false) as must_change_password
             FROM users u
-            LEFT JOIN tenants t ON t.id = u.tenant_id
+            LEFT JOIN tenants t ON CAST(t.id AS VARCHAR) = CAST(u.tenant_id AS VARCHAR)
             WHERE u.id = :user_id
         """)
-        row = db.execute(sql_user, {"user_id": user_id}).fetchone()
+        row = db.execute(sql_user, {"user_id": _guid(user_id)}).fetchone()
     except Exception:
         logger.warning("must_change_password column missing, using fallback query for /users/me/")
         sql_user = text("""
             SELECT 
-                CAST(u.id AS VARCHAR), u.email, u.first_name, u.last_name, 
+                CAST(u.id AS VARCHAR) as id, u.email, u.first_name, u.last_name, 
                 u.is_active, u.avatar_url, u.created_at, u.tenant_id,
                 t.slug as tenant_slug, t.name as tenant_name,
                 t.settings as tenant_settings, t.type as tenant_type,
                 u.mfa_enabled,
                 false as must_change_password
             FROM users u
-            LEFT JOIN tenants t ON t.id = u.tenant_id
+            LEFT JOIN tenants t ON CAST(t.id AS VARCHAR) = CAST(u.tenant_id AS VARCHAR)
             WHERE u.id = :user_id
         """)
-        row = db.execute(sql_user, {"user_id": user_id}).fetchone()
+        row = db.execute(sql_user, {"user_id": _guid(user_id)}).fetchone()
     
     # 2. Fetch roles from user_roles table
     sql_roles = text("SELECT role FROM user_roles WHERE user_id = :user_id")
-    role_rows = db.execute(sql_roles, {"user_id": user_id}).fetchall()
+    role_rows = db.execute(sql_roles, {"user_id": _guid(user_id)}).fetchall()
     db_roles = [r.role for r in role_rows]
     
     # 3. Consolidate roles (Token + DB)
@@ -166,7 +183,7 @@ def list_users(
     tenant_id = current_user.get("tenant_id")
 
     where_clauses = ["u.tenant_id = :tenant_id"]
-    params: dict = {"tenant_id": tenant_id}
+    params: dict = {"tenant_id": _guid(tenant_id)}
 
     if search:
         # Use LOWER() + LIKE for SQLite compatibility (ILIKE is PostgreSQL-only)
@@ -202,11 +219,10 @@ def list_users(
     if settings.is_sqlite:
         users_sql_raw = f"""
             SELECT
-                CAST(u.id AS VARCHAR),
-                u.email, u.first_name, u.last_name,
+                CAST(u.id AS VARCHAR) as id, u.email, u.first_name, u.last_name,
                 u.is_active, u.avatar_url, u.created_at,
                 COALESCE(
-                    (SELECT GROUP_CONCAT(DISTINCT ur2.role, ',')
+                    (SELECT GROUP_CONCAT(DISTINCT ur2.role)
                      FROM user_roles ur2 WHERE ur2.user_id = u.id AND ur2.tenant_id = u.tenant_id),
                     ''
                 ) AS roles
@@ -221,8 +237,7 @@ def list_users(
     else:
         users_sql_raw = f"""
             SELECT
-                CAST(u.id AS VARCHAR),
-                u.email, u.first_name, u.last_name,
+                CAST(u.id AS VARCHAR) as id, u.email, u.first_name, u.last_name,
                 u.is_active, u.avatar_url, u.created_at,
                 COALESCE(
                     ARRAY_AGG(DISTINCT ur.role) FILTER (WHERE ur.role IS NOT NULL),
@@ -247,7 +262,7 @@ def list_users(
             "last_name": r.last_name,
             "is_active": r.is_active,
             "avatar_url": r.avatar_url,
-            "created_at": r.created_at.isoformat() if r.created_at else None,
+            "created_at": r.created_at.isoformat() if hasattr(r.created_at, 'isoformat') else str(r.created_at) if r.created_at else None,
             "roles": list(r.roles) if r.roles else [],
         }
         for r in rows
@@ -278,17 +293,20 @@ def list_user_roles(
 ):
     """GET /users/roles/ — list all user-role assignments for the current tenant."""
     tid = tenant_id or current_user.get("tenant_id")
-    rows = db.execute(text("""
+    if settings.is_sqlite:
+        roles_id_expr = "CAST(ur.user_id AS VARCHAR) || ':' || ur.role AS id"
+    else:
+        roles_id_expr = "CONCAT(ur.user_id::text, ':', ur.role) AS id"
+    rows = db.execute(text(f"""
         SELECT ur.user_id, ur.role, ur.tenant_id, ur.created_at,
                u.first_name, u.last_name, u.email,
-               -- Synthetic id: user_id:role (no separate PK on user_roles)
-               CONCAT(ur.user_id::text, ':', ur.role) AS id
+               {roles_id_expr}
         FROM user_roles ur
         JOIN users u ON u.id = ur.user_id
         WHERE ur.tenant_id = :tid
         ORDER BY u.last_name, u.first_name, ur.role
         LIMIT 500
-    """), {"tid": tid}).mappings().all()
+    """), {"tid": _guid(tid)}).mappings().all()
 
     return [
         {
@@ -321,11 +339,23 @@ def assign_role_direct(
     """POST /users/roles/ — assign a role to a user for the current tenant."""
     tid = body.tenant_id or current_user.get("tenant_id")
     try:
-        db.execute(text("""
-            INSERT INTO user_roles (user_id, tenant_id, role, created_at)
-            VALUES (:user_id, :tenant_id, :role, NOW())
-            ON CONFLICT DO NOTHING
-        """), {"user_id": body.user_id, "tenant_id": tid, "role": body.role})
+        if settings.is_sqlite:
+            # SQLite doesn't support ON CONFLICT DO NOTHING — check first
+            existing = db.execute(
+                text("SELECT 1 FROM user_roles WHERE user_id = :user_id AND tenant_id = :tenant_id AND role = :role"),
+                {"user_id": _guid(body.user_id), "tenant_id": _guid(tid), "role": body.role}
+            ).fetchone()
+            if not existing:
+                db.execute(text("""
+                    INSERT INTO user_roles (id, user_id, tenant_id, role, created_at, updated_at)
+                    VALUES (:role_id, :user_id, :tenant_id, :role, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+                """), {"role_id": _guid(str(uuid.uuid4())), "user_id": _guid(body.user_id), "tenant_id": _guid(tid), "role": body.role})
+        else:
+            db.execute(text("""
+                INSERT INTO user_roles (id, user_id, tenant_id, role, created_at, updated_at)
+                VALUES (:role_id, :user_id, :tenant_id, :role, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+                ON CONFLICT DO NOTHING
+            """), {"role_id": str(uuid.uuid4()), "user_id": body.user_id, "tenant_id": tid, "role": body.role})
         db.commit()
         return {
             "id": f"{body.user_id}:{body.role}",
@@ -353,7 +383,7 @@ def remove_role_direct(
     user_id, role = role_id.split(":", 1)
     db.execute(text("""
         DELETE FROM user_roles WHERE user_id = :user_id AND role = :role AND tenant_id = :tid
-    """), {"user_id": user_id, "role": role, "tid": tid})
+    """), {"user_id": _guid(user_id), "role": role, "tid": _guid(tid)})
     db.commit()
 
 
@@ -370,7 +400,7 @@ def list_user_profiles(
     """GET /users/profiles/ — list user profiles for a tenant (supports ?search=email)."""
     tid = tenant_id or current_user.get("tenant_id")
     where = ["u.tenant_id = :tid"]
-    params: dict = {"tid": tid}
+    params: dict = {"tid": _guid(tid)}
 
     if search:
         where.append(
@@ -378,21 +408,38 @@ def list_user_profiles(
         )
         params["search"] = f"%{search}%"
 
-    rows = db.execute(text(f"""
-        SELECT u.id, u.first_name, u.last_name, u.email, u.is_active, u.created_at,
-               p.avatar_url, p.phone,
-               COALESCE(
-                   (SELECT array_agg(ur.role) FROM user_roles ur WHERE ur.user_id = u.id AND ur.tenant_id = u.tenant_id),
-                   ARRAY[]::text[]
-               ) AS roles
-        FROM users u
-        LEFT JOIN profiles p ON p.user_id = u.id
-        WHERE {' AND '.join(where)}
-        ORDER BY u.last_name, u.first_name
-        LIMIT 200
-    """), params).mappings().all()
+    if settings.is_sqlite:
+        profiles_sql_raw = f"""
+            SELECT u.id, u.first_name, u.last_name, u.email, u.is_active, u.created_at,
+                   p.avatar_url, p.phone,
+                   COALESCE(
+                       (SELECT GROUP_CONCAT(DISTINCT ur.role)
+                        FROM user_roles ur WHERE ur.user_id = u.id AND ur.tenant_id = u.tenant_id),
+                       ''
+                   ) AS roles
+            FROM users u
+            LEFT JOIN profiles p ON p.user_id = u.id
+            WHERE {' AND '.join(where)}
+            ORDER BY u.last_name, u.first_name
+            LIMIT 200
+        """
+    else:
+        profiles_sql_raw = f"""
+            SELECT u.id, u.first_name, u.last_name, u.email, u.is_active, u.created_at,
+                   p.avatar_url, p.phone,
+                   COALESCE(
+                       (SELECT array_agg(ur.role) FROM user_roles ur WHERE ur.user_id = u.id AND ur.tenant_id = u.tenant_id),
+                       ARRAY[]::text[]
+                   ) AS roles
+            FROM users u
+            LEFT JOIN profiles p ON p.user_id = u.id
+            WHERE {' AND '.join(where)}
+            ORDER BY u.last_name, u.first_name
+            LIMIT 200
+        """
+    rows = db.execute(text(profiles_sql_raw), params).mappings().all()
 
-    return [
+    result_list = [
         {
             "id": str(r["id"]),
             "first_name": r["first_name"],
@@ -406,6 +453,13 @@ def list_user_profiles(
         }
         for r in rows
     ]
+    # SQLite returns roles as comma-separated string via GROUP_CONCAT
+    if settings.is_sqlite:
+        for u in result_list:
+            if isinstance(u["roles"], str):
+                u["roles"] = [r for r in u["roles"].split(",") if r] if u["roles"] else []
+
+    return result_list
 
 
 # ─── GET /users/pending/ ─── MUST be before /{user_id}/ ─────────────────────
@@ -438,7 +492,7 @@ def list_pending_users(
           )
         ORDER BY s.last_name, s.first_name
     """)
-    students = db.execute(students_sql, {"tenant_id": tenant_id}).fetchall()
+    students = db.execute(students_sql, {"tenant_id": _guid(tenant_id)}).fetchall()
 
     # Parents are tracked as users with PARENT role — no standalone parents table
     parents = []
@@ -477,10 +531,10 @@ def get_user(
     if settings.is_sqlite:
         sql_raw = """
             SELECT
-                CAST(u.id AS VARCHAR), u.email, u.first_name, u.last_name,
+                CAST(u.id AS VARCHAR) as id, u.email, u.first_name, u.last_name,
                 u.is_active, u.avatar_url, u.created_at,
                 COALESCE(
-                    (SELECT GROUP_CONCAT(DISTINCT ur2.role, ',')
+                    (SELECT GROUP_CONCAT(DISTINCT ur2.role)
                      FROM user_roles ur2 WHERE ur2.user_id = u.id AND ur2.tenant_id = u.tenant_id),
                     ''
                 ) AS roles
@@ -492,7 +546,7 @@ def get_user(
     else:
         sql_raw = """
             SELECT
-                CAST(u.id AS VARCHAR), u.email, u.first_name, u.last_name,
+                CAST(u.id AS VARCHAR) as id, u.email, u.first_name, u.last_name,
                 u.is_active, u.avatar_url, u.created_at,
                 COALESCE(
                     ARRAY_AGG(DISTINCT ur.role) FILTER (WHERE ur.role IS NOT NULL),
@@ -504,7 +558,7 @@ def get_user(
             GROUP BY u.id, u.email, u.first_name, u.last_name, u.is_active, u.avatar_url, u.created_at
         """
     sql = text(sql_raw)
-    row = db.execute(sql, {"user_id": user_id, "tenant_id": tenant_id}).fetchone()
+    row = db.execute(sql, {"user_id": _guid(user_id), "tenant_id": _guid(tenant_id)}).fetchone()
     if not row:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
     roles_val = list(row.roles) if row.roles else []
@@ -517,7 +571,7 @@ def get_user(
         "last_name": row.last_name,
         "is_active": row.is_active,
         "avatar_url": row.avatar_url,
-        "created_at": row.created_at.isoformat() if row.created_at else None,
+        "created_at": row.created_at.isoformat() if hasattr(row.created_at, 'isoformat') else str(row.created_at) if row.created_at else None,
         "roles": roles_val,
     }
 
@@ -543,7 +597,7 @@ def update_user(
     if "email" in updates:
         existing = db.execute(
             text("SELECT id FROM users WHERE email = :email AND id != :user_id"),
-            {"email": updates["email"], "user_id": user_id}
+            {"email": updates["email"], "user_id": _guid(user_id)}
         ).fetchone()
         if existing:
             raise HTTPException(status_code=400, detail="Email already in use by another user")
@@ -551,11 +605,11 @@ def update_user(
         updates["username"] = updates["email"]
 
     set_clauses = ", ".join([f"{k} = :{k}" for k in updates])
-    updates["user_id"] = user_id
-    updates["tenant_id"] = tenant_id
+    updates["user_id"] = _guid(user_id)
+    updates["tenant_id"] = _guid(tenant_id)
 
     sql = text(f"""
-        UPDATE users SET {set_clauses}, updated_at = NOW()
+        UPDATE users SET {set_clauses}, updated_at = CURRENT_TIMESTAMP
         WHERE id = :user_id AND tenant_id = :tenant_id
     """)
     result = db.execute(sql, updates)
@@ -597,10 +651,10 @@ def toggle_user_status(
         )
 
     sql = text("""
-        UPDATE users SET is_active = :is_active, updated_at = NOW()
+        UPDATE users SET is_active = :is_active, updated_at = CURRENT_TIMESTAMP
         WHERE id = :user_id AND tenant_id = :tenant_id
     """)
-    result = db.execute(sql, {"is_active": body.is_active, "user_id": user_id, "tenant_id": tenant_id})
+    result = db.execute(sql, {"is_active": body.is_active, "user_id": _guid(user_id), "tenant_id": _guid(tenant_id)})
 
     if result.rowcount == 0:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
@@ -650,7 +704,7 @@ def update_user_roles(
     # Verify user exists in tenant
     check = db.execute(
         text("SELECT id FROM users WHERE id = :user_id AND tenant_id = :tenant_id"),
-        {"user_id": user_id, "tenant_id": tenant_id}
+        {"user_id": _guid(user_id), "tenant_id": _guid(tenant_id)}
     ).fetchone()
     if not check:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
@@ -658,17 +712,32 @@ def update_user_roles(
     # Replace roles
     db.execute(
         text("DELETE FROM user_roles WHERE user_id = :user_id AND tenant_id = :tenant_id"),
-        {"user_id": user_id, "tenant_id": tenant_id}
+        {"user_id": _guid(user_id), "tenant_id": _guid(tenant_id)}
     )
     for role in body.roles:
-        db.execute(
-            text("""
-                INSERT INTO user_roles (user_id, tenant_id, role, created_at)
-                VALUES (:user_id, :tenant_id, :role, NOW())
-                ON CONFLICT DO NOTHING
-            """),
-            {"user_id": user_id, "tenant_id": tenant_id, "role": role}
-        )
+        if settings.is_sqlite:
+            # SQLite doesn't support ON CONFLICT DO NOTHING — check first
+            existing = db.execute(
+                text("SELECT 1 FROM user_roles WHERE user_id = :user_id AND tenant_id = :tenant_id AND role = :role"),
+                {"user_id": _guid(user_id), "tenant_id": _guid(tenant_id), "role": role}
+            ).fetchone()
+            if not existing:
+                db.execute(
+                    text("""
+                        INSERT INTO user_roles (id, user_id, tenant_id, role, created_at, updated_at)
+                        VALUES (:role_id, :user_id, :tenant_id, :role, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+                    """),
+                    {"role_id": _guid(str(uuid.uuid4())), "user_id": _guid(user_id), "tenant_id": _guid(tenant_id), "role": role}
+                )
+        else:
+            db.execute(
+                text("""
+                    INSERT INTO user_roles (id, user_id, tenant_id, role, created_at, updated_at)
+                    VALUES (:role_id, :user_id, :tenant_id, :role, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+                    ON CONFLICT DO NOTHING
+                """),
+                {"role_id": str(uuid.uuid4()), "user_id": user_id, "tenant_id": tenant_id, "role": role}
+            )
     # Log audit BEFORE commit
     log_audit(
         db,
@@ -715,7 +784,7 @@ def assign_role(
     # Verify user exists in tenant
     check = db.execute(
         text("SELECT id FROM users WHERE id = :user_id AND tenant_id = :tenant_id"),
-        {"user_id": user_id, "tenant_id": tenant_id}
+        {"user_id": _guid(user_id), "tenant_id": _guid(tenant_id)}
     ).fetchone()
     if not check:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
@@ -723,19 +792,30 @@ def assign_role(
     # Check if role already assigned
     existing = db.execute(
         text("SELECT id FROM user_roles WHERE user_id = :user_id AND tenant_id = :tenant_id AND role = :role"),
-        {"user_id": user_id, "tenant_id": tenant_id, "role": body.role}
+        {"user_id": _guid(user_id), "tenant_id": _guid(tenant_id), "role": body.role}
     ).fetchone()
     if existing:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Role already assigned to this user")
 
-    db.execute(
-        text("""
-            INSERT INTO user_roles (user_id, tenant_id, role, created_at)
-            VALUES (:user_id, :tenant_id, :role, NOW())
-            ON CONFLICT DO NOTHING
-        """),
-        {"user_id": user_id, "tenant_id": tenant_id, "role": body.role}
-    )
+    if settings.is_sqlite:
+        # SQLite doesn't support ON CONFLICT DO NOTHING — but we already checked
+        # for duplicates above, so just insert directly
+        db.execute(
+            text("""
+                INSERT INTO user_roles (id, user_id, tenant_id, role, created_at, updated_at)
+                VALUES (:role_id, :user_id, :tenant_id, :role, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+            """),
+            {"role_id": _guid(str(uuid.uuid4())), "user_id": _guid(user_id), "tenant_id": _guid(tenant_id), "role": body.role}
+        )
+    else:
+        db.execute(
+            text("""
+                INSERT INTO user_roles (id, user_id, tenant_id, role, created_at, updated_at)
+                VALUES (:role_id, :user_id, :tenant_id, :role, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+                ON CONFLICT DO NOTHING
+            """),
+            {"role_id": str(uuid.uuid4()), "user_id": user_id, "tenant_id": tenant_id, "role": body.role}
+        )
 
     log_audit(
         db,
@@ -763,7 +843,7 @@ def remove_role(
 
     result = db.execute(
         text("DELETE FROM user_roles WHERE user_id = :user_id AND tenant_id = :tenant_id AND role = :role"),
-        {"user_id": user_id, "tenant_id": tenant_id, "role": role}
+        {"user_id": _guid(user_id), "tenant_id": _guid(tenant_id), "role": role}
     )
 
     if result.rowcount == 0:
@@ -800,7 +880,7 @@ def delete_user(
 
     result = db.execute(
         text("DELETE FROM users WHERE id = :user_id AND tenant_id = :tenant_id"),
-        {"user_id": user_id, "tenant_id": tenant_id}
+        {"user_id": _guid(user_id), "tenant_id": _guid(tenant_id)}
     )
 
     if result.rowcount == 0:
@@ -846,7 +926,7 @@ def reset_user_password(
     # Verify user exists
     row = db.execute(
         text("SELECT id, email FROM users WHERE id = :user_id AND tenant_id = :tenant_id"),
-        {"user_id": user_id, "tenant_id": tenant_id}
+        {"user_id": _guid(user_id), "tenant_id": _guid(tenant_id)}
     ).fetchone()
     if not row:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
@@ -859,8 +939,8 @@ def reset_user_password(
     password_hash = get_password_hash(temp_password)
 
     db.execute(
-        text("UPDATE users SET password_hash = :pw, updated_at = NOW() WHERE id = :user_id"),
-        {"pw": password_hash, "user_id": user_id}
+        text("UPDATE users SET password_hash = :pw, updated_at = CURRENT_TIMESTAMP WHERE id = :user_id"),
+        {"pw": password_hash, "user_id": _guid(user_id)}
     )
 
     # Log audit BEFORE commit
@@ -976,26 +1056,26 @@ def create_user(
     
     password_hash = get_password_hash(raw_password)
     sql = text("""
-        INSERT INTO users (id, email, username, first_name, last_name, password_hash, tenant_id, is_active, created_at, updated_at)
-        VALUES (:id, :email, :email, :first_name, :last_name, :password_hash, :tenant_id, true, NOW(), NOW())
+        INSERT INTO users (id, email, username, first_name, last_name, password_hash, tenant_id, is_active, mfa_enabled, must_change_password, created_at, updated_at)
+        VALUES (:id, :email, :email, :first_name, :last_name, :password_hash, :tenant_id, true, false, false, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
     """)
     db.execute(sql, {
-        "id": new_id,
+        "id": _guid(new_id),
         "email": body.email,
         "first_name": body.first_name,
         "last_name": body.last_name,
         "password_hash": password_hash,
-        "tenant_id": tenant_id
+        "tenant_id": _guid(tenant_id)
     })
 
     # Add roles
     for role in body.roles:
         db.execute(
             text("""
-                INSERT INTO user_roles (user_id, tenant_id, role, created_at)
-                VALUES (:user_id, :tenant_id, :role, NOW())
+                INSERT INTO user_roles (id, user_id, tenant_id, role, created_at, updated_at)
+                VALUES (:role_id, :user_id, :tenant_id, :role, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
             """),
-            {"user_id": new_id, "tenant_id": tenant_id, "role": role}
+            {"role_id": _guid(str(uuid.uuid4())), "user_id": _guid(new_id), "tenant_id": _guid(tenant_id), "role": role}
         )
     
     # Log audit BEFORE commit
@@ -1090,15 +1170,15 @@ def convert_to_account(
 
     db.execute(
         text("""
-            INSERT INTO users (id, email, username, first_name, last_name, password_hash, tenant_id, is_active, created_at, updated_at)
-            VALUES (:id, :email, :email, :first_name, :last_name, :password_hash, :tenant_id, true, NOW(), NOW())
+            INSERT INTO users (id, email, username, first_name, last_name, password_hash, tenant_id, is_active, mfa_enabled, must_change_password, created_at, updated_at)
+            VALUES (:id, :email, :email, :first_name, :last_name, :password_hash, :tenant_id, true, false, false, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
         """),
-        {"id": new_user_id, "email": body.email, "first_name": body.first_name, "last_name": body.last_name, "password_hash": password_hash, "tenant_id": tenant_id}
+        {"id": _guid(new_user_id), "email": body.email, "first_name": body.first_name, "last_name": body.last_name, "password_hash": password_hash, "tenant_id": _guid(tenant_id)}
     )
 
     db.execute(
-        text("INSERT INTO user_roles (user_id, tenant_id, role, created_at) VALUES (:user_id, :tenant_id, :role, NOW())"),
-        {"user_id": new_user_id, "tenant_id": tenant_id, "role": role}
+        text("INSERT INTO user_roles (id, user_id, tenant_id, role, created_at, updated_at) VALUES (:role_id, :user_id, :tenant_id, :role, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)"),
+        {"role_id": _guid(str(uuid.uuid4())), "user_id": _guid(new_user_id), "tenant_id": _guid(tenant_id), "role": role}
     )
 
     # 2. Update Student/Parent record
@@ -1109,7 +1189,7 @@ def convert_to_account(
     db.execute(
         text("UPDATE students SET user_id = :user_id WHERE id = :id AND tenant_id = :tenant_id") if body.type == "student"
         else text("UPDATE parents SET user_id = :user_id WHERE id = :id AND tenant_id = :tenant_id"),
-        {"user_id": new_user_id, "id": body.id, "tenant_id": tenant_id}
+        {"user_id": _guid(new_user_id), "id": _guid(body.id), "tenant_id": _guid(tenant_id)}
     )
 
     # Log audit BEFORE commit
@@ -1207,18 +1287,18 @@ def update_user_profile(
     if "email" in updates:
         existing = db.execute(
             text("SELECT id FROM users WHERE email = :email AND id != :user_id"),
-            {"email": updates["email"], "user_id": user_id}
+            {"email": updates["email"], "user_id": _guid(user_id)}
         ).fetchone()
         if existing:
             raise HTTPException(status_code=400, detail="Email already in use by another user")
         updates["username"] = updates["email"]
 
     set_clauses = ", ".join([f"{k} = :{k}" for k in updates])
-    updates["user_id"] = user_id
-    updates["tenant_id"] = tenant_id
+    updates["user_id"] = _guid(user_id)
+    updates["tenant_id"] = _guid(tenant_id)
 
     sql = text(f"""
-        UPDATE users SET {set_clauses}, updated_at = NOW()
+        UPDATE users SET {set_clauses}, updated_at = CURRENT_TIMESTAMP
         WHERE id = :user_id AND tenant_id = :tenant_id
     """)
     result = db.execute(sql, updates)

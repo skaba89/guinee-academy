@@ -157,7 +157,7 @@ def register_payment(
     # 2. Insert payment
     payment_id = db.execute(text("""
         INSERT INTO payments (tenant_id, invoice_id, amount, payment_method, reference, notes, received_by, status, payment_date)
-        VALUES (:tenant_id, :invoice_id, :amount, :method, :reference, :notes, :received_by, 'COMPLETED', NOW())
+        VALUES (:tenant_id, :invoice_id, :amount, :method, :reference, :notes, :received_by, 'COMPLETED', CURRENT_TIMESTAMP)
         RETURNING id
     """), {
         "tenant_id": tenant_id, "invoice_id": body.invoice_id,
@@ -167,7 +167,7 @@ def register_payment(
 
     # 3. Update invoice
     db.execute(text("""
-        UPDATE invoices SET paid_amount = :paid, status = :status, updated_at = NOW()
+        UPDATE invoices SET paid_amount = :paid, status = :status, updated_at = CURRENT_TIMESTAMP
         WHERE id = :invoice_id AND tenant_id = :tenant_id
     """), {"paid": new_paid, "status": new_status, "invoice_id": body.invoice_id, "tenant_id": tenant_id})
 
@@ -213,7 +213,7 @@ def reverse_payment(
 
     # Mark payment as reversed
     db.execute(text("""
-        UPDATE payments SET status = 'REVERSED', notes = :notes, updated_at = NOW()
+        UPDATE payments SET status = 'REVERSED', notes = :notes, updated_at = CURRENT_TIMESTAMP
         WHERE id = :payment_id AND tenant_id = :tenant_id
     """), {"payment_id": payment_id, "notes": body.notes, "tenant_id": tenant_id})
 
@@ -227,7 +227,7 @@ def reverse_payment(
             total = float(inv["total_amount"] or 0)
             new_status = "PAID" if new_paid >= total else ("PARTIAL" if new_paid > 0 else "PENDING")
             db.execute(text("""
-                UPDATE invoices SET paid_amount = :paid, status = :status, updated_at = NOW()
+                UPDATE invoices SET paid_amount = :paid, status = :status, updated_at = CURRENT_TIMESTAMP
                 WHERE id = :inv_id AND tenant_id = :tenant_id
             """), {"paid": new_paid, "status": new_status, "inv_id": str(pay["invoice_id"]), "tenant_id": tenant_id})
 
@@ -352,7 +352,7 @@ def create_invoice_atomic(
         VALUES (:tenant_id, :student_id, :invoice_number, :total_amount, 0,
                 :total_amount, 0, 0,
                 :items, :due_date, COALESCE(:due_date, CURRENT_DATE), :notes, :has_payment_plan, :installments_count,
-                'PENDING', NOW(), NOW())
+                'PENDING', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
         RETURNING id
     """), {
         "tenant_id": tenant_id, "student_id": body.student_id,
@@ -399,7 +399,7 @@ def update_invoice_endpoint(
             notes = :notes,
             has_payment_plan = :has_payment_plan,
             installments_count = :installments_count,
-            updated_at = NOW()
+            updated_at = CURRENT_TIMESTAMP
         WHERE id = :invoice_id AND tenant_id = :tenant_id
     """), {
         "tenant_id": tenant_id, "invoice_id": invoice_id,
@@ -540,8 +540,7 @@ def send_payment_reminders(
             try:
                 db.execute(text("""
                     INSERT INTO notifications (tenant_id, user_id, type, title, message, is_read, created_at)
-                    VALUES (:tid, :uid, 'PAYMENT_REMINDER', :title, :msg, false, NOW())
-                    ON CONFLICT DO NOTHING
+                    VALUES (:tid, :uid, 'PAYMENT_REMINDER', :title, :msg, false, CURRENT_TIMESTAMP)
                 """), {
                     "tid": tenant_id,
                     "uid": str(inv.parent_user_id),
@@ -606,7 +605,7 @@ def create_fee(
     try:
         fee_id = db.execute(text("""
             INSERT INTO fees (tenant_id, name, description, amount, created_at)
-            VALUES (:tenant_id, :name, :description, :amount, NOW())
+            VALUES (:tenant_id, :name, :description, :amount, CURRENT_TIMESTAMP)
             RETURNING id
         """), {"tenant_id": tenant_id, "name": body.name, "description": body.description, "amount": body.amount}).scalar()
 

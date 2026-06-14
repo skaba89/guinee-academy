@@ -50,7 +50,7 @@ def list_teachers(
         where_clauses.append("ta.subject_id = :subject_id")
         params["subject_id"] = subject_id
     if search:
-        where_clauses.append("(u.first_name ILIKE :s OR u.last_name ILIKE :s OR u.email ILIKE :s)")
+        where_clauses.append("(LOWER(u.first_name) LIKE LOWER(:s) OR LOWER(u.last_name) LIKE LOWER(:s) OR LOWER(u.email) LIKE LOWER(:s))")
         params["s"] = f"%{search}%"
 
     where_sql = " AND ".join(where_clauses)
@@ -105,11 +105,14 @@ def create_teacher_assignment(
     if not tenant_id:
         raise HTTPException(status_code=403, detail="No tenant context")
     try:
+        import uuid as _uuid
+        new_id = str(_uuid.uuid4())
         result = db.execute(text("""
             INSERT INTO teacher_assignments (id, tenant_id, teacher_id, class_id, subject_id, created_at, updated_at)
-            VALUES (gen_random_uuid(), :tid, :teacher_id, :class_id, :subject_id, NOW(), NOW())
+            VALUES (:id, :tid, :teacher_id, :class_id, :subject_id, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
             RETURNING id, tenant_id, teacher_id, class_id, subject_id, created_at, updated_at
         """), {
+            "id": new_id,
             "tid": tenant_id,
             "teacher_id": assignment.teacher_id,
             "class_id": assignment.class_id,
@@ -148,7 +151,7 @@ def update_teacher_assignment(
             params["subject_id"] = assignment.subject_id
         if not sets:
             raise HTTPException(status_code=400, detail="No fields to update")
-        sets.append("updated_at = NOW()")
+        sets.append("updated_at = CURRENT_TIMESTAMP")
         query_str = f"""
             UPDATE teacher_assignments SET {', '.join(sets)}
             WHERE id = :aid AND tenant_id = :tid

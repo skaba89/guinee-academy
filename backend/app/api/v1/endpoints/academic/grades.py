@@ -229,7 +229,7 @@ def create_bulk_grades(
         for item in body.grades:
             row = db.execute(text("""
                 INSERT INTO grades (tenant_id, student_id, assessment_id, score, comment, created_at, updated_at)
-                VALUES (:tenant_id, :student_id, :assessment_id, :score, :comment, NOW(), NOW())
+                VALUES (:tenant_id, :student_id, :assessment_id, :score, :comment, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
                 RETURNING id, student_id, assessment_id, score, comment, created_at
             """), {
                 "tenant_id": tenant_id,

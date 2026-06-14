@@ -37,21 +37,43 @@ def list_parents(
     params: dict = {"tenant_id": tenant_id}
     extra = ""
     if search:
-        extra = " AND (p.first_name ILIKE :search OR p.last_name ILIKE :search OR p.email ILIKE :search)"
+        extra = " AND (LOWER(p.first_name) LIKE LOWER(:search) OR LOWER(p.last_name) LIKE LOWER(:search) OR LOWER(p.email) LIKE LOWER(:search))"
         params["search"] = f"%{search}%"
-    rows = db.execute(text(f"""
-        SELECT p.*,
-               COALESCE(
-                   ARRAY_AGG(DISTINCT ps.student_id) FILTER (WHERE ps.student_id IS NOT NULL),
-                   ARRAY[]::uuid[]
-               ) AS student_ids
-        FROM parents p
-        LEFT JOIN parent_students ps ON ps.parent_id = p.id AND ps.tenant_id = p.tenant_id
-        WHERE p.tenant_id = :tenant_id {extra}
-        GROUP BY p.id
-        ORDER BY p.last_name, p.first_name
-    """), params).mappings().all()
-    return rows
+    from app.core.config import settings as _settings
+    if _settings.is_sqlite:
+        rows = db.execute(text(f"""
+            SELECT p.*,
+                   GROUP_CONCAT(DISTINCT ps.student_id) AS student_ids
+            FROM parents p
+            LEFT JOIN parent_students ps ON ps.parent_id = p.id AND ps.tenant_id = p.tenant_id
+            WHERE p.tenant_id = :tenant_id {extra}
+            GROUP BY p.id
+            ORDER BY p.last_name, p.first_name
+        """), params).mappings().all()
+        # Convert comma-separated student_ids string to list
+        result = []
+        for r in rows:
+            d = dict(r)
+            if d.get('student_ids'):
+                d['student_ids'] = d['student_ids'].split(',')
+            else:
+                d['student_ids'] = []
+            result.append(d)
+        return result
+    else:
+        rows = db.execute(text(f"""
+            SELECT p.*,
+                   COALESCE(
+                       ARRAY_AGG(DISTINCT ps.student_id) FILTER (WHERE ps.student_id IS NOT NULL),
+                       ARRAY[]::uuid[]
+                   ) AS student_ids
+            FROM parents p
+            LEFT JOIN parent_students ps ON ps.parent_id = p.id AND ps.tenant_id = p.tenant_id
+            WHERE p.tenant_id = :tenant_id {extra}
+            GROUP BY p.id
+            ORDER BY p.last_name, p.first_name
+        """), params).mappings().all()
+        return rows
 
 # --- Create parent (POST /parents/) ---
 
@@ -79,7 +101,7 @@ def create_parent(
         parent_id = str(uuid.uuid4())
         db.execute(text("""
             INSERT INTO parents (id, tenant_id, first_name, last_name, email, phone, occupation, address, created_at, updated_at)
-            VALUES (:id, :tenant_id, :first_name, :last_name, :email, :phone, :occupation, :address, NOW(), NOW())
+            VALUES (:id, :tenant_id, :first_name, :last_name, :email, :phone, :occupation, :address, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
             RETURNING id, tenant_id, first_name, last_name, email, phone, occupation, address, created_at, updated_at
         """), {
             "id": parent_id,
@@ -622,7 +644,7 @@ def create_parent_payment(
                     (tenant_id, invoice_id, amount, payment_method, reference, notes, received_by, status, payment_date)
                 VALUES
                     (:tenant_id, :invoice_id, :amount, :method, :reference,
-                     :notes, :received_by, 'PENDING', NOW())
+                     :notes, :received_by, 'PENDING', CURRENT_TIMESTAMP)
                 RETURNING id
             """), {
                 "tenant_id": tenant_id, "invoice_id": body.invoice_id,
@@ -658,7 +680,7 @@ def create_parent_payment(
     try:
         payment_id = db.execute(text("""
             INSERT INTO payments (tenant_id, invoice_id, amount, payment_method, reference, notes, received_by, status, payment_date)
-            VALUES (:tenant_id, :invoice_id, :amount, :method, :reference, :notes, :received_by, 'COMPLETED', NOW())
+            VALUES (:tenant_id, :invoice_id, :amount, :method, :reference, :notes, :received_by, 'COMPLETED', CURRENT_TIMESTAMP)
             RETURNING id
         """), {
             "tenant_id": tenant_id, "invoice_id": body.invoice_id,
@@ -667,7 +689,7 @@ def create_parent_payment(
         }).scalar()
 
         db.execute(text("""
-            UPDATE invoices SET paid_amount = :paid, status = :status, updated_at = NOW()
+            UPDATE invoices SET paid_amount = :paid, status = :status, updated_at = CURRENT_TIMESTAMP
             WHERE id = :invoice_id AND tenant_id = :tenant_id
         """), {"paid": new_paid, "status": new_status,
                "invoice_id": body.invoice_id, "tenant_id": tenant_id})
@@ -718,10 +740,10 @@ def _confirm_gateway_payment(db: Session, transaction_id: str, amount: float, te
     new_status = "PAID" if new_paid >= float(inv["total_amount"]) else "PARTIAL"
 
     db.execute(text(
-        "UPDATE payments SET status = 'COMPLETED', updated_at = NOW() WHERE id = :pid"
+        "UPDATE payments SET status = 'COMPLETED', updated_at = CURRENT_TIMESTAMP WHERE id = :pid"
     ), {"pid": str(payment["id"])})
     db.execute(text(
-        "UPDATE invoices SET paid_amount = :paid, status = :status, updated_at = NOW() "
+        "UPDATE invoices SET paid_amount = :paid, status = :status, updated_at = CURRENT_TIMESTAMP "
         "WHERE id = :id AND tenant_id = :tid"
     ), {"paid": new_paid, "status": new_status, "id": invoice_id, "tid": tenant_id})
     return True
@@ -1117,8 +1139,8 @@ def create_parent_appointment(
                 created_at, updated_at
             ) VALUES (
                 :id, :tenant_id, :parent_id, :teacher_id, :student_id,
-                :appointment_date::date, :appointment_time::time, :slot_id, :notes, :status,
-                NOW(), NOW()
+                DATE(:appointment_date), TIME(:appointment_time), :slot_id, :notes, :status,
+                CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
             ) RETURNING id
         """), {
             "id": appointment_id,
@@ -1168,10 +1190,10 @@ def list_parent_appointment_slots(
             extra += " AND teacher_id = :teacher_id"
             params["teacher_id"] = teacher_id
         if date_from:
-            extra += " AND date >= :date_from::date"
+            extra += " AND date >= DATE(:date_from)"
             params["date_from"] = date_from
         if date_to:
-            extra += " AND date <= :date_to::date"
+            extra += " AND date <= DATE(:date_to)"
             params["date_to"] = date_to
 
         rows = db.execute(text(f"""
@@ -1225,9 +1247,9 @@ def create_parent_appointment_slot(
                 max_appointments, location, is_active,
                 created_at, updated_at
             ) VALUES (
-                :id, :tenant_id, :teacher_id, :date::date,
-                :start_time::time, :end_time::time,
-                :max_appointments, :location, true, NOW(), NOW()
+                :id, :tenant_id, :teacher_id, DATE(:date),
+                TIME(:start_time), TIME(:end_time),
+                :max_appointments, :location, true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
             ) RETURNING id
         """), {
             "id": slot_id,

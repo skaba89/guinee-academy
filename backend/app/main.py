@@ -608,24 +608,20 @@ async def lifespan(app: FastAPI):
     from app.core.database import Base, engine
     import app.models  # noqa: F401 — ensure all models are registered
 
-    try:
-        from alembic.config import Config
-        from alembic import command
+    if settings.is_sqlite:
+        logger.info("SQLite detected — skipping Alembic migrations, using create_all instead")
+    else:
+        try:
+            from alembic.config import Config
+            from alembic import command
 
-        backend_dir = os.path.dirname(os.path.dirname(__file__))
-        alembic_cfg = Config(os.path.join(backend_dir, "alembic.ini"))
-        alembic_cfg.set_main_option("script_location", os.path.join(backend_dir, "alembic"))
-        alembic_cfg.set_main_option("sqlalchemy.url", settings.DATABASE_URL_SYNC)
-        command.upgrade(alembic_cfg, "head")
-        logger.info("Alembic auto-migration: upgrade head succeeded")
-    except Exception as alembic_err:
-        if settings.is_sqlite:
-            logger.warning(
-                "Alembic migration skipped for SQLite (PostgreSQL-specific SQL): %s. "
-                "Falling back to create_all.",
-                alembic_err,
-            )
-        else:
+            backend_dir = os.path.dirname(os.path.dirname(__file__))
+            alembic_cfg = Config(os.path.join(backend_dir, "alembic.ini"))
+            alembic_cfg.set_main_option("script_location", os.path.join(backend_dir, "alembic"))
+            alembic_cfg.set_main_option("sqlalchemy.url", settings.DATABASE_URL_SYNC)
+            command.upgrade(alembic_cfg, "head")
+            logger.info("Alembic auto-migration: upgrade head succeeded")
+        except Exception as alembic_err:
             logger.critical(
                 "Alembic migration FAILED: %s — refusing to start. "
                 "Fix the migration and retry. Do NOT use create_all as a fallback "
@@ -659,6 +655,7 @@ async def lifespan(app: FastAPI):
     try:
         from app.core.database import SessionLocal
         from app.models.user import User
+        from app.models.user_role import UserRole
         from app.core.security import get_password_hash
         from sqlalchemy import text
         import uuid
@@ -696,7 +693,7 @@ async def lifespan(app: FastAPI):
                         "Super admin not created. Use the /api/v1/auth/bootstrap/ endpoint."
                     )
                 else:
-                    admin_id = str(uuid.uuid4())
+                    admin_id = uuid.uuid4()
                     admin = User(
                         id=admin_id,
                         email=admin_email,
@@ -710,11 +707,14 @@ async def lifespan(app: FastAPI):
                     )
                     db.add(admin)
                     db.flush()
-                    db.execute(
-                        text("INSERT INTO user_roles (id, user_id, role, tenant_id, created_at, updated_at) "
-                             "VALUES (:id, :uid, 'SUPER_ADMIN', NULL, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)"),
-                        {"id": str(uuid.uuid4()), "uid": admin_id}
+                    # Use ORM to create the role so GUID type converts correctly for SQLite
+                    role = UserRole(
+                        id=uuid.uuid4(),
+                        user_id=admin_id,
+                        role="SUPER_ADMIN",
+                        tenant_id=None,
                     )
+                    db.add(role)
                     db.commit()
                     logger.info("Auto-created super admin: %s", admin_email)
             else:
@@ -753,11 +753,13 @@ async def lifespan(app: FastAPI):
                     UserRole.role == "SUPER_ADMIN"
                 ).first()
                 if not existing_role:
-                    db.execute(
-                        text("INSERT INTO user_roles (id, user_id, role, tenant_id, created_at, updated_at) "
-                             "VALUES (:id, :uid, 'SUPER_ADMIN', NULL, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)"),
-                        {"id": str(uuid.uuid4()), "uid": str(existing.id)}
+                    role = UserRole(
+                        id=uuid.uuid4(),
+                        user_id=existing.id,
+                        role="SUPER_ADMIN",
+                        tenant_id=None,
                     )
+                    db.add(role)
                     db.commit()
                     logger.info("Super admin role SUPER_ADMIN re-created for %s", admin_email)
                 elif needs_update:
