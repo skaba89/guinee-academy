@@ -161,6 +161,20 @@ async def _reset_login_attempts(user_id: str) -> None:
 @limiter.limit("5/minute")
 async def login(request: Request, form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
     try:
+        # Resolve optional tenant context from X-Tenant-Slug header.
+        # The frontend sends this when the user logs in from a tenant-specific
+        # login page (e.g. /admin/auth). This allows SUPER_ADMIN users to
+        # authenticate in the context of a specific tenant.
+        from app.models.tenant import Tenant as TenantModel
+        tenant_slug = request.headers.get("X-Tenant-Slug")
+        resolved_tenant_id = None
+        if tenant_slug:
+            tenant_obj = db.query(TenantModel).filter(TenantModel.slug == tenant_slug, TenantModel.is_active == True).first()
+            if tenant_obj:
+                resolved_tenant_id = str(tenant_obj.id)
+            # If slug doesn't match any tenant, we still proceed — the login
+            # may succeed for a SUPER_ADMIN without a tenant context.
+
         user = (
             db.query(User)
             .filter(or_(User.email == form_data.username, User.username == form_data.username))
@@ -260,13 +274,19 @@ async def login(request: Request, form_data: OAuth2PasswordRequestForm = Depends
         token_jti = hashlib.sha256(f"{user.id}:{datetime.now(timezone.utc).timestamp()}".encode()).hexdigest()[:16]
 
         # Create access token (wrap in try/except to catch SECRET_KEY issues)
+        # For SUPER_ADMIN without a tenant_id, use the resolved tenant from
+        # X-Tenant-Slug header if available, so downstream middleware and
+        # endpoints know which tenant context to operate in.
+        token_tenant_id = str(user.tenant_id) if user.tenant_id else None
+        if not token_tenant_id and resolved_tenant_id and "SUPER_ADMIN" in roles:
+            token_tenant_id = resolved_tenant_id
         try:
             access_token = create_access_token(
                 {
                     "sub": str(user.id),
                     "email": user.email,
                     "preferred_username": user.username,
-                    "tenant_id": str(user.tenant_id) if user.tenant_id else None,
+                    "tenant_id": token_tenant_id,
                     "roles": roles,
                     "is_superuser": getattr(user, "is_superuser", False),
                     "jti": token_jti,

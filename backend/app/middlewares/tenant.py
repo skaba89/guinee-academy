@@ -21,9 +21,17 @@ class TenantMiddleware(BaseHTTPMiddleware):
         if path.startswith(settings.API_V1_STR):
             check_path = path[len(settings.API_V1_STR):]
 
+        # Also handle the case where the full path (with /api/v1 prefix) is checked
+        full_public_prefixes = [
+            settings.API_V1_STR + "/health",
+            settings.API_V1_STR + "/auth/",
+            settings.API_V1_STR + "/tenants/public/",
+        ]
+
         public_paths = [
             "/docs", "/openapi.json", "/health", "/health/", "/", "/auth/login",
-            "/auth/refresh", "/auth/logout", "/users/me", "/users/me/",
+            "/auth/login/", "/auth/refresh", "/auth/refresh/", "/auth/logout", "/auth/logout/",
+            "/users/me", "/users/me/",
             "/favicon.ico", "/favicon.png", "/redoc"
         ]
 
@@ -47,12 +55,14 @@ class TenantMiddleware(BaseHTTPMiddleware):
             or check_path in public_paths
             or check_path.rstrip("/") in public_paths
             or any(check_path.startswith(p) for p in public_prefixes)
+            or any(path.startswith(p) for p in full_public_prefixes)
         )
 
         if (is_public or
             (request.method == "POST" and (check_path == "/tenants" or check_path == "/tenants/")) or
             (request.method == "POST" and check_path.startswith("/tenants/create-with-admin")) or
             (request.method == "GET" and check_path.startswith("/tenants/super-admin")) or
+            (request.method == "POST" and check_path.startswith("/auth/")) or  # all auth POST endpoints (login, register, refresh, etc.)
             any(check_path.endswith(ext) for ext in [".ico", ".png", ".jpg", ".jpeg", ".svg", ".css", ".js"])):
             return await call_next(request)
 
@@ -62,6 +72,7 @@ class TenantMiddleware(BaseHTTPMiddleware):
         tenant_id = None
         auth_header = request.headers.get("Authorization")
         user_roles = []
+        payload = None  # Initialize to avoid NameError when no auth header
 
         if auth_header and auth_header.startswith("Bearer "):
             try:
@@ -99,27 +110,13 @@ class TenantMiddleware(BaseHTTPMiddleware):
         if payload and payload.get("is_superuser") and not tenant_id:
             return await call_next(request)
 
+        # No Authorization header — allow through for endpoints that don't require auth.
+        # The downstream get_current_user dependency will return 401 if auth is needed.
+        if not auth_header or not auth_header.startswith("Bearer "):
+            return await call_next(request)
+
         if not tenant_id:
             # SECURITY: Reject authenticated requests without tenant_id
-            if auth_header and auth_header.startswith("Bearer "):
-                origin = request.headers.get("origin", "")
-                allowed_origins = getattr(request.app.state, "_cors_allowed_origins", [])
-                cors_hdrs = {}
-                if origin:
-                    if "*" in allowed_origins or origin in allowed_origins:
-                        cors_hdrs = {
-                            "Access-Control-Allow-Origin": origin,
-                            "Vary": "Origin",
-                        }
-
-                return JSONResponse(
-                    status_code=400,
-                    content={"detail": "Identifiant du tenant manquant dans le jeton JWT. Contactez un administrateur."},
-                    headers=cors_hdrs,
-                )
-
-            # Include CORS headers so the browser can read the error response.
-            # BaseHTTPMiddleware returning directly may bypass CORSMiddleware.
             origin = request.headers.get("origin", "")
             allowed_origins = getattr(request.app.state, "_cors_allowed_origins", [])
             cors_hdrs = {}
@@ -132,16 +129,16 @@ class TenantMiddleware(BaseHTTPMiddleware):
 
             return JSONResponse(
                 status_code=400,
-                content={"detail": "Identification du tenant manquante (X-Tenant-ID ou JWT claim)"},
+                content={"detail": "Identifiant du tenant manquant dans le jeton JWT. Contactez un administrateur."},
                 headers=cors_hdrs,
             )
 
         request.state.tenant_id = tenant_id
 
         # Set the context for Row Level Security (RLS)
-        token = tenant_context.set(tenant_id)
+        ctx_token = tenant_context.set(tenant_id)
         try:
             response = await call_next(request)
             return response
         finally:
-            tenant_context.reset(token)
+            tenant_context.reset(ctx_token)

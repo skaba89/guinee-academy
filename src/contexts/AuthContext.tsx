@@ -20,7 +20,7 @@ type AuthContextType = {
   isLoading: boolean;
   mustChangePassword: boolean;
   isMfaVerified: boolean;
-  signIn: (email: string, password: string) => Promise<{ error: Error | null; profileData?: any }>;
+  signIn: (email: string, password: string, tenantSlug?: string) => Promise<{ error: Error | null; profileData?: any }>;
   verifyMfa: (token: string) => Promise<{ success: boolean; error?: string }>;
   signUp: (email: string, password: string, metadata?: unknown) => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
@@ -152,14 +152,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return () => window.removeEventListener('auth:logout', handleAuthLogout);
   }, [clearAuth, navigate]);
 
-  const signIn = useCallback(async (email: string, password: string) => {
+  const signIn = useCallback(async (email: string, password: string, tenantSlug?: string) => {
     try {
       setIsLoading(true);
       const body = new URLSearchParams();
       body.set("username", email);
       body.set("password", password);
+      // Build headers — include tenant slug if provided so the backend
+      // can resolve the tenant context for the login request.
+      const headers: Record<string, string> = {
+        "Content-Type": "application/x-www-form-urlencoded",
+      };
+      if (tenantSlug) {
+        headers["X-Tenant-Slug"] = tenantSlug;
+      }
       const response = await apiClient.post("/auth/login/", body, {
-        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        headers,
       });
       const token = response.data?.access_token;
       if (!token) {

@@ -91,7 +91,7 @@ const TenantAuthPage = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [logoError, setLogoError] = useState(false);
 
-  const { data: tenantData, isLoading: tenantLoading } = usePublicTenant(tenantSlug);
+  const { data: tenantData, isLoading: tenantLoading, error: tenantError } = usePublicTenant(tenantSlug);
 
   // Branding data
   const primaryColor = tenantData?.landing?.primary_color || tenantData?.settings?.primary_color || "#1e3a5f";
@@ -131,7 +131,7 @@ const TenantAuthPage = () => {
 
     setSubmitting(true);
     try {
-      const { error, profileData } = await signIn(email, password);
+      const { error, profileData } = await signIn(email, password, tenantSlug);
       if (error) {
         const msg = error.message || "Identifiants incorrects";
         console.error("[TenantAuth] Login failed:", msg);
@@ -195,6 +195,14 @@ const TenantAuthPage = () => {
         </div>
       </div>
     );
+  }
+
+  // ─── Tenant Not Found State ───
+  // If the tenant lookup failed, we still show the login form with default branding.
+  // This allows SUPER_ADMIN users to log in even if the tenant slug doesn't exist
+  // (e.g. during initial setup when no tenants have been created yet).
+  if (tenantError && !tenantData) {
+    console.warn("[TenantAuth] Tenant lookup failed for slug:", tenantSlug, tenantError);
   }
 
   // ─── Main Layout ───

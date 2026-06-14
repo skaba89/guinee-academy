@@ -102,11 +102,20 @@ apiClient.interceptors.request.use(
       config.headers.Authorization = `Bearer ${token}`;
     }
 
-    const lastTenantId = localStorage.getItem('last_tenant_id');
-    // Only send X-Tenant-ID if it's a non-empty UUID (not empty string or stale value)
-    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-    if (lastTenantId && uuidRegex.test(lastTenantId)) {
-      config.headers['X-Tenant-ID'] = lastTenantId;
+    // Only send X-Tenant-ID for non-auth endpoints. Auth endpoints (login, register,
+    // refresh) don't need it and sending a stale value can cause issues.
+    const isAuthEndpoint = config.url?.includes('/auth/login') ||
+      config.url?.includes('/auth/register') ||
+      config.url?.includes('/auth/refresh') ||
+      config.url?.includes('/auth/bootstrap');
+
+    if (!isAuthEndpoint) {
+      const lastTenantId = localStorage.getItem('last_tenant_id');
+      // Only send X-Tenant-ID if it's a non-empty UUID (not empty string or stale value)
+      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+      if (lastTenantId && uuidRegex.test(lastTenantId)) {
+        config.headers['X-Tenant-ID'] = lastTenantId;
+      }
     }
 
     return config;
