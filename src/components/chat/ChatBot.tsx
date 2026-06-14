@@ -15,17 +15,10 @@ interface Message {
   content: string;
 }
 
-// Resolve API base URL (same logic as apiClient)
-function resolveChatApiBaseUrl(): string {
-  const runtimeCfg = (window as any).__GUINEE_ACADEMY_CONFIG__;
-  if (runtimeCfg?.API_URL) return runtimeCfg.API_URL.trim();
-  const buildUrl = import.meta.env.VITE_API_URL?.trim();
-  if (buildUrl && !/localhost|127\.0\.0\.1/.test(buildUrl)) return buildUrl;
-  if (/localhost|127\.0\.0\.1/.test(window.location.hostname)) return 'http://localhost:8000';
-  return '/api-proxy';
-}
+// Use the shared API base URL from the centralized client
+import { API_BASE_URL } from '@/api/client';
 
-const CHAT_URL = `${resolveChatApiBaseUrl()}/api/v1/ai/chat`;
+const CHAT_URL = `${API_BASE_URL}/ai/chat`;
 
 export const ChatBot = () => {
   const [isOpen, setIsOpen] = useState(false);

@@ -16,7 +16,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import axios from "axios";
+import { publicApiClient } from "@/api/client";
 
 interface TenantInfo {
   id: string;
@@ -43,10 +43,6 @@ interface SubmitResult {
   message: string;
 }
 
-function getApiBase() {
-  return (window as any).__GUINEE_ACADEMY_CONFIG__?.API_URL || import.meta.env.VITE_API_URL || "";
-}
-
 export default function ReEnrollment() {
   const { tenantSlug } = useParams<{ tenantSlug: string }>();
   const navigate = useNavigate();
@@ -70,8 +66,8 @@ export default function ReEnrollment() {
 
   useEffect(() => {
     if (!tenantSlug) return;
-    axios
-      .get(`${getApiBase()}/api/v1/admissions/public/tenant-info/${tenantSlug}/`)
+    publicApiClient
+      .get<TenantInfo>(`/admissions/public/tenant-info/${tenantSlug}/`)
       .then((r) => setSchool(r.data))
       .catch(() => setSchool(null))
       .finally(() => setSchoolLoading(false));
@@ -84,7 +80,7 @@ export default function ReEnrollment() {
     setVerifyError(null);
     setStudent(null);
     try {
-      const r = await axios.post(`${getApiBase()}/api/v1/admissions/public/verify-student/`, {
+      const r = await publicApiClient.post('/admissions/public/verify-student/', {
         tenant_id: school.id,
         registration_number: registrationNumber.trim(),
         parent_email: parentEmail.trim(),
@@ -106,7 +102,7 @@ export default function ReEnrollment() {
     setSubmitting(true);
     setSubmitError(null);
     try {
-      const r = await axios.post(`${getApiBase()}/api/v1/admissions/public/reenroll/`, {
+      const r = await publicApiClient.post('/admissions/public/reenroll/', {
         tenant_id: school.id,
         student_id: student.student_id,
         academic_year_id: school.current_academic_year?.id,

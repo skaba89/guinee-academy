@@ -10,7 +10,7 @@ import { useParams, useNavigate, Link } from "react-router-dom";
 import { School, LogIn, RefreshCw, FileText, Loader2, AlertCircle, Phone, Mail, Globe } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import axios from "axios";
+import { publicApiClient } from "@/api/client";
 
 interface TenantInfo {
   id: string;
@@ -43,9 +43,8 @@ export default function EnrollmentHub() {
 
   useEffect(() => {
     if (!tenantSlug) return;
-    const apiBase = (window as any).__GUINEE_ACADEMY_CONFIG__?.API_URL || import.meta.env.VITE_API_URL || "";
-    axios
-      .get(`${apiBase}/api/v1/admissions/public/tenant-info/${tenantSlug}/`)
+    publicApiClient
+      .get<TenantInfo>(`/admissions/public/tenant-info/${tenantSlug}/`)
       .then((r) => setSchool(r.data))
       .catch((err) => {
         if (err.response?.status === 404) {

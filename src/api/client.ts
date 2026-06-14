@@ -56,8 +56,39 @@ function resolveApiBaseUrl(rawValue?: string): string {
   return isBrowserLocal ? 'http://localhost:8000' : '/api-proxy';
 }
 
+/**
+ * Resolve the full API base URL including the `/api/v1` suffix.
+ * This is the SINGLE SOURCE OF TRUTH for all API base URLs in the app.
+ *
+ * Returns a value like:
+ *   - `http://localhost:8000/api/v1` (dev, direct to backend)
+ *   - `/api/v1` (Docker / proxy, relative path through Vite/nginx proxy)
+ *   - `/api-proxy/v1` (Render/Netlify proxy)
+ */
+function resolveFullApiBaseUrl(): string {
+  const rawBase = resolveApiBaseUrl(import.meta.env.VITE_API_URL);
+  // Strip any trailing /api or /api/ before appending /api/v1
+  // This prevents double /api/api/v1 when VITE_API_URL=/api or similar
+  return `${rawBase.replace(/\/api\/?$/, '')}/api/v1`;
+}
+
+/** The resolved base URL — single source of truth for all API clients. */
+export const API_BASE_URL = resolveFullApiBaseUrl();
+
 export const apiClient = axios.create({
-  baseURL: `${resolveApiBaseUrl(import.meta.env.VITE_API_URL).replace(/\/api\/?$/, '')}/api/v1`,
+  baseURL: API_BASE_URL,
+  timeout: API_TIMEOUT_MS,
+  headers: {
+    'Content-Type': 'application/json',
+  },
+});
+
+/**
+ * Public API client — same base URL as apiClient but WITHOUT auth interceptors.
+ * Use this for endpoints that must work without authentication (tenant lookup, etc.).
+ */
+export const publicApiClient = axios.create({
+  baseURL: API_BASE_URL,
   timeout: API_TIMEOUT_MS,
   headers: {
     'Content-Type': 'application/json',

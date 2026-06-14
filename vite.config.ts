@@ -38,6 +38,13 @@ export default defineConfig(({ mode }) => {
           changeOrigin: true,
           rewrite: (path: string) => path.replace(/^\/api-proxy/, ''),
         },
+        // Also proxy /api/v1/* to backend — this covers the case where
+        // VITE_API_URL=/api is used (e.g. Docker builds) so requests
+        // like /api/v1/auth/login/ reach the backend correctly.
+        '/api/v1': {
+          target: env.VITE_DEV_PROXY_TARGET || 'http://localhost:8000',
+          changeOrigin: true,
+        },
       },
     },
     plugins: [

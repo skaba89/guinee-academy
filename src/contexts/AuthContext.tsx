@@ -166,9 +166,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         throw new Error("No access token returned by API");
       }
       localStorage.setItem(TOKEN_STORAGE_KEY, token);
+
+      // If backend signals MFA setup is required for this privileged user,
+      // mark it so the UI can prompt for MFA setup after login
+      const mfaSetupRequired = response.data?.mfa_setup_required === true;
+      if (mfaSetupRequired) {
+        setIsMfaVerified(false);
+      }
+
       const profileResponse = await apiClient.get("/users/me/");
       applyProfileData(profileResponse.data);
-      return { error: null, profileData: profileResponse.data };
+      return { error: null, profileData: profileResponse.data, mfaSetupRequired };
     } catch (error: any) {
       clearAuth();
       // Enrich error with backend detail for better diagnostics

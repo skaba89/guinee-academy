@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import axios from "axios";
+import { publicApiClient } from "@/api/client";
 
 interface Application {
   id: string;
@@ -41,9 +41,7 @@ const BADGE_VARIANTS: Record<string, string> = {
   red: "destructive",
 };
 
-function getApiBase() {
-  return (window as any).__GUINEE_ACADEMY_CONFIG__?.API_URL || import.meta.env.VITE_API_URL || "";
-}
+
 
 export default function ApplicationStatus() {
   const { tenantSlug } = useParams<{ tenantSlug: string }>();
@@ -59,7 +57,7 @@ export default function ApplicationStatus() {
   const resolveTenantId = async (): Promise<string | null> => {
     if (tenantId) return tenantId;
     try {
-      const r = await axios.get(`${getApiBase()}/api/v1/admissions/public/tenant-info/${tenantSlug}/`);
+      const r = await publicApiClient.get(`/admissions/public/tenant-info/${tenantSlug}/`);
       setTenantId(r.data.id);
       return r.data.id;
     } catch {
@@ -84,7 +82,7 @@ export default function ApplicationStatus() {
     try {
       const params: Record<string, string> = { tenant_id: tid, email: email.trim() };
       if (reference.trim()) params.reference = reference.trim();
-      const r = await axios.get(`${getApiBase()}/api/v1/admissions/public/status/`, { params });
+      const r = await publicApiClient.get('/admissions/public/status/', { params });
       setResults(r.data.applications);
       if (r.data.applications.length === 0) {
         setError("Aucune candidature trouvée pour cet e-mail.");

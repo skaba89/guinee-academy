@@ -1,6 +1,6 @@
 // src/hooks/usePublicPages.ts
 import { useQuery } from '@tanstack/react-query';
-import axios from 'axios';
+
 
 // ─── Types ───────────────────────────────────────────────────────────────
 
@@ -51,31 +51,8 @@ export interface PublicPageListItem {
   sort_order?: number;
 }
 
-// ─── Axios instance (reuse the publicApi pattern) ────────────────────────
-
-function resolvePublicBaseUrl(): string {
-  const runtimeCfg = (window as any).__GUINEE_ACADEMY_CONFIG__;
-  if (runtimeCfg?.API_URL && typeof runtimeCfg.API_URL === 'string') {
-    const url = runtimeCfg.API_URL.trim();
-    if (url) return `${url.replace(/\/api\/?$/, '')}/api/v1`;
-  }
-  const envUrl = import.meta.env.VITE_API_URL?.trim();
-  if (envUrl) {
-    const isBrowserLocal = /localhost|127\.0\.0\.1/.test(window.location.hostname);
-    if (!isBrowserLocal && /localhost|127\.0\.0\.1/.test(envUrl)) {
-      return '/api/v1';
-    }
-    return `${envUrl.replace(/\/api\/?$/, '')}/api/v1`;
-  }
-  const isBrowserLocal = /localhost|127\.0\.0\.1/.test(window.location.hostname);
-  return isBrowserLocal ? 'http://localhost:8000/api/v1' : '/api/v1';
-}
-
-const publicApi = axios.create({
-  baseURL: resolvePublicBaseUrl(),
-  timeout: 10_000,
-  headers: { 'Content-Type': 'application/json' },
-});
+// ─── Axios instance (shared public client from api/client.ts) ────────────
+import { publicApiClient } from '@/api/client';
 
 // ─── Hooks ───────────────────────────────────────────────────────────────
 
@@ -88,7 +65,7 @@ export function usePublicPages(tenantSlug: string | undefined) {
     queryKey: ['public-pages', tenantSlug],
     queryFn: async () => {
       if (!tenantSlug) throw new Error('Slug requis');
-      const { data } = await publicApi.get<PublicPageListItem[]>(
+      const { data } = await publicApiClient.get<PublicPageListItem[]>(
         `/tenants/public/${encodeURIComponent(tenantSlug)}/pages/`
       );
       return data;
@@ -110,7 +87,7 @@ export function usePublicPageBySlug(tenantSlug: string | undefined, pageSlug: st
     queryKey: ['public-page', tenantSlug, pageSlug],
     queryFn: async () => {
       if (!tenantSlug || !pageSlug) throw new Error('Slug requis');
-      const { data } = await publicApi.get<PublicPageResponse>(
+      const { data } = await publicApiClient.get<PublicPageResponse>(
         `/tenants/public/${encodeURIComponent(tenantSlug)}/pages/${encodeURIComponent(pageSlug)}/`
       );
       return data;
@@ -132,7 +109,7 @@ export function usePublicNav(tenantSlug: string | undefined) {
     queryKey: ['public-nav', tenantSlug],
     queryFn: async () => {
       if (!tenantSlug) throw new Error('Slug requis');
-      const { data } = await publicApi.get<PublicNavItem[]>(
+      const { data } = await publicApiClient.get<PublicNavItem[]>(
         `/tenants/public/${encodeURIComponent(tenantSlug)}/nav/`
       );
       return data;

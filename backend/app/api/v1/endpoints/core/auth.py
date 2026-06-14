@@ -82,6 +82,7 @@ class Token(BaseModel):
     refresh_token: str | None = None
     expires_in: int
     token_version: int | None = None
+    mfa_setup_required: bool = False  # True when user has privileged role but no MFA configured yet
 
 
 class UserInfo(BaseModel):
@@ -281,6 +282,7 @@ async def login(request: Request, form_data: OAuth2PasswordRequestForm = Depends
         # SECURITY: Enforce MFA check for privileged roles before issuing token
         PRIVILEGED_ROLES_REQUIRING_MFA = {"SUPER_ADMIN", "TENANT_ADMIN", "DIRECTOR", "ACCOUNTANT"}
         user_privileged_roles = [r for r in roles if r in PRIVILEGED_ROLES_REQUIRING_MFA]
+        mfa_setup_required = False
 
         if user_privileged_roles:
             mfa_enabled = getattr(user, "mfa_enabled", False)
@@ -288,29 +290,23 @@ async def login(request: Request, form_data: OAuth2PasswordRequestForm = Depends
 
             if not mfa_enabled:
                 if enforce_mfa:
-                    # SECURITY: Allow SUPER_ADMIN a grace login to configure MFA
-                    # This prevents a chicken-and-egg deadlock where the admin
-                    # cannot log in to enable MFA because MFA is required to log in.
-                    is_super_admin = "SUPER_ADMIN" in user_privileged_roles
-                    if is_super_admin:
-                        logger.warning(
-                            "Grace login: user '%s' is SUPER_ADMIN without MFA — "
-                            "allowing one-time access to configure MFA",
-                            user.email
-                        )
-                    else:
-                        logger.warning(
-                            "Login blocked: user '%s' has privileged role(s) %s but MFA is not enabled (ENFORCE_MFA=true)",
-                            user.email, user_privileged_roles
-                        )
-                        raise HTTPException(
-                            status_code=status.HTTP_403_FORBIDDEN,
-                            detail="L'authentification multi-facteurs (MFA) est obligatoire pour ce compte. Veuillez activer le MFA via les paramètres de sécurité.",
-                        )
+                    # SECURITY: Grace login for ALL privileged roles without MFA.
+                    # This prevents a chicken-and-egg deadlock where a user cannot
+                    # log in to enable MFA because MFA is required to log in.
+                    # The login succeeds but mfa_setup_required=True signals the
+                    # frontend to redirect the user to MFA setup immediately.
+                    mfa_setup_required = True
+                    logger.warning(
+                        "Grace login: user '%s' has privileged role(s) %s without MFA — "
+                        "allowing access to configure MFA (mfa_setup_required=True)",
+                        user.email, user_privileged_roles
+                    )
                 else:
+                    # ENFORCE_MFA is off — still flag so frontend can nudge the user
+                    mfa_setup_required = True
                     logger.warning(
                         "MFA not enabled for user '%s' with privileged roles %s. "
-                        "Set ENFORCE_MFA=true to require MFA for privileged accounts.",
+                        "Set ENFORCE_MFA=true to block login until MFA is configured.",
                         user.email, user_privileged_roles
                     )
 
@@ -323,6 +319,7 @@ async def login(request: Request, form_data: OAuth2PasswordRequestForm = Depends
             refresh_token=None,
             expires_in=settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60,
             token_version=token_version,
+            mfa_setup_required=mfa_setup_required,
         )
 
     except HTTPException:
