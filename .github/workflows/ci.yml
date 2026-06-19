@@ -356,6 +356,10 @@ jobs:
       - name: Start backend
         # Start uvicorn in background with logs captured to /tmp/backend.log
         # so we can inspect them if the API fails to come up.
+        # REDIS_URL must match the password set in the 'Create .env.docker'
+        # step above (ciredispassword). Without it, /api/v1/health/ returns
+        # 503 (Redis unreachable) and the Playwright global-setup never
+        # considers the API ready.
         run: |
           cd backend && nohup uvicorn app.main:app --host 0.0.0.0 --port 8000 > /tmp/backend.log 2>&1 &
           echo "Backend PID: $!"
@@ -369,6 +373,7 @@ jobs:
           echo "Backend process is alive after 10s. Continuing..."
         env:
           DATABASE_URL: postgresql://schoolflow:testpassword@localhost:5432/schoolflow_test
+          REDIS_URL: redis://:ciredispassword@localhost:6379/0
           SECRET_KEY: test-secret-key-for-ci-min-32-chars
           BOOTSTRAP_SECRET: test-bootstrap-secret-key-for-ci-32chars
           DEBUG: "true"
