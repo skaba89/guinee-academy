@@ -13,10 +13,17 @@ export default defineConfig({
   fullyParallel: true,
   /* Arrêter au premier test échoué */
   forbidOnly: !!process.env.CI,
-  /* Relancer les tests échoués sur CI */
-  retries: process.env.CI ? 2 : 0,
+  /* Pas de retries sur CI tant que les tests E2E ne sont pas stables
+   * (les utilisateurs de test admin@test.local etc. ne sont pas seedés
+   * dans le DB CI — chaque test échoue, et avec retries=2 le run dure
+   * >60 min. Une fois le seeding en place, remettre retries: 2). */
+  retries: process.env.CI ? 0 : 0,
   /* Workers parallèles sur CI */
   workers: process.env.CI ? 1 : undefined,
+  /* Timeout par test — 15s suffit pour la plupart des flows;
+   * éviter les hangs de 30s sur les tests qui dépendent d'un user
+   * non seedé. */
+  timeout: process.env.CI ? 15000 : 30000,
   /* Reporter: json pour CI, html pour développement */
   reporter: 'html',
   /* Configuration commune pour tous les projets */
