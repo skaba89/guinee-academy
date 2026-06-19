@@ -3,6 +3,7 @@ Admissions module — workflow complet:
   DRAFT → SUBMITTED → UNDER_REVIEW → ACCEPTED → CONVERTED_TO_STUDENT
                                     ↘ REJECTED
 """
+import uuid as _uuid
 from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
@@ -193,6 +194,8 @@ def create_admission(
     tenant_id = current_user.get("tenant_id")
     if not tenant_id:
         raise HTTPException(status_code=403, detail="No tenant context")
+    new_id = str(_uuid.uuid4())
+    now = datetime.utcnow()
     row = db.execute(text("""
         INSERT INTO admission_applications (
             id, tenant_id, academic_year_id, level_id,
@@ -201,13 +204,14 @@ def create_admission(
             parent_first_name, parent_last_name, parent_email, parent_phone,
             parent_address, parent_occupation, status, notes, created_at, updated_at
         ) VALUES (
-            gen_random_uuid(), :tenant_id, :academic_year_id, :level_id,
+            :id, :tenant_id, :academic_year_id, :level_id,
             :student_first_name, :student_last_name, :student_date_of_birth,
             :student_gender, :student_address, :student_previous_school,
             :parent_first_name, :parent_last_name, :parent_email, :parent_phone,
-            :parent_address, :parent_occupation, 'DRAFT', :notes, NOW(), NOW()
+            :parent_address, :parent_occupation, 'DRAFT', :notes, :now, :now
         ) RETURNING *
     """), {
+        "id": new_id,
         "tenant_id": tenant_id, "academic_year_id": payload.academic_year_id,
         "level_id": payload.level_id,
         "student_first_name": payload.student_first_name, "student_last_name": payload.student_last_name,
@@ -217,6 +221,7 @@ def create_admission(
         "parent_email": payload.parent_email, "parent_phone": payload.parent_phone,
         "parent_address": payload.parent_address, "parent_occupation": payload.parent_occupation,
         "notes": payload.notes,
+        "now": now,
     }).mappings().first()
     log_audit(db, user_id=current_user.get("id"), tenant_id=tenant_id,
               action="ADMISSION_CREATED", resource_type="ADMISSION", resource_id=str(row["id"]))
@@ -247,13 +252,18 @@ def transition_status(
     extra = ""
     extra_params: dict = {}
     if new_status == "SUBMITTED":
-        extra = ", submitted_at = NOW()"
+        extra = ", submitted_at = :now"
+        extra_params["now"] = datetime.utcnow()
     if new_status in ("ACCEPTED", "REJECTED", "UNDER_REVIEW"):
-        extra = ", reviewed_at = NOW(), reviewed_by = :reviewer"
+        now = datetime.utcnow()
+        extra = ", reviewed_at = :now, reviewed_by = :reviewer"
         extra_params["reviewer"] = current_user.get("id")
+        extra_params["now"] = now
+    if "now" not in extra_params:
+        extra_params["now"] = datetime.utcnow()
     db.execute(text(f"""
         UPDATE admission_applications
-        SET status = :status, notes = COALESCE(:notes, notes), updated_at = NOW() {extra}
+        SET status = :status, notes = COALESCE(:notes, notes), updated_at = :now {extra}
         WHERE id = :id AND tenant_id = :tenant_id
     """), {"status": new_status, "notes": payload.notes,
            "id": admission_id, "tenant_id": tenant_id, **extra_params})
@@ -310,7 +320,7 @@ def convert_to_student(
             :first_name, :last_name, :dob, :gender,
             :address, :level, :class_name, :academic_year, 'ACTIVE',
             :parent_name, :parent_phone, :parent_email,
-            NOW(), NOW()
+            :now, :now
         ) RETURNING id, registration_number, first_name, last_name
     """), {
         "tenant_id":   tenant_id, "reg_number": reg_number,
@@ -323,16 +333,18 @@ def convert_to_student(
         "parent_name": f"{app['parent_first_name']} {app['parent_last_name']}",
         "parent_phone": app["parent_phone"],
         "parent_email": app["parent_email"],
+        "now": datetime.utcnow(),
     }).mappings().first()
 
     student_id = str(student["id"])
+    now_conv = datetime.utcnow()
     db.execute(text("""
         UPDATE admission_applications
         SET status = 'CONVERTED_TO_STUDENT', converted_student_id = :student_id,
-            reviewed_by = :reviewer, reviewed_at = NOW(), updated_at = NOW()
+            reviewed_by = :reviewer, reviewed_at = :now, updated_at = :now
         WHERE id = :id AND tenant_id = :tenant_id
     """), {"student_id": student_id, "reviewer": current_user.get("id"),
-           "id": admission_id, "tenant_id": tenant_id})
+           "id": admission_id, "tenant_id": tenant_id, "now": now_conv})
 
     log_audit(db, user_id=current_user.get("id"), tenant_id=tenant_id,
               action="ADMISSION_CONVERTED", resource_type="ADMISSION", resource_id=admission_id,
@@ -364,10 +376,10 @@ def edit_admission(
     set_clause = ", ".join(f"{k} = :{k}" for k in updates)
     result = db.execute(text(f"""
         UPDATE admission_applications
-        SET {set_clause}, updated_at = NOW()
+        SET {set_clause}, updated_at = :now
         WHERE id = :id AND tenant_id = :tenant_id AND status = 'DRAFT'
         RETURNING id
-    """), {"id": admission_id, "tenant_id": tenant_id, **updates})
+    """), {"id": admission_id, "tenant_id": tenant_id, "now": datetime.utcnow(), **updates})
     if not result.rowcount:
         raise HTTPException(status_code=400,
             detail="Application not found or not in DRAFT status")
@@ -410,23 +422,26 @@ def public_apply(
     if not tenant:
         raise HTTPException(status_code=404, detail="Tenant not found or inactive")
 
+    new_id = str(_uuid.uuid4())
+    now = datetime.utcnow()
     row = db.execute(text("""
         INSERT INTO admission_applications (
             id, tenant_id, academic_year_id, level_id,
             student_first_name, student_last_name, student_date_of_birth,
             student_gender, student_address, student_previous_school,
             parent_first_name, parent_last_name, parent_email, parent_phone,
-            parent_address, parent_occupation, status, notes, 
+            parent_address, parent_occupation, status, notes,
             submitted_at, created_at, updated_at
         ) VALUES (
-            gen_random_uuid(), :tenant_id, :academic_year_id, :level_id,
+            :id, :tenant_id, :academic_year_id, :level_id,
             :student_first_name, :student_last_name, :student_date_of_birth,
             :student_gender, :student_address, :student_previous_school,
             :parent_first_name, :parent_last_name, :parent_email, :parent_phone,
             :parent_address, :parent_occupation, 'SUBMITTED', :notes,
-            NOW(), NOW(), NOW()
+            :now, :now, :now
         ) RETURNING *
     """), {
+        "id": new_id,
         "tenant_id": tenant_id, 
         "academic_year_id": payload.get("academic_year_id"),
         "level_id": payload.get("level_id"),
@@ -440,9 +455,10 @@ def public_apply(
         "parent_last_name": payload.get("parent_last_name"),
         "parent_email": payload.get("parent_email"), 
         "parent_phone": payload.get("parent_phone"),
-        "parent_address": payload.get("parent_address"), 
+        "parent_address": payload.get("parent_address"),
         "parent_occupation": payload.get("parent_occupation"),
         "notes": payload.get("notes"),
+        "now": now,
     }).mappings().first()
 
     db.commit()
@@ -629,6 +645,8 @@ def public_reenroll(payload: ReEnrollPayload, db: Session = Depends(get_db)):
         )
 
     import json as _json
+    new_id = str(_uuid.uuid4())
+    now = datetime.utcnow()
     row = db.execute(text("""
         INSERT INTO admission_applications (
             id, tenant_id, academic_year_id, level_id,
@@ -637,13 +655,14 @@ def public_reenroll(payload: ReEnrollPayload, db: Session = Depends(get_db)):
             status, notes, documents,
             submitted_at, created_at, updated_at
         ) VALUES (
-            gen_random_uuid(), :tenant_id, :academic_year_id, :level_id,
+            :id, :tenant_id, :academic_year_id, :level_id,
             :first_name, :last_name,
             :parent_email, :parent_phone,
-            'SUBMITTED', :notes, :documents::jsonb,
-            NOW(), NOW(), NOW()
+            'SUBMITTED', :notes, CAST(:documents AS json),
+            :now, :now, :now
         ) RETURNING id, status, submitted_at
     """), {
+        "id": new_id,
         "tenant_id": payload.tenant_id,
         "academic_year_id": payload.academic_year_id,
         "level_id": payload.level_id,
@@ -653,6 +672,7 @@ def public_reenroll(payload: ReEnrollPayload, db: Session = Depends(get_db)):
         "parent_phone": payload.parent_phone,
         "notes": f"[RÉINSCRIPTION] {payload.notes or ''}".strip(),
         "documents": _json.dumps({"type": "REINSCRIPTION", "student_id": payload.student_id}),
+        "now": now,
     }).mappings().first()
 
     db.commit()

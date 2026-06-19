@@ -1,4 +1,5 @@
 """Users endpoints — full CRUD + role management"""
+import json
 from typing import Optional, List
 from datetime import datetime
 from fastapi import APIRouter, Depends, HTTPException, status, Query
@@ -160,9 +161,29 @@ def read_users_me(
             "slug": row.tenant_slug,
             "name": row.tenant_name,
             "type": row.tenant_type,
-            "settings": row.tenant_settings if row.tenant_settings else {}
+            "settings": _parse_tenant_settings(row.tenant_settings),
         } if row.tenant_id else None
     }
+
+
+def _parse_tenant_settings(raw):
+    """Parse tenant settings from raw SQL row value.
+
+    SQLite stores JSON columns as TEXT, so raw SQL `text()` queries return
+    a JSON string instead of a parsed dict. The frontend expects a dict
+    (e.g. `tenant.settings.onboarding_completed`), so we normalize here.
+    """
+    if not raw:
+        return {}
+    if isinstance(raw, dict):
+        return raw
+    if isinstance(raw, str):
+        try:
+            parsed = json.loads(raw)
+            return parsed if isinstance(parsed, dict) else {}
+        except (json.JSONDecodeError, TypeError):
+            return {}
+    return {}
 
 
 @router.get("/")
