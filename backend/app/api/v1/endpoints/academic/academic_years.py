@@ -1,18 +1,19 @@
 import logging
-from typing import List
+from uuid import UUID
+
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
-from uuid import UUID
 
 from app.core.database import get_db
 from app.core.security import require_permission
 from app.crud import academic as crud_academic
 from app.schemas.academic import AcademicYear, AcademicYearCreate, AcademicYearUpdate
 
+
 router = APIRouter()
 logger = logging.getLogger(__name__)
 
-@router.get("/", response_model=List[AcademicYear])
+@router.get("/", response_model=list[AcademicYear])
 def list_academic_years(
     db: Session = Depends(get_db),
     current_user: dict = Depends(require_permission("settings:read")),
@@ -22,7 +23,7 @@ def list_academic_years(
     if not tenant_id:
         logger.warning("No tenant_id found in current_user")
         return []
-    
+
     try:
         return crud_academic.get_academic_years(db, tenant_id=tenant_id)
     except Exception as e:

@@ -1,7 +1,8 @@
-from pydantic import BaseModel
-from typing import List, Optional
-from uuid import UUID
 from datetime import datetime
+from uuid import UUID
+
+from pydantic import BaseModel
+
 
 # --- ParentStudent Schemas ---
 
@@ -9,7 +10,7 @@ class ParentStudentBase(BaseModel):
     parent_id: UUID
     student_id: UUID
     is_primary: bool = False
-    relation_type: Optional[str] = None
+    relation_type: str | None = None
 
 class ParentStudentCreate(ParentStudentBase):
     pass

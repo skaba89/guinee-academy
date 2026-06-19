@@ -1,41 +1,85 @@
 from fastapi import APIRouter, Request
-from app.api.v1.endpoints.core import users, storage, realtime, auth, rgpd, analytics, mfa, tenants, notifications, audit, health, ai, public_pages, webhooks, search, imports as data_imports, billing, platform
-from app.api.v1.endpoints.academic import students, grades, academic_years, campuses, levels, subjects, departments, terms, assessments, teachers, attendance, homework
-from app.api.v1.endpoints.finance import payments, payment_schedules
-from app.api.v1.endpoints.operational import infrastructure, hr, school_life, parents, admissions, schedule, communication, surveys
-from app.api.v1.endpoints.operational import departments as dept_portal
-from app.api.v1.endpoints.operational import alumni as alumni_portal
-from app.api.v1.endpoints.operational import inventory, library, clubs, incidents
+
+from app.api.v1.endpoints.academic import (
+    academic_years,
+    assessments,
+    attendance,
+    campuses,
+    departments,
+    grades,
+    homework,
+    levels,
+    students,
+    subjects,
+    teachers,
+    terms,
+)
 from app.api.v1.endpoints.aliases import (
-    enrollments_alias_router,
-    invoices_alias_router,
+    achievement_router,
     class_sessions_router,
+    classrooms_alias_router,
+    course_discussions_router,
+    courses_alias_router,
+    enrollments_alias_router,
+    gamification_router,
+    grade_history_router,
+    homework_submissions_router,
+    invoices_alias_router,
+    point_transactions_router,
+    presence_router,
+    push_subscriptions_router,
+    quiz_questions_router,
+    rooms_alias_router,
+    schedule_slots_alias_router,
     school_events_router,
+    shared_note_comments_router,
+    shared_note_likes_router,
+    shared_notes_router,
+    student_achievement_router,
+    student_badges_router,
+    student_check_ins_router,
     student_parents_router,
     student_subjects_router,
-    push_subscriptions_router,
-    presence_router,
-    parents_list_alias_router,
-    rooms_alias_router,
-    classrooms_alias_router,
-    schedule_slots_alias_router,
-    achievement_router,
-    student_achievement_router,
-    gamification_router,
-    homework_submissions_router,
-    grade_history_router,
-    shared_notes_router,
-    shared_note_likes_router,
-    shared_note_comments_router,
-    courses_alias_router,
-    course_discussions_router,
-    student_check_ins_router,
-    student_badges_router,
     trusted_devices_router,
-    point_transactions_router,
-    quiz_questions_router,
 )
+from app.api.v1.endpoints.core import (
+    ai,
+    analytics,
+    audit,
+    auth,
+    billing,
+    health,
+    mfa,
+    notifications,
+    platform,
+    realtime,
+    rgpd,
+    search,
+    storage,
+    tenants,
+    users,
+    webhooks,
+)
+from app.api.v1.endpoints.core import imports as data_imports
 from app.api.v1.endpoints.core.rgpd import consent_router
+from app.api.v1.endpoints.finance import payment_schedules, payments
+from app.api.v1.endpoints.operational import (
+    admissions,
+    clubs,
+    communication,
+    hr,
+    incidents,
+    infrastructure,
+    inventory,
+    library,
+    parents,
+    schedule,
+    school_life,
+    surveys,
+)
+from app.api.v1.endpoints.operational import alumni as alumni_portal
+from app.api.v1.endpoints.operational import departments as dept_portal
+
 
 api_router = APIRouter()
 
@@ -50,7 +94,7 @@ api_router.include_router(audit.router, prefix="/audit", tags=["Audit Logs"])
 # /audit-logs is a legacy alias — use a lightweight redirect instead of double-registering
 # the same router (which duplicates all endpoints in OpenAPI).
 from starlette.responses import RedirectResponse
-from starlette.routing import Route
+
 
 audit_logs_redirect = APIRouter()
 
@@ -111,6 +155,8 @@ api_router.include_router(surveys.router, prefix="/surveys", tags=["Surveys"])
 # Admin CRUD (requires auth)
 from app.api.v1.endpoints.core.public_pages import admin_router as public_pages_admin_router
 from app.api.v1.endpoints.core.public_pages import public_router as public_pages_public_router
+
+
 api_router.include_router(public_pages_admin_router, prefix="/public-pages", tags=["Public Pages (Admin)"])
 # Public read endpoints (no auth required)
 api_router.include_router(public_pages_public_router, prefix="/tenants/public", tags=["Public Pages"])

@@ -1,8 +1,8 @@
 """PublicPage model — customizable public pages per tenant."""
-from sqlalchemy import Column, String, Boolean, JSON, Integer, Text
+from sqlalchemy import JSON, Boolean, Column, Integer, String, Text
 from sqlalchemy.orm import relationship
 
-from app.models.base import Base, UUIDMixin, TimestampMixin, TenantMixin
+from app.models.base import Base, TenantMixin, TimestampMixin, UUIDMixin
 
 
 class PublicPage(Base, UUIDMixin, TimestampMixin, TenantMixin):

@@ -3,29 +3,29 @@
 Admin endpoints require authentication and appropriate roles.
 Public endpoints are accessible without authentication.
 """
-from typing import List
+import logging
+from datetime import datetime
+from uuid import UUID
+
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from sqlalchemy.orm.attributes import flag_modified
-from uuid import UUID
-from datetime import datetime
-import traceback
-import logging
 
 from app.core.database import get_db
 from app.core.security import get_current_user, require_permission
-from app.utils.audit import log_audit
-from app.schemas.public_pages import (
-    PublicPageCreate,
-    PublicPageUpdate,
-    PublicPageResponse,
-    PublicPageListItem,
-    PublicPagePublicResponse,
-    PublicPageNavResponse,
-    PageReorderRequest,
-)
 from app.models.public_page import PublicPage
 from app.models.tenant import Tenant
+from app.schemas.public_pages import (
+    PageReorderRequest,
+    PublicPageCreate,
+    PublicPageListItem,
+    PublicPageNavResponse,
+    PublicPagePublicResponse,
+    PublicPageResponse,
+    PublicPageUpdate,
+)
+from app.utils.audit import log_audit
+
 
 logger = logging.getLogger(__name__)
 
@@ -148,7 +148,7 @@ async def create_public_page(
         )
 
 
-@admin_router.get("/", response_model=List[PublicPageListItem])
+@admin_router.get("/", response_model=list[PublicPageListItem])
 async def list_public_pages(
     page_type: str | None = None,
     is_published: bool | None = None,
@@ -174,7 +174,7 @@ async def list_public_pages(
     return pages
 
 
-@admin_router.get("/nav/", response_model=List[PublicPageNavResponse])
+@admin_router.get("/nav/", response_model=list[PublicPageNavResponse])
 async def list_nav_pages(
     db: Session = Depends(get_db),
     current_user: dict = Depends(get_current_user),
@@ -390,7 +390,7 @@ async def reorder_public_pages(
 public_router = APIRouter()
 
 
-@public_router.get("/{tenant_slug}/pages/", response_model=List[PublicPageListItem])
+@public_router.get("/{tenant_slug}/pages/", response_model=list[PublicPageListItem])
 async def list_published_pages_public(
     tenant_slug: str,
     db: Session = Depends(get_db),
@@ -418,7 +418,7 @@ async def list_published_pages_public(
     return pages
 
 
-@public_router.get("/{tenant_slug}/nav/", response_model=List[PublicPageNavResponse])
+@public_router.get("/{tenant_slug}/nav/", response_model=list[PublicPageNavResponse])
 async def list_nav_pages_public(
     tenant_slug: str,
     db: Session = Depends(get_db),

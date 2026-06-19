@@ -1,15 +1,16 @@
-import time
 import logging
-from typing import Optional
+import time
+
+import redis as redis_lib
 from fastapi import APIRouter, Depends
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
-from sqlalchemy.orm import Session
 from sqlalchemy import text
-import redis as redis_lib
+from sqlalchemy.orm import Session
 
-from app.core.database import get_db
 from app.core.config import settings
+from app.core.database import get_db
+
 
 logger = logging.getLogger(__name__)
 
@@ -18,8 +19,8 @@ router = APIRouter()
 
 class ServiceStatus(BaseModel):
     status: str  # "healthy" | "unhealthy" | "degraded"
-    latency_ms: Optional[float] = None
-    detail: Optional[str] = None
+    latency_ms: float | None = None
+    detail: str | None = None
 
 
 class HealthResponse(BaseModel):

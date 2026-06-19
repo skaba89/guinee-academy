@@ -1,14 +1,17 @@
+import datetime
+import json
 import logging
-from fastapi import APIRouter, Depends, HTTPException, status, Query
-from sqlalchemy.orm import Session
-from sqlalchemy import text
-from typing import List, Dict, Any, Optional
-from pydantic import BaseModel
+from typing import Any
 from uuid import UUID
-import datetime, json
+
+from fastapi import APIRouter, Depends, HTTPException, Query, status
+from pydantic import BaseModel
+from sqlalchemy import text
+from sqlalchemy.orm import Session
 
 from app.core.database import get_db
 from app.core.security import get_current_user, require_permission
+
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -18,17 +21,17 @@ router = APIRouter()
 class AnnouncementCreate(BaseModel):
     title: str
     content: str
-    target_roles: List[str]
+    target_roles: list[str]
     pinned: bool = False
 
 class MessageCreate(BaseModel):
     content: str
-    conversation_id: Optional[str] = None  # existing conversation
-    recipient_id: Optional[str] = None      # create new 1-on-1 conversation
+    conversation_id: str | None = None  # existing conversation
+    recipient_id: str | None = None      # create new 1-on-1 conversation
 
 class ConversationCreate(BaseModel):
     recipient_id: str
-    initial_message: Optional[str] = None
+    initial_message: str | None = None
 
 
 # ─── Announcements ────────────────────────────────────────────────────────────
@@ -42,8 +45,8 @@ def get_announcements(
     try:
         tenant_id = current_user.get("tenant_id")
         query = text("""
-            SELECT id, tenant_id, author_id, title, content, target_roles, pinned, published_at, created_at, deleted_at 
-            FROM announcements 
+            SELECT id, tenant_id, author_id, title, content, target_roles, pinned, published_at, created_at, deleted_at
+            FROM announcements
             WHERE tenant_id = :tenant_id AND deleted_at IS NULL
             ORDER BY pinned DESC, created_at DESC
         """)
@@ -110,7 +113,7 @@ def delete_announcement(
     try:
         tenant_id = current_user.get("tenant_id")
         db.execute(text("""
-            UPDATE announcements SET deleted_at = NOW() 
+            UPDATE announcements SET deleted_at = NOW()
             WHERE id = :id AND tenant_id = :tenant_id
         """), {"id": str(announcement_id), "tenant_id": tenant_id})
         db.commit()
@@ -152,7 +155,7 @@ def get_teacher_recipients(
     try:
         user_id = current_user.get("id")
         tenant_id = current_user.get("tenant_id")
-        
+
         parents = db.execute(text("""
             SELECT DISTINCT u.id, u.first_name, u.last_name, u.email, 'Parent' as info
             FROM teacher_assignments ta
@@ -161,14 +164,14 @@ def get_teacher_recipients(
             JOIN users u ON u.id = ps.parent_id
             WHERE ta.teacher_id = :user_id AND ta.tenant_id = :tenant_id
         """), {"user_id": user_id, "tenant_id": tenant_id}).mappings().all()
-        
+
         teachers = db.execute(text("""
             SELECT DISTINCT u.id, u.first_name, u.last_name, u.email, 'Enseignant' as info
             FROM teacher_assignments ta
             JOIN users u ON u.id = ta.teacher_id
             WHERE ta.tenant_id = :tenant_id AND ta.teacher_id != :user_id
         """), {"user_id": user_id, "tenant_id": tenant_id}).mappings().all()
-        
+
         def fmt(row):
             return {
                 "id": str(row["id"]),
@@ -200,14 +203,14 @@ def list_conversations(
         tenant_id = current_user.get("tenant_id")
 
         rows = db.execute(text("""
-            SELECT 
+            SELECT
                 c.id, c.type, c.title, c.tenant_id, c.created_at,
                 m.content AS last_message, m.created_at AS last_message_at,
                 sender.first_name AS sender_first, sender.last_name AS sender_last,
                 COUNT(um.id) FILTER (WHERE um.is_read = false AND um.user_id = :user_id) AS unread_count,
                 -- Other participant info for 1-on-1 conversations
                 (
-                    SELECT CONCAT(u2.first_name, ' ', u2.last_name) 
+                    SELECT CONCAT(u2.first_name, ' ', u2.last_name)
                     FROM conversation_participants cp2
                     JOIN users u2 ON u2.id = cp2.user_id
                     WHERE cp2.conversation_id = c.id AND cp2.user_id != :user_id
@@ -310,7 +313,7 @@ def create_or_find_conversation(
 @router.get("/conversations/{conversation_id}/messages/")
 def get_messages(
     conversation_id: str,
-    before: Optional[str] = None,
+    before: str | None = None,
     limit: int = Query(50, ge=1, le=100),
     db: Session = Depends(get_db),
     current_user: dict = Depends(get_current_user),
@@ -319,7 +322,6 @@ def get_messages(
     try:
         """Get messages for a conversation with pagination. Also marks messages as read."""
         user_id = current_user.get("id")
-        tenant_id = current_user.get("tenant_id")
 
         # Verify user is participant
         part = db.execute(text("""
@@ -329,7 +331,7 @@ def get_messages(
         if not part:
             raise HTTPException(status_code=403, detail="Accès refusé")
 
-        cursor = f"AND m.created_at < :before" if before else ""
+        cursor = "AND m.created_at < :before" if before else ""
         params: dict = {"conv_id": conversation_id, "limit": limit}
         if before:
             params["before"] = before
@@ -557,7 +559,7 @@ def update_forum(forum_id: UUID, body: dict, db: Session = Depends(get_db), curr
         if not tenant_id:
             raise HTTPException(status_code=403, detail="No tenant context")
         db.execute(text("""
-            UPDATE student_forums SET 
+            UPDATE student_forums SET
                 title = :title, description = :desc, category = :cat, is_active = :active
             WHERE id = :fid AND tenant_id = :tid
         """), {
@@ -597,11 +599,11 @@ def delete_forum(forum_id: UUID, db: Session = Depends(get_db), current_user: di
 
 class NotificationEmailPayload(BaseModel):
     type: str
-    recipientEmail: Optional[str] = None
-    recipientPhone: Optional[str] = None       # WhatsApp phone (E.164)
-    recipientName: Optional[str] = None
-    oneSignalUserId: Optional[str] = None      # OneSignal external user ID
-    data: Optional[Dict[str, Any]] = None
+    recipientEmail: str | None = None
+    recipientPhone: str | None = None       # WhatsApp phone (E.164)
+    recipientName: str | None = None
+    oneSignalUserId: str | None = None      # OneSignal external user ID
+    data: dict[str, Any] | None = None
 
 
 @router.post("/send-notification-email/")
@@ -676,7 +678,6 @@ def send_notification_email(
                 )
             else:
                 # Generic: send via email only
-                from app.services.notifications import Templates
                 result_email = svc.email.send(
                     to=payload.recipientEmail or "",
                     subject=f"Notification — {payload.type}",

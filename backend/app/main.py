@@ -6,17 +6,16 @@ from contextlib import asynccontextmanager
 # here has been removed. We now use bcrypt directly (via app.core.security's
 # _BcryptContext) instead of passlib's CryptContext, eliminating the need for
 # any version-introspection workaround.
-
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
-from fastapi.staticfiles import StaticFiles
 from slowapi import Limiter, _rate_limit_exceeded_handler
-from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
 from slowapi.middleware import SlowAPIMiddleware
+from slowapi.util import get_remote_address
 
 from app.core.config import settings
+
 
 # ─── Sentry — initialisation avant tout le reste ─────────────────────────────
 def _init_sentry() -> None:
@@ -26,8 +25,8 @@ def _init_sentry() -> None:
     try:
         import sentry_sdk
         from sentry_sdk.integrations.fastapi import FastApiIntegration
-        from sentry_sdk.integrations.sqlalchemy import SqlalchemyIntegration
         from sentry_sdk.integrations.redis import RedisIntegration
+        from sentry_sdk.integrations.sqlalchemy import SqlalchemyIntegration
 
         def _scrub_sensitive(event, hint):
             """Supprimer les données sensibles avant envoi à Sentry (RGPD)."""
@@ -62,19 +61,21 @@ def _init_sentry() -> None:
 
 
 _init_sentry()
-from app.core.logging_config import setup_logging
+from fastapi.exceptions import HTTPException
+
+from app.api.v1.router import api_router
 from app.core.exceptions import (
     GuineeAcademyException,
     guinee_academy_exception_handler,
     http_exception_handler,
     unhandled_exception_handler,
 )
-from app.middlewares.tenant import TenantMiddleware
-from app.middlewares.request_id import RequestIDMiddleware
+from app.core.logging_config import setup_logging
 from app.middlewares.metrics import MetricsMiddleware, metrics_endpoint
 from app.middlewares.quota import QuotaMiddleware
-from app.api.v1.router import api_router
-from fastapi.exceptions import HTTPException
+from app.middlewares.request_id import RequestIDMiddleware
+from app.middlewares.tenant import TenantMiddleware
+
 
 setup_logging(level=settings.LOG_LEVEL)
 logger = logging.getLogger(__name__)
@@ -106,7 +107,7 @@ limiter = Limiter(
     headers_enabled=True,
 )
 
-def _ensure_all_table_columns(db, text):  # noqa: dead code — kept for emergency manual invocation
+def _ensure_all_table_columns(db, text):
     """Replaced by Alembic migration 20260424_0003_ensure_core_table_columns.
 
     This function is no longer called at startup. Use `alembic upgrade head` instead.
@@ -611,15 +612,15 @@ async def lifespan(app: FastAPI):
     logger.info("Guinée Academy API starting up...")
 
     # Auto-run pending Alembic migrations
+    import app.models
     from app.core.database import Base, engine
-    import app.models  # noqa: F401 — ensure all models are registered
 
     if settings.is_sqlite:
         logger.info("SQLite detected — skipping Alembic migrations, using create_all instead")
     else:
         try:
-            from alembic.config import Config
             from alembic import command
+            from alembic.config import Config
 
             backend_dir = os.path.dirname(os.path.dirname(__file__))
             alembic_cfg = Config(os.path.join(backend_dir, "alembic.ini"))
@@ -659,12 +660,14 @@ async def lifespan(app: FastAPI):
 
     # Auto-create super admin if no admin exists
     try:
+        import uuid
+
+        from sqlalchemy import text
+
         from app.core.database import SessionLocal
+        from app.core.security import get_password_hash
         from app.models.user import User
         from app.models.user_role import UserRole
-        from app.core.security import get_password_hash
-        from sqlalchemy import text
-        import uuid
 
         db = SessionLocal()
         try:
@@ -1026,8 +1029,9 @@ def root():
 @app.get("/health/", tags=["Health"], summary="Health check")
 async def health_check():
     """Lightweight liveness + readiness probe for load balancers and monitoring."""
-    from app.core.database import SessionLocal
     from sqlalchemy import text as sa_text
+
+    from app.core.database import SessionLocal
 
     db_status = "unreachable"
     try:
@@ -1135,7 +1139,9 @@ app.include_router(api_router, prefix=settings.API_V1_STR)
 # SECURITY: Custom StaticFiles subclass to enforce Content-Disposition
 # on non-image uploads, preventing inline execution of uploaded scripts.
 import posixpath
+
 from starlette.staticfiles import StaticFiles as _BaseStaticFiles
+
 
 class _SafeStaticFiles(_BaseStaticFiles):
     """StaticFiles subclass that adds Content-Disposition: attachment
@@ -1169,7 +1175,7 @@ class _SafeStaticFiles(_BaseStaticFiles):
         await super().__call__(scope, receive, _send_with_disposition)
 
 try:
-    from app.core.storage import _UPLOAD_DIR as _upload_dir
+    from app.core.storage import _UPLOAD_DIR as _upload_dir  # noqa: N811 — intentional lowercase alias
 except Exception:
     _upload_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "uploads")
 os.makedirs(_upload_dir, exist_ok=True)

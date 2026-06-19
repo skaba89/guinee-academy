@@ -1,26 +1,36 @@
-import logging
 import base64
 import html as html_mod
-from fastapi import APIRouter, Depends, HTTPException, Query
-from fastapi.responses import StreamingResponse
-from sqlalchemy.orm import Session
-from sqlalchemy import text
-from typing import List, Optional, Dict, Any, Tuple
+import logging
+from datetime import datetime
+from typing import Any
 from uuid import UUID, uuid4
-from datetime import datetime, date, time
+
+from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel
+from sqlalchemy import text
+from sqlalchemy.orm import Session
 
 from app.core.database import get_db
 from app.core.security import require_permission
-from app.schemas.school_life import (
-    Assessment, AssessmentCreate, AssessmentUpdate,
-    Grade, GradeCreate, GradeUpdate,
-    Attendance, AttendanceCreate, AttendanceUpdate,
-    SchoolEvent, SchoolEventCreate, SchoolEventUpdate,
-    StudentCheckIn, StudentCheckInCreate
-)
 from app.crud import school_life as crud_sl
+from app.schemas.school_life import (
+    Assessment,
+    AssessmentCreate,
+    AssessmentUpdate,
+    Attendance,
+    AttendanceCreate,
+    AttendanceUpdate,
+    Grade,
+    GradeCreate,
+    GradeUpdate,
+    SchoolEvent,
+    SchoolEventCreate,
+    SchoolEventUpdate,
+    StudentCheckIn,
+    StudentCheckInCreate,
+)
 from app.utils.audit import log_audit
+
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -28,7 +38,7 @@ logger = logging.getLogger(__name__)
 
 # --- Assessments ---
 
-@router.get("/assessments/", response_model=List[Assessment])
+@router.get("/assessments/", response_model=list[Assessment])
 def read_assessments(
     db: Session = Depends(get_db),
     current_user: dict = Depends(require_permission("assessments:read")),
@@ -93,9 +103,9 @@ def delete_assessment(
 
 # --- Grades ---
 
-@router.get("/grades/", response_model=List[Grade])
+@router.get("/grades/", response_model=list[Grade])
 def read_grades(
-    student_id: Optional[UUID] = None,
+    student_id: UUID | None = None,
     db: Session = Depends(get_db),
     current_user: dict = Depends(require_permission("grades:read")),
 ):
@@ -160,9 +170,9 @@ def delete_grade(
 
 # --- Attendance ---
 
-@router.get("/attendance/", response_model=List[Attendance])
+@router.get("/attendance/", response_model=list[Attendance])
 def read_attendance(
-    student_ids: List[UUID] = Query(None),
+    student_ids: list[UUID] = Query(None),
     db: Session = Depends(get_db),
     current_user: dict = Depends(require_permission("attendance:read")),
 ):
@@ -254,9 +264,9 @@ def delete_attendance(
 
 # --- Events ---
 
-@router.get("/events/", response_model=List[SchoolEvent])
+@router.get("/events/", response_model=list[SchoolEvent])
 def read_events(
-    start_after: Optional[datetime] = None,
+    start_after: datetime | None = None,
     db: Session = Depends(get_db),
     current_user: dict = Depends(require_permission("school_life:read")),
 ):
@@ -343,20 +353,20 @@ def delete_event(
 # --- Appointment Slots ---
 
 class AppointmentSlotCreate(BaseModel):
-    teacher_id: Optional[UUID] = None
+    teacher_id: UUID | None = None
     date: str
     start_time: str
     end_time: str
     max_appointments: int = 1
-    location: Optional[str] = None
+    location: str | None = None
     is_active: bool = True
 
 
 @router.get("/appointment-slots/")
 def list_appointment_slots(
-    teacher_id: Optional[str] = None,
-    date: Optional[str] = None,
-    is_active: Optional[bool] = None,
+    teacher_id: str | None = None,
+    date: str | None = None,
+    is_active: bool | None = None,
     page: int = 1,
     page_size: int = 20,
     db: Session = Depends(get_db),
@@ -370,7 +380,7 @@ def list_appointment_slots(
         # SECURITY: WHERE clauses built from developer-controlled literals, not user-supplied SQL.
         # All filter values are passed as bound parameters (safe from injection).
         conditions = ["tenant_id = :tid"]
-        params: Dict[str, Any] = {"tid": tenant_id}
+        params: dict[str, Any] = {"tid": tenant_id}
         if teacher_id:
             conditions.append("teacher_id = :teacher_id")
             params["teacher_id"] = teacher_id
@@ -497,14 +507,14 @@ def delete_appointment_slot(
 # --- Check-Ins ---
 
 class CheckInSessionCreate(BaseModel):
-    classroom_id: Optional[UUID] = None
-    notes: Optional[str] = None
+    classroom_id: UUID | None = None
+    notes: str | None = None
 
 
 @router.get("/check-ins/sessions/")
 def list_check_in_sessions(
-    teacher_id: Optional[str] = None,
-    session_date: Optional[str] = None,
+    teacher_id: str | None = None,
+    session_date: str | None = None,
     page: int = 1,
     page_size: int = 20,
     db: Session = Depends(get_db),
@@ -518,7 +528,7 @@ def list_check_in_sessions(
         # SECURITY: WHERE clauses built from developer-controlled literals, not user-supplied SQL.
         # All filter values are passed as bound parameters (safe from injection).
         conditions = ["tenant_id = :tid"]
-        params: Dict[str, Any] = {"tid": tenant_id}
+        params: dict[str, Any] = {"tid": tenant_id}
         if teacher_id:
             conditions.append("teacher_id = :teacher_id")
             params["teacher_id"] = teacher_id
@@ -598,9 +608,9 @@ def create_check_in_session(
 
 @router.get("/check-ins/assignments/")
 def list_check_in_assignments(
-    session_id: Optional[str] = None,
-    student_id: Optional[str] = None,
-    status: Optional[str] = None,
+    session_id: str | None = None,
+    student_id: str | None = None,
+    status: str | None = None,
     page: int = 1,
     page_size: int = 20,
     db: Session = Depends(get_db),
@@ -615,7 +625,7 @@ def list_check_in_assignments(
         # All column literals are developer-controlled; user values use bound params.
         ALLOWED_ASSIGNMENT_STATUSES = {"PENDING", "COMPLETED", "SKIPPED", "ABSENT"}
         conditions = ["ca.tenant_id = :tid"]
-        params: Dict[str, Any] = {"tid": tenant_id}
+        params: dict[str, Any] = {"tid": tenant_id}
         if session_id:
             conditions.append("ca.session_id = :session_id")
             params["session_id"] = session_id
@@ -674,9 +684,9 @@ def list_check_in_assignments(
         raise HTTPException(status_code=500, detail="An internal error occurred.")
 
 
-@router.get("/check-ins/", response_model=List[StudentCheckIn])
+@router.get("/check-ins/", response_model=list[StudentCheckIn])
 def read_check_ins(
-    student_ids: List[UUID] = Query(None),
+    student_ids: list[UUID] = Query(None),
     db: Session = Depends(get_db),
     current_user: dict = Depends(require_permission("school_life:read")),
 ):
@@ -739,7 +749,7 @@ def students_without_badges(db: Session = Depends(get_db), current_user: dict = 
         rows = db.execute(text("""
             SELECT id, first_name, last_name, registration_number
             FROM students
-            WHERE tenant_id = :tid 
+            WHERE tenant_id = :tid
               AND is_archived = false
               AND id NOT IN (SELECT student_id FROM student_badges WHERE tenant_id = :tid AND status = 'ACTIVE')
             ORDER BY last_name, first_name
@@ -753,7 +763,7 @@ def students_without_badges(db: Session = Depends(get_db), current_user: dict = 
 
 @router.get("/event-registrations/")
 def list_event_registrations(
-    student_id: Optional[str] = Query(None),
+    student_id: str | None = Query(None),
     db: Session = Depends(get_db),
     current_user: dict = Depends(require_permission("school_life:read")),
 ):
@@ -779,8 +789,8 @@ def list_event_registrations(
 
 class EventRegistrationCreate(BaseModel):
     event_id: str
-    student_id: Optional[str] = None
-    alumni_id: Optional[str] = None
+    student_id: str | None = None
+    alumni_id: str | None = None
 
 
 @router.post("/event-registrations/", status_code=201)
@@ -823,7 +833,7 @@ def get_gamification_stats(db: Session = Depends(get_db), current_user: dict = D
             return {"totalPoints": 0, "totalAchievements": 0, "totalStudents": 0}
         from sqlalchemy import text
         row = db.execute(text("""
-            SELECT 
+            SELECT
                 COUNT(*) as total_badges,
                 COUNT(*) FILTER (WHERE status = 'ACTIVE') as active_badges,
                 COUNT(DISTINCT badge_type) as types
@@ -851,16 +861,16 @@ class SmartReportCardRequest(BaseModel):
     student_id: str
     term_id: str
     classroom_id: str
-    director_comment: Optional[str] = None
-    decision: Optional[str] = None          # "Passage", "Redoublement", "Félicitations"
+    director_comment: str | None = None
+    decision: str | None = None          # "Passage", "Redoublement", "Félicitations"
     show_guinea_header: bool = True          # République de Guinée header
 
 class SmartBatchRequest(BaseModel):
     """Batch bulletin for all students in a class."""
     classroom_id: str
     term_id: str
-    director_comment: Optional[str] = None
-    decision: Optional[str] = None
+    director_comment: str | None = None
+    decision: str | None = None
     show_guinea_header: bool = True
 
 
@@ -889,8 +899,6 @@ def _mention_bg(avg: float) -> str:
 
 def _fetch_student_data(db, student_id: str, tenant_id: str) -> dict:
     """Fetch all data needed for one bulletin from the DB."""
-    esc = html_mod.escape
-
     # Student
     s_row = db.execute(text("""
         SELECT first_name, last_name, registration_number,
@@ -946,7 +954,7 @@ def _fetch_absences(db, student_id: str, start_date, end_date, tenant_id: str) -
 
 def _compute_average(grades: list) -> float:
     """Weighted average /20 across subjects (group by subject, then weight by coeff)."""
-    by_subject: Dict[str, Dict] = {}
+    by_subject: dict[str, dict] = {}
     for g in grades:
         name = g["subject_name"]
         score = g.get("score")
@@ -972,7 +980,7 @@ def _compute_average(grades: list) -> float:
     return total_weighted / total_coeff
 
 
-def _compute_class_rank(db, classroom_id: str, term_id: str, tenant_id: str, student_id: str) -> Tuple[int, int]:
+def _compute_class_rank(db, classroom_id: str, term_id: str, tenant_id: str, student_id: str) -> tuple[int, int]:
     """Return (rank, total) for the student in this class/term. rank=0 if not computable."""
     try:
         rows = db.execute(text("""
@@ -1049,7 +1057,7 @@ def _build_bulletin_v2(
     now_str = datetime.now().strftime("%d/%m/%Y")
 
     # ── Subject rows ──────────────────────────────────────────────────────────
-    by_subject: Dict[str, Dict] = {}
+    by_subject: dict[str, dict] = {}
     for g in grades:
         name = esc(str(g.get("subject_name", "Matière inconnue")))
         score = g.get("score")
@@ -1092,7 +1100,8 @@ def _build_bulletin_v2(
         mention = _grade_mention_v2(general_average)
         avg_color = _grade_color_v2(general_average)
         mention_bg = _mention_bg(general_average)
-        avg_color_text = "#fff" if general_average < 10 or general_average >= 14 else "#1e3a8a"
+        # avg_color_text reserved for future use (text-on-background contrast)
+        _avg_color_text = "#fff" if general_average < 10 or general_average >= 14 else "#1e3a8a"
         avg_box_bg = avg_color
     else:
         avg_display = "—"
@@ -1452,16 +1461,16 @@ def _build_bulletin_v2(
 function downloadHtml() {{
   const a = document.createElement('a');
   a.href = 'data:text/html;charset=utf-8,' + encodeURIComponent(document.documentElement.outerHTML);
-  a.download = 'bulletin_{safe_name}_{safe_term}.html';
+  a.download = 'bulletin_SAFE_NAME_SAFE_TERM.html';
   a.click();
 }}
 </script>
 
 </body>
 </html>""".replace(
-    "{safe_name}", student_name.replace(" ", "_")[:30],
+    "SAFE_NAME", student_name.replace(" ", "_")[:30],
 ).replace(
-    "{safe_term}", (term or "trimestre").replace(" ", "_")[:20],
+    "SAFE_TERM", (term or "trimestre").replace(" ", "_")[:20],
 )
 
 
@@ -1726,7 +1735,7 @@ def generate_batch_report_cards(
 
 class ReportCardGrade(BaseModel):
     subject_name: str
-    score: Optional[float] = None
+    score: float | None = None
     max_score: float = 20
     coefficient: float = 1
     weight: float = 1
@@ -1735,28 +1744,28 @@ class ReportCardGrade(BaseModel):
 class ReportCardStudent(BaseModel):
     firstName: str
     lastName: str
-    registration_number: Optional[str] = None
+    registration_number: str | None = None
 
 
 class ReportCardTenant(BaseModel):
     name: str
-    address: Optional[str] = None
-    phone: Optional[str] = None
-    email: Optional[str] = None
-    logo_url: Optional[str] = None
+    address: str | None = None
+    phone: str | None = None
+    email: str | None = None
+    logo_url: str | None = None
 
 
 class ReportCardRequest(BaseModel):
     tenant: ReportCardTenant
     student: ReportCardStudent
-    classroom: Optional[str] = None
-    level: Optional[str] = None
-    term: Optional[str] = None
-    academicYear: Optional[str] = None
-    grades: List[ReportCardGrade] = []
-    average: Optional[str] = None
+    classroom: str | None = None
+    level: str | None = None
+    term: str | None = None
+    academicYear: str | None = None
+    grades: list[ReportCardGrade] = []
+    average: str | None = None
     # Batch mode
-    reports: Optional[List[dict]] = None
+    reports: list[dict] | None = None
 
 
 def _grade_mention(avg: float) -> str:
@@ -1792,7 +1801,7 @@ def _build_bulletin_html(
     """Generate a professional bulletin HTML with inline CSS for print."""
 
     # Compute subject averages from grades
-    by_subject: Dict[str, Dict] = {}
+    by_subject: dict[str, dict] = {}
     for g in grades:
         name = html_mod.escape(str(g.get("subject_name", "Matière inconnue")))
         score = g.get("score")
@@ -1833,15 +1842,12 @@ def _build_bulletin_html(
         computed_avg = total_weighted / total_coeff
         avg_display = f"{computed_avg:.2f}/20"
         mention = _grade_mention(computed_avg)
-        avg_color = _grade_color(computed_avg)
     elif average and average != "-":
         avg_display = average + "/20" if "/" not in average else average
         mention = ""
-        avg_color = "#374151"
     else:
         avg_display = "—"
         mention = ""
-        avg_color = "#374151"
 
     logo_html = ""
     if logo_url:

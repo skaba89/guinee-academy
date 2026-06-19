@@ -1,21 +1,27 @@
 import logging
-from fastapi import APIRouter, Depends, HTTPException, status, Query
-from sqlalchemy.orm import Session
-from sqlalchemy import text
-from typing import List, Optional
 from uuid import UUID
 
+from fastapi import APIRouter, Depends, HTTPException, Query, status
+from sqlalchemy import text
+from sqlalchemy.orm import Session
+
 from app.core.database import get_db
-from app.core.security import get_current_user, require_permission
+from app.core.security import require_permission
 from app.models import Notification, PushSubscription, User
+from app.schemas.notification import (
+    NotificationBulkCreate,
+    NotificationCreate,
+    NotificationResponse,
+    NotificationUpdate,
+)
 from app.schemas.push_subscription import PushSubscriptionCreate, PushSubscriptionInDB
-from app.schemas.notification import NotificationResponse, NotificationCreate, NotificationBulkCreate, NotificationUpdate
+
 
 router = APIRouter()
 
 # ─── Push Subscriptions ──────────────────────────────────────────────────────
 
-@router.get("/subscriptions/", response_model=List[PushSubscriptionInDB])
+@router.get("/subscriptions/", response_model=list[PushSubscriptionInDB])
 def read_subscriptions(
     db: Session = Depends(get_db),
     current_user: dict = Depends(require_permission("notifications:read")),
@@ -34,7 +40,7 @@ def create_subscription(
     """Create or update a push subscription."""
     user_id = current_user.get("id")
     tenant_id = current_user.get("tenant_id")
-    
+
     if not tenant_id:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -145,7 +151,7 @@ def create_bulk_notifications(
     tenant_id = current_user.get("tenant_id")
     if not tenant_id:
         raise HTTPException(status_code=400, detail="Tenant ID missing")
-        
+
     # SECURITY: Validate that all target user_ids belong to the current tenant
     for n in bulk_in.notifications:
         if n.user_id:
@@ -160,7 +166,7 @@ def create_bulk_notifications(
             tenant_id=tenant_id
         )
         db.add(db_obj)
-    
+
     db.commit()
     return {"status": "ok", "count": len(bulk_in.notifications)}
 
@@ -177,13 +183,13 @@ def update_notification(
         Notification.id == notification_id,
         Notification.user_id == user_id
     ).first()
-    
+
     if not notification:
         raise HTTPException(status_code=404, detail="Notification not found")
-        
+
     for field, value in update_in.dict(exclude_unset=True).items():
         setattr(notification, field, value)
-    
+
     db.commit()
     db.refresh(notification)
     return notification
@@ -196,7 +202,7 @@ def mark_all_as_read(
     """Mark all notifications as read for current user."""
     user_id = current_user.get("id")
     db.query(Notification).filter(
-        Notification.user_id == user_id, 
+        Notification.user_id == user_id,
         Notification.is_read == False
     ).update({"is_read": True})
     db.commit()
@@ -234,9 +240,10 @@ def clear_read_notifications(
 
 # ─── Parent Alerts (replaces Supabase Edge Function 'send-parent-alert') ──────
 
+from typing import Any
+
 from pydantic import BaseModel
-from typing import Any, Dict
-import logging
+
 
 logger = logging.getLogger(__name__)
 
@@ -244,7 +251,7 @@ class ParentAlertRequest(BaseModel):
     type: str  # 'absence' | 'low_grade'
     student_id: str
     student_name: str
-    details: Dict[str, Any] = {}
+    details: dict[str, Any] = {}
 
 @router.post("/send-parent-alert/")
 def send_parent_alert(

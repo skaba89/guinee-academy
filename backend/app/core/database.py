@@ -1,9 +1,11 @@
-import os
 from contextvars import ContextVar
-from sqlalchemy import create_engine, text, event
+
+from sqlalchemy import create_engine, event, text
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
+
 from app.core.config import settings
+
 
 # Global context for tenant_id to be used in database sessions
 tenant_context: ContextVar[str] = ContextVar("tenant_id", default=None)

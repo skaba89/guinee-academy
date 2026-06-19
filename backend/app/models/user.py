@@ -1,8 +1,8 @@
 """User model"""
-from sqlalchemy import Column, String, Boolean, ForeignKey
+from sqlalchemy import Boolean, Column, ForeignKey, String
 from sqlalchemy.orm import relationship
 
-from app.models.base import Base, GUID, UUIDMixin, TimestampMixin
+from app.models.base import GUID, Base, TimestampMixin, UUIDMixin
 
 
 class User(Base, UUIDMixin, TimestampMixin):

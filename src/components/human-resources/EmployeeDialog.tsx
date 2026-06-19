@@ -16,9 +16,8 @@ interface EmployeeDialogProps {
 
 export function EmployeeDialog({ open, onOpenChange, employee, onSubmit, isSubmitting }: EmployeeDialogProps) {
     const { useLastEmployeeNumber } = useHumanResources();
-    const { data: lastNumber } = (typeof useLastEmployeeNumber === 'function') 
-        ? useLastEmployeeNumber() 
-        : { data: null };
+    // Always call the hook unconditionally to respect React's rules-of-hooks.
+    const { data: lastNumber } = useLastEmployeeNumber();
 
     const [form, setForm] = useState<Partial<Employee>>({
         employee_number: "",

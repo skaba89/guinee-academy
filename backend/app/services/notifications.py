@@ -34,9 +34,9 @@ import ssl
 from dataclasses import dataclass, field
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
-from typing import Optional
 
 import httpx
+
 
 logger = logging.getLogger(__name__)
 
@@ -134,7 +134,7 @@ class WhatsAppSender:
         to_phone: str,
         template_name: str,
         language: str = "fr",
-        body_vars: Optional[list[str]] = None,
+        body_vars: list[str] | None = None,
     ) -> bool:
         """
         Send a pre-approved template message (works for proactive outreach).
@@ -180,8 +180,8 @@ class WhatsAppSender:
         self,
         to_phone: str,
         body: str,
-        template: Optional[str] = None,
-        template_vars: Optional[list[str]] = None,
+        template: str | None = None,
+        template_vars: list[str] | None = None,
         language: str = "fr",
     ) -> bool:
         """
@@ -225,10 +225,10 @@ class OneSignalSender:
         self,
         title: str,
         body: str,
-        player_ids: Optional[list[str]] = None,
-        external_user_ids: Optional[list[str]] = None,
-        data: Optional[dict] = None,
-        url: Optional[str] = None,
+        player_ids: list[str] | None = None,
+        external_user_ids: list[str] | None = None,
+        data: dict | None = None,
+        url: str | None = None,
     ) -> bool:
         """
         Send a push notification.
@@ -272,7 +272,7 @@ class OneSignalSender:
             logger.error("OneSignal error: %s", e)
             return False
 
-    def send_to_user(self, user_id: str, title: str, body: str, data: Optional[dict] = None) -> bool:
+    def send_to_user(self, user_id: str, title: str, body: str, data: dict | None = None) -> bool:
         """Shortcut: send to a single user by their external ID."""
         return self.send(title=title, body=body, external_user_ids=[user_id], data=data)
 
@@ -537,7 +537,7 @@ class EmailSender:
             logger.error("SMTP error: %s", e)
             return False
 
-    def send(self, to: str, subject: str, html: str, text: Optional[str] = None) -> bool:
+    def send(self, to: str, subject: str, html: str, text: str | None = None) -> bool:
         """Try Resend first, then SMTP as fallback."""
         if not to or "@" not in to:
             return False
@@ -774,14 +774,14 @@ class NotificationService:
         # WhatsApp
         wa_token = tenant_settings.get("whatsappAccessToken", "")
         wa_phone = tenant_settings.get("whatsappPhoneId", "")
-        self.whatsapp: Optional[WhatsAppSender] = (
+        self.whatsapp: WhatsAppSender | None = (
             WhatsAppSender(wa_token, wa_phone) if wa_token and wa_phone else None
         )
 
         # OneSignal
         os_app = tenant_settings.get("oneSignalAppId", "")
         os_key = tenant_settings.get("oneSignalApiKey", "")
-        self.onesignal: Optional[OneSignalSender] = (
+        self.onesignal: OneSignalSender | None = (
             OneSignalSender(os_app, os_key) if os_app and os_key else None
         )
 
@@ -810,9 +810,9 @@ class NotificationService:
 
     def send_payment_reminder(
         self,
-        to_phone: Optional[str],
-        to_email: Optional[str],
-        onesignal_user_id: Optional[str],
+        to_phone: str | None,
+        to_email: str | None,
+        onesignal_user_id: str | None,
         parent_name: str,
         student_name: str,
         invoice_number: str,
@@ -826,9 +826,9 @@ class NotificationService:
 
     def send_absence_alert(
         self,
-        to_phone: Optional[str],
-        to_email: Optional[str],
-        onesignal_user_id: Optional[str],
+        to_phone: str | None,
+        to_email: str | None,
+        onesignal_user_id: str | None,
         parent_name: str,
         student_name: str,
         date: str,
@@ -841,9 +841,9 @@ class NotificationService:
 
     def send_grade_alert(
         self,
-        to_phone: Optional[str],
-        to_email: Optional[str],
-        onesignal_user_id: Optional[str],
+        to_phone: str | None,
+        to_email: str | None,
+        onesignal_user_id: str | None,
         parent_name: str,
         student_name: str,
         subject: str,
@@ -859,9 +859,9 @@ class NotificationService:
 
     def send_bulletin_ready(
         self,
-        to_phone: Optional[str],
-        to_email: Optional[str],
-        onesignal_user_id: Optional[str],
+        to_phone: str | None,
+        to_email: str | None,
+        onesignal_user_id: str | None,
         parent_name: str,
         student_name: str,
         term: str,
@@ -876,9 +876,9 @@ class NotificationService:
 
     def _dispatch(
         self,
-        to_phone: Optional[str],
-        to_email: Optional[str],
-        onesignal_user_id: Optional[str],
+        to_phone: str | None,
+        to_email: str | None,
+        onesignal_user_id: str | None,
         msg: dict,
         template: str,
     ) -> NotifResult:
@@ -946,7 +946,7 @@ class NotificationService:
 
 # ─── Helpers ──────────────────────────────────────────────────────────────────
 
-def build_service_from_db(db, tenant_id: str) -> Optional["NotificationService"]:
+def build_service_from_db(db, tenant_id: str) -> NotificationService | None:
     """
     Convenience: build a NotificationService directly from a DB session.
     Usage in endpoints:

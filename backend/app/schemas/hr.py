@@ -1,7 +1,8 @@
-from pydantic import BaseModel, EmailStr
-from typing import Optional, List
-from uuid import UUID
 from datetime import date, datetime
+from uuid import UUID
+
+from pydantic import BaseModel, EmailStr
+
 
 # --- Employee Schemas ---
 
@@ -9,52 +10,52 @@ class EmployeeBase(BaseModel):
     employee_number: str
     first_name: str
     last_name: str
-    email: Optional[EmailStr] = None
-    phone: Optional[str] = None
-    job_title: Optional[str] = None
-    department: Optional[str] = None
+    email: EmailStr | None = None
+    phone: str | None = None
+    job_title: str | None = None
+    department: str | None = None
     hire_date: date
     is_active: bool = True
-    date_of_birth: Optional[date] = None
-    place_of_birth: Optional[str] = None
-    nationality: Optional[str] = None
-    social_security_number: Optional[str] = None
-    address: Optional[str] = None
-    city: Optional[str] = None
-    postal_code: Optional[str] = None
-    country: Optional[str] = None
-    bank_name: Optional[str] = None
-    bank_iban: Optional[str] = None
-    bank_bic: Optional[str] = None
-    emergency_contact_name: Optional[str] = None
-    emergency_contact_phone: Optional[str] = None
+    date_of_birth: date | None = None
+    place_of_birth: str | None = None
+    nationality: str | None = None
+    social_security_number: str | None = None
+    address: str | None = None
+    city: str | None = None
+    postal_code: str | None = None
+    country: str | None = None
+    bank_name: str | None = None
+    bank_iban: str | None = None
+    bank_bic: str | None = None
+    emergency_contact_name: str | None = None
+    emergency_contact_phone: str | None = None
 
 class EmployeeCreate(EmployeeBase):
     pass
 
 class EmployeeUpdate(BaseModel):
-    employee_number: Optional[str] = None
-    first_name: Optional[str] = None
-    last_name: Optional[str] = None
-    email: Optional[EmailStr] = None
-    phone: Optional[str] = None
-    job_title: Optional[str] = None
-    department: Optional[str] = None
-    hire_date: Optional[date] = None
-    is_active: Optional[bool] = None
-    date_of_birth: Optional[date] = None
-    place_of_birth: Optional[str] = None
-    nationality: Optional[str] = None
-    social_security_number: Optional[str] = None
-    address: Optional[str] = None
-    city: Optional[str] = None
-    postal_code: Optional[str] = None
-    country: Optional[str] = None
-    bank_name: Optional[str] = None
-    bank_iban: Optional[str] = None
-    bank_bic: Optional[str] = None
-    emergency_contact_name: Optional[str] = None
-    emergency_contact_phone: Optional[str] = None
+    employee_number: str | None = None
+    first_name: str | None = None
+    last_name: str | None = None
+    email: EmailStr | None = None
+    phone: str | None = None
+    job_title: str | None = None
+    department: str | None = None
+    hire_date: date | None = None
+    is_active: bool | None = None
+    date_of_birth: date | None = None
+    place_of_birth: str | None = None
+    nationality: str | None = None
+    social_security_number: str | None = None
+    address: str | None = None
+    city: str | None = None
+    postal_code: str | None = None
+    country: str | None = None
+    bank_name: str | None = None
+    bank_iban: str | None = None
+    bank_bic: str | None = None
+    emergency_contact_name: str | None = None
+    emergency_contact_phone: str | None = None
 
 class Employee(EmployeeBase):
     id: UUID
@@ -71,12 +72,12 @@ class ContractBase(BaseModel):
     contract_number: str
     contract_type: str
     start_date: date
-    end_date: Optional[date] = None
-    trial_period_end: Optional[date] = None
+    end_date: date | None = None
+    trial_period_end: date | None = None
     job_title: str
     gross_monthly_salary: float
     weekly_hours: float = 35.0
-    notes: Optional[str] = None
+    notes: str | None = None
     is_current: bool = True
     employee_id: UUID
 
@@ -84,16 +85,16 @@ class ContractCreate(ContractBase):
     pass
 
 class ContractUpdate(BaseModel):
-    contract_number: Optional[str] = None
-    contract_type: Optional[str] = None
-    start_date: Optional[date] = None
-    end_date: Optional[date] = None
-    trial_period_end: Optional[date] = None
-    job_title: Optional[str] = None
-    gross_monthly_salary: Optional[float] = None
-    weekly_hours: Optional[float] = None
-    notes: Optional[str] = None
-    is_current: Optional[bool] = None
+    contract_number: str | None = None
+    contract_type: str | None = None
+    start_date: date | None = None
+    end_date: date | None = None
+    trial_period_end: date | None = None
+    job_title: str | None = None
+    gross_monthly_salary: float | None = None
+    weekly_hours: float | None = None
+    notes: str | None = None
+    is_current: bool | None = None
 
 class Contract(ContractBase):
     id: UUID
@@ -112,22 +113,22 @@ class LeaveRequestBase(BaseModel):
     end_date: date
     total_days: int
     status: str = "PENDING"
-    reason: Optional[str] = None
+    reason: str | None = None
     employee_id: UUID
 
 class LeaveRequestCreate(LeaveRequestBase):
     pass
 
 class LeaveRequestUpdate(BaseModel):
-    status: Optional[str] = None
-    reviewed_at: Optional[date] = None
+    status: str | None = None
+    reviewed_at: date | None = None
 
 class LeaveRequest(LeaveRequestBase):
     id: UUID
     tenant_id: UUID
     created_at: datetime
     updated_at: datetime
-    reviewed_at: Optional[date] = None
+    reviewed_at: date | None = None
 
     class Config:
         from_attributes = True
@@ -141,15 +142,15 @@ class PayslipBase(BaseModel):
     net_salary: float
     pay_date: date
     is_final: str = "false"
-    pdf_url: Optional[str] = None
+    pdf_url: str | None = None
     employee_id: UUID
 
 class PayslipCreate(PayslipBase):
     pass
 
 class PayslipUpdate(BaseModel):
-    is_final: Optional[str] = None
-    pdf_url: Optional[str] = None
+    is_final: str | None = None
+    pdf_url: str | None = None
 
 class Payslip(PayslipBase):
     id: UUID

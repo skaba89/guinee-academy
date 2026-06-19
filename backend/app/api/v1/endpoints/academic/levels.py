@@ -1,20 +1,21 @@
-from typing import List
-from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy.orm import Session
-from sqlalchemy import text
+import logging
 from uuid import UUID
+
+from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy import text
+from sqlalchemy.orm import Session
 
 from app.core.database import get_db
 from app.core.security import require_permission
 from app.crud import academic as crud_academic
 from app.schemas.academic import Level, LevelCreate, LevelUpdate, Subject
-import logging
+
 
 logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
-@router.get("/", response_model=List[Level])
+@router.get("/", response_model=list[Level])
 def list_levels(
     db: Session = Depends(get_db),
     current_user: dict = Depends(require_permission("settings:read")),
@@ -84,7 +85,7 @@ def delete_level(
     return None
 
 
-@router.get("/{level_id}/subjects/", response_model=List[Subject])
+@router.get("/{level_id}/subjects/", response_model=list[Subject])
 def get_level_subjects(
     level_id: UUID,
     db: Session = Depends(get_db),

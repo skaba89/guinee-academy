@@ -1,16 +1,16 @@
 """Homework endpoints"""
 import logging
-from typing import Optional, List, Any
-from fastapi import APIRouter, Depends, HTTPException, status, Query
+from datetime import datetime
+
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from pydantic import BaseModel
-from sqlalchemy.orm import Session
 from sqlalchemy import text
-from uuid import UUID
-from datetime import datetime, date
+from sqlalchemy.orm import Session
 
 from app.core.database import get_db
 from app.core.security import get_current_user, require_permission
 from app.utils.audit import log_audit
+
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -20,44 +20,44 @@ router = APIRouter()
 
 class HomeworkCreate(BaseModel):
     title: str
-    description: Optional[str] = None
-    class_id: Optional[str] = None
-    subject_id: Optional[str] = None
-    due_date: Optional[str] = None
+    description: str | None = None
+    class_id: str | None = None
+    subject_id: str | None = None
+    due_date: str | None = None
     is_published: bool = True
-    content: Optional[str] = None
+    content: str | None = None
 
 
 class HomeworkUpdate(BaseModel):
-    title: Optional[str] = None
-    description: Optional[str] = None
-    class_id: Optional[str] = None
-    subject_id: Optional[str] = None
-    due_date: Optional[str] = None
-    is_published: Optional[bool] = None
-    content: Optional[str] = None
+    title: str | None = None
+    description: str | None = None
+    class_id: str | None = None
+    subject_id: str | None = None
+    due_date: str | None = None
+    is_published: bool | None = None
+    content: str | None = None
 
 
 class SubmissionCreate(BaseModel):
     homework_id: str
     student_id: str
-    content: Optional[str] = None
+    content: str | None = None
 
 
 class GradeSubmission(BaseModel):
-    grade: Optional[float] = None
-    feedback: Optional[str] = None
+    grade: float | None = None
+    feedback: str | None = None
 
 
 # ─── GET /homework ──────────────────────────────────────────────────────────
 
 @router.get("/")
 def list_homework(
-    class_id: Optional[str] = None,
-    subject_id: Optional[str] = None,
-    search: Optional[str] = None,
-    due_date_from: Optional[str] = None,
-    due_date_to: Optional[str] = None,
+    class_id: str | None = None,
+    subject_id: str | None = None,
+    search: str | None = None,
+    due_date_from: str | None = None,
+    due_date_to: str | None = None,
     page: int = Query(1, ge=1),
     page_size: int = Query(50, ge=1, le=100),
     db: Session = Depends(get_db),
@@ -70,7 +70,8 @@ def list_homework(
 
     # SECURITY: WHERE clause fragments are developer-controlled string literals.
     # All user-supplied values are passed as bound parameters (safe from SQL injection).
-    ALLOWED_HOMEWORK_FILTER_COLUMNS = {"class_id", "subject_id", "due_date_from", "due_date_to", "search"}
+    # Allowed filter columns (documentation only — actual filters are explicit below):
+    _ALLOWED = {"class_id", "subject_id", "due_date_from", "due_date_to", "search"}
     where = ["h.tenant_id = :tenant_id"]
     params: dict = {"tenant_id": tenant_id, "limit": page_size, "offset": (page - 1) * page_size}
 
@@ -176,7 +177,7 @@ def get_homework(
 @router.get("/submissions/{student_id}/")
 def get_student_submissions(
     student_id: str,
-    homework_id: Optional[str] = None,
+    homework_id: str | None = None,
     db: Session = Depends(get_db),
     current_user: dict = Depends(require_permission("homework:read")),
 ):
@@ -336,7 +337,6 @@ def submit_homework(
     This prevents IDOR where one student submits on behalf of another.
     """
     tenant_id = current_user.get("tenant_id")
-    user_id = current_user.get("id")
     user_roles = current_user.get("roles", [])
 
     # SECURITY: Non-admin users can only submit for their own student profile

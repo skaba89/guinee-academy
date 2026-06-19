@@ -19,7 +19,6 @@ import hashlib
 import hmac
 import json
 import logging
-from typing import List, Optional
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -31,6 +30,7 @@ from app.core.database import get_db
 from app.core.events import DomainEvent, EventType, subscribe_all
 from app.core.security import get_current_user, require_permission
 
+
 logger = logging.getLogger(__name__)
 router = APIRouter()
 
@@ -39,10 +39,10 @@ router = APIRouter()
 
 class WebhookCreate(BaseModel):
     url: HttpUrl
-    events: List[str]
-    description: Optional[str] = None
+    events: list[str]
+    description: str | None = None
     is_active: bool = True
-    secret: Optional[str] = None
+    secret: str | None = None
 
     @field_validator("events")
     @classmethod
@@ -62,14 +62,14 @@ class WebhookCreate(BaseModel):
 
 
 class WebhookUpdate(BaseModel):
-    url: Optional[HttpUrl] = None
-    events: Optional[List[str]] = None
-    description: Optional[str] = None
-    is_active: Optional[bool] = None
+    url: HttpUrl | None = None
+    events: list[str] | None = None
+    description: str | None = None
+    is_active: bool | None = None
 
     @field_validator("events")
     @classmethod
-    def validate_events(cls, v: Optional[list]) -> Optional[list]:
+    def validate_events(cls, v: list | None) -> list | None:
         if v is None:
             return v
         valid = {e.value for e in EventType}
@@ -82,11 +82,11 @@ class WebhookUpdate(BaseModel):
 class WebhookResponse(BaseModel):
     id: str
     url: str
-    events: List[str]
-    description: Optional[str] = None
+    events: list[str]
+    description: str | None = None
     is_active: bool
     has_secret: bool = False
-    created_at: Optional[str] = None
+    created_at: str | None = None
 
     model_config = {"from_attributes": True}
 
@@ -102,7 +102,7 @@ def _sign_payload(payload: str, secret: str) -> str:
     ).hexdigest()
 
 
-async def _deliver_webhook(url: str, payload: dict, secret: Optional[str] = None) -> bool:
+async def _deliver_webhook(url: str, payload: dict, secret: str | None = None) -> bool:
     """Deliver a webhook payload to the target URL.
 
     Returns True on success (2xx response), False otherwise.
@@ -183,7 +183,7 @@ def list_available_events(
     return {"categories": categories, "total": len(EventType)}
 
 
-@router.get("/", response_model=List[WebhookResponse])
+@router.get("/", response_model=list[WebhookResponse])
 def list_webhooks(
     db: Session = Depends(get_db),
     current_user: dict = Depends(require_permission("auth:manage")),

@@ -1,16 +1,18 @@
-from typing import List, Optional
+import logging
+import uuid
+from datetime import UTC, datetime
+
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel
 from sqlalchemy.orm import Session, joinedload
+
 from app.core.database import get_db
-from app.models import AccountDeletionRequest, Profile, User
-from app.schemas.rgpd import DeletionRequest, DeletionRequestCreate, DeletionRequestUpdate
 from app.core.security import get_current_user, require_permission
-from app.utils.audit import log_audit
+from app.models import AccountDeletionRequest, Profile, User
 from app.models.audit_log import AuditLog
-import uuid
-from datetime import datetime, timezone
-import logging
+from app.schemas.rgpd import DeletionRequest, DeletionRequestCreate, DeletionRequestUpdate
+from app.utils.audit import log_audit
+
 
 logger = logging.getLogger(__name__)
 
@@ -27,7 +29,7 @@ def create_deletion_request(
     Create a new account deletion request.
     """
     user_id = uuid.UUID(current_user["id"])
-    
+
     # Check if a pending request already exists
     existing_request = db.query(AccountDeletionRequest).filter(
         AccountDeletionRequest.user_id == user_id,
@@ -58,21 +60,21 @@ def create_deletion_request(
     db.refresh(db_obj)
     return db_obj
 
-@router.get("/requests/", response_model=List[DeletionRequest])
+@router.get("/requests/", response_model=list[DeletionRequest])
 def list_deletion_requests(
     db: Session = Depends(get_db),
     current_user: dict = Depends(get_current_user)
 ):
     """
-    List deletion requests. 
+    List deletion requests.
     Admin see all for tenant, users see their own.
     """
     user_id = uuid.UUID(current_user["id"])
     roles = current_user.get("roles", [])
     tenant_id = current_user.get("tenant_id")
-    
+
     query = db.query(AccountDeletionRequest).options(joinedload(AccountDeletionRequest.user))
-    
+
     if any(role in ["SUPER_ADMIN", "TENANT_ADMIN", "DIRECTOR"] for role in roles):
         if tenant_id and "SUPER_ADMIN" not in roles:
             query = query.filter(AccountDeletionRequest.tenant_id == tenant_id)
@@ -98,12 +100,12 @@ def process_deletion_request(
     db_obj = query.first()
     if not db_obj:
         raise HTTPException(status_code=404, detail="Request not found")
-        
+
     db_obj.status = update_in.status
     db_obj.rejection_reason = update_in.rejection_reason
-    db_obj.processed_at = datetime.now(timezone.utc)
+    db_obj.processed_at = datetime.now(UTC)
     db_obj.processed_by = uuid.UUID(current_user["id"])
-    
+
     if update_in.status == "PROCESSED":
         # Perform actual anonymization
         user_to_delete = db.query(User).filter(User.id == db_obj.user_id).first()
@@ -113,16 +115,16 @@ def process_deletion_request(
             user_to_delete.first_name = "Deleted"
             user_to_delete.last_name = "User"
             user_to_delete.is_active = False
-            
+
             # 2. Anonymize profile if exists
             profile = db.query(Profile).filter(Profile.id == user_to_delete.id).first()
             if profile:
                 profile.phone = None
                 profile.avatar_url = None
-                
+
             # 3. User is anonymized in the local DB only (no external identity provider)
             pass
-                
+
         # Log audit
         log_audit(
             db,
@@ -174,14 +176,14 @@ def get_rgpd_stats(
 
     compliance_risks = risks_count
     total_exports = export_count
-    
+
     return {
         "totalConsents": total_consents,
         "anonymizedUsers": anonymized_users,
         "pendingRequests": pending_requests,
         "complianceRisks": compliance_risks,
         "totalExports": total_exports,
-        "lastUpdated": datetime.now(timezone.utc).isoformat()
+        "lastUpdated": datetime.now(UTC).isoformat()
     }
 
 @router.get("/check-retention/{user_id}/")
@@ -299,7 +301,7 @@ def get_rgpd_audit_logs(
 @router.post("/direct-delete/{user_id}/")
 def direct_delete_user(
     user_id: uuid.UUID,
-    body: Optional[BaseModel] = None,
+    body: BaseModel | None = None,
     db: Session = Depends(get_db),
     current_user: dict = Depends(require_permission("rgpd:write"))
 ):
@@ -335,20 +337,20 @@ def direct_delete_user(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Target user does not belong to your tenant."
         )
-        
+
     # Reuse the same logic as process_deletion_request
     user_to_delete.email = f"deleted_{str(user_to_delete.id)[:8]}@guinee-academy.deleted"
     user_to_delete.first_name = "Deleted"
     user_to_delete.last_name = "User"
     user_to_delete.is_active = False
-    
+
     profile = db.query(Profile).filter(Profile.id == user_to_delete.id).first()
     if profile:
         profile.phone = None
         profile.avatar_url = None
-        
+
     # User is anonymized in the local DB only (no external identity provider)
-        
+
     # Log audit
     log_audit(
         db,
@@ -359,7 +361,7 @@ def direct_delete_user(
         resource_id=str(user_id),
         details={"reason": reason}
     )
-    
+
     db.commit()
     return {"message": "User anonymized successfully"}
 
@@ -373,11 +375,11 @@ def export_user_data(
     """
     user_id = uuid.UUID(current_user["id"])
     tenant_id = current_user.get("tenant_id")
-    
+
     # Gather data from various tables
     user = db.query(User).filter(User.id == user_id).first()
     profile = db.query(Profile).filter(Profile.id == user_id).first()
-    
+
     export_data = {
         "user": {
             "id": str(user.id),
@@ -391,11 +393,11 @@ def export_user_data(
             "avatar_url": profile.avatar_url if profile else None
         },
         "export_metadata": {
-            "exported_at": datetime.now(timezone.utc).isoformat(),
+            "exported_at": datetime.now(UTC).isoformat(),
             "tenant_id": str(tenant_id)
         }
     }
-    
+
     # Log the export action
     log_audit(
         db,
@@ -406,7 +408,7 @@ def export_user_data(
         resource_id=str(user_id),
         details={"format": "JSON"}
     )
-    
+
     db.commit()
     return export_data
 
@@ -519,6 +521,7 @@ def record_consent(
 ):
     """POST /consent/record/ — record a consent choice for the current user."""
     import json
+
     from sqlalchemy import text as _text
     user_id = current_user.get("id")
     tenant_id = current_user.get("tenant_id")

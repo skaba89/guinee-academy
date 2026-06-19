@@ -1,7 +1,10 @@
-from sqlalchemy import Column, String, DateTime, ForeignKey, Text, JSON
-from sqlalchemy.orm import relationship
 from datetime import datetime
-from app.models.base import Base, GUID, UUIDMixin, TimestampMixin, TenantMixin
+
+from sqlalchemy import JSON, Column, DateTime, ForeignKey, String, Text
+from sqlalchemy.orm import relationship
+
+from app.models.base import GUID, Base, TenantMixin, TimestampMixin, UUIDMixin
+
 
 class AccountDeletionRequest(Base, UUIDMixin, TimestampMixin, TenantMixin):
     __tablename__ = "account_deletion_requests"

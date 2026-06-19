@@ -1,16 +1,19 @@
 import logging
+
+
 """Student endpoints"""
-from typing import Optional
-from fastapi import APIRouter, Depends, HTTPException, status, Query
-from sqlalchemy.orm import Session
-from uuid import UUID
 import math
+from uuid import UUID
+
+from fastapi import APIRouter, Depends, HTTPException, Query, status
+from sqlalchemy.orm import Session
 
 from app.core.database import get_db
-from app.core.security import get_current_user, require_permission
+from app.core.security import require_permission
 from app.crud import student as crud_student
-from app.schemas.student import Student, StudentCreate, StudentUpdate, StudentList
 from app.models.student import StudentStatus
+from app.schemas.student import Student, StudentCreate, StudentList, StudentUpdate
+
 
 router = APIRouter()
 
@@ -21,14 +24,14 @@ def list_students(
     current_user: dict = Depends(require_permission("students:read")),
     page: int = Query(1, ge=1),
     page_size: int = Query(50, ge=1, le=100),
-    search: Optional[str] = None,
-    status: Optional[StudentStatus] = None,
-    level: Optional[str] = None,
-    class_name: Optional[str] = None,
+    search: str | None = None,
+    status: StudentStatus | None = None,
+    level: str | None = None,
+    class_name: str | None = None,
 ):
     """
     List students with pagination and filters
-    
+
     Permissions: students:read
     """
     tenant_id = current_user.get("tenant_id")
@@ -52,9 +55,9 @@ def list_students(
         level=level,
         class_name=class_name,
     )
-    
+
     pages = math.ceil(total / page_size) if total > 0 else 1
-    
+
     return StudentList(
         items=students,
         total=total,
@@ -63,10 +66,10 @@ def list_students(
         pages=pages,
     )
 
-from sqlalchemy import text
-from fastapi.responses import JSONResponse
 from datetime import datetime
-import logging
+
+from sqlalchemy import text
+
 
 logger = logging.getLogger(__name__)
 
@@ -82,16 +85,16 @@ def get_student_dashboard(
         raise HTTPException(status_code=401, detail="Unauthorized")
 
     student_res = db.execute(text("""
-        SELECT * FROM students 
+        SELECT * FROM students
         WHERE email = :email AND tenant_id = :tenant_id
         LIMIT 1
     """), {"email": current_user.get("email"), "tenant_id": tenant_id}).mappings().first()
-    
+
     if not student_res:
          raise HTTPException(status_code=404, detail="Student profile not found")
-         
+
     student_id = str(student_res["id"])
-    
+
     enrollment = db.execute(text("""
         SELECT e.*, c.name as class_name, l.name as level_name
         FROM enrollments e
@@ -100,7 +103,7 @@ def get_student_dashboard(
         WHERE e.student_id = :student_id AND e.tenant_id = :tenant_id AND e.status = 'active'
         LIMIT 1
     """), {"student_id": student_id, "tenant_id": tenant_id}).mappings().first()
-    
+
     class_id = str(enrollment["class_id"]) if enrollment and enrollment["class_id"] else None
 
     # Grades — SECURITY: filter by tenant_id to prevent cross-tenant data leak
@@ -112,7 +115,7 @@ def get_student_dashboard(
         WHERE g.student_id = :student_id AND g.tenant_id = :tenant_id AND g.score IS NOT NULL
         ORDER BY g.created_at DESC LIMIT 15
     """), {"student_id": student_id, "tenant_id": tenant_id}).mappings().all()]
-    
+
     formatted_grades = []
     for g in grades:
          formatted_grades.append({
@@ -130,7 +133,7 @@ def get_student_dashboard(
             WHERE h.class_id = :class_id AND h.tenant_id = :tenant_id AND h.due_date >= CURRENT_DATE
             ORDER BY h.due_date ASC LIMIT 5
         """), {"class_id": class_id, "tenant_id": tenant_id}).mappings().all()]
-        
+
     for h in homework:
         if isinstance(h.get("due_date"), datetime): h["due_date"] = h["due_date"].isoformat()
 
@@ -179,7 +182,7 @@ def get_student(
 ):
     """
     Get student by ID
-    
+
     Permissions: students:read
     """
     student = crud_student.get_student(db, student_id, current_user.get("tenant_id"))
@@ -199,7 +202,7 @@ def create_student(
 ):
     """
     Create a new student
-    
+
     Permissions: students:write
     """
     # Check if registration number already exists
@@ -214,7 +217,7 @@ def create_student(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Registration number already exists"
         )
-    
+
     return crud_student.create_student(db, student, tenant_id)
 
 
@@ -227,7 +230,7 @@ def update_student(
 ):
     """
     Update a student
-    
+
     Permissions: students:write
     """
     updated_student = crud_student.update_student(
@@ -249,7 +252,7 @@ def delete_student(
 ):
     """
     Delete a student
-    
+
     Permissions: students:write
     """
     success = crud_student.delete_student(db, student_id, current_user.get("tenant_id"))

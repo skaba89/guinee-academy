@@ -1,16 +1,18 @@
-import logging
-from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy.orm import Session
-from sqlalchemy import text
-from typing import List, Dict, Any, Optional
-from pydantic import BaseModel
-from uuid import UUID
-from datetime import datetime, timezone
 import json
+import logging
+from datetime import UTC, datetime
+from typing import Any
+from uuid import UUID
+
+from fastapi import APIRouter, Depends, HTTPException, status
+from pydantic import BaseModel
+from sqlalchemy import text
+from sqlalchemy.orm import Session
 
 from app.core.database import get_db
-from app.core.security import get_current_user, require_permission
+from app.core.security import require_permission
 from app.utils.audit import log_audit
+
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
@@ -21,21 +23,21 @@ logger = logging.getLogger(__name__)
 class QuestionCreate(BaseModel):
     question_text: str
     question_type: str = "TEXT"
-    options: Optional[List[str]] = None
+    options: list[str] | None = None
     is_required: bool = True
-    order_index: Optional[int] = None
+    order_index: int | None = None
 
 
 class QuestionUpdate(BaseModel):
-    question_text: Optional[str] = None
-    question_type: Optional[str] = None
-    options: Optional[List[str]] = None
-    is_required: Optional[bool] = None
-    order_index: Optional[int] = None
+    question_text: str | None = None
+    question_type: str | None = None
+    options: list[str] | None = None
+    is_required: bool | None = None
+    order_index: int | None = None
 
 
 class SubmitResponse(BaseModel):
-    responses: List[Dict[str, Any]]
+    responses: list[dict[str, Any]]
 
 
 # --- Existing endpoints ---
@@ -288,7 +290,7 @@ def submit_survey_response(
             raise HTTPException(status_code=400, detail="Survey is not active")
 
         response_id = str(UUID())
-        submitted_at = datetime.now(timezone.utc).isoformat()
+        submitted_at = datetime.now(UTC).isoformat()
 
         for resp in submission.responses:
             db.execute(text("""

@@ -1,14 +1,15 @@
 """Alumni Portal endpoints — sovereign backend replacing Supabase direct access."""
-import logging
-from fastapi import APIRouter, Depends, HTTPException, status, Query
-from sqlalchemy.orm import Session
-from sqlalchemy import text
-from typing import Optional
-from pydantic import BaseModel
 import datetime
+import logging
+
+from fastapi import APIRouter, Depends, HTTPException, status
+from pydantic import BaseModel
+from sqlalchemy import text
+from sqlalchemy.orm import Session
 
 from app.core.database import get_db
-from app.core.security import get_current_user, require_permission
+from app.core.security import require_permission
+
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -18,11 +19,11 @@ router = APIRouter()
 
 class DocumentRequestCreate(BaseModel):
     document_type: str          # transcript | diploma | certificate | attestation | other
-    document_description: Optional[str] = None
+    document_description: str | None = None
     purpose: str
     urgency: str = "normal"     # normal | urgent
     delivery_method: str = "email"  # email | mail | pickup
-    delivery_address: Optional[str] = None
+    delivery_address: str | None = None
 
 
 # ─── Dashboard ────────────────────────────────────────────────────────────────
@@ -40,7 +41,6 @@ def alumni_dashboard(
         - 3 most recent requests
         """
         user_id = current_user.get("id")
-        tenant_id = current_user.get("tenant_id")
         if not user_id:
             raise HTTPException(status_code=401, detail="Unauthorized")
 
@@ -363,7 +363,7 @@ def alumni_career_events(
         tenant_id = current_user.get("tenant_id")
         if not tenant_id:
             return []
-        now = datetime.datetime.now(datetime.timezone.utc).isoformat()
+        now = datetime.datetime.now(datetime.UTC).isoformat()
 
         rows = db.execute(text("""
             SELECT id, title, description, event_type, start_datetime,
@@ -391,7 +391,7 @@ def alumni_career_events(
 
 @router.get("/careers/applications/")
 def list_job_applications(
-    student_id: Optional[str] = None,
+    student_id: str | None = None,
     db: Session = Depends(get_db),
     current_user: dict = Depends(require_permission("alumni:read")),
 ):
@@ -461,7 +461,7 @@ def create_job_application(
 
 @router.get("/mentorship-requests/")
 def list_mentorship_requests_student(
-    student_id: Optional[str] = None,
+    student_id: str | None = None,
     db: Session = Depends(get_db),
     current_user: dict = Depends(require_permission("alumni:read")),
 ):
@@ -563,10 +563,10 @@ def admin_list_mentorship_requests(
         if not tenant_id:
             return []
         rows = db.execute(text("""
-            SELECT 
+            SELECT
                 m.*,
                 s.id as student_id, s.first_name as student_first_name, s.last_name as student_last_name, s.email as student_email,
-                am.id as mentor_id, am.first_name as mentor_first_name, am.last_name as mentor_last_name, 
+                am.id as mentor_id, am.first_name as mentor_first_name, am.last_name as mentor_last_name,
                 am.current_company, am.current_position
             FROM mentorship_requests m
             LEFT JOIN students s ON s.id = m.student_id
@@ -616,7 +616,7 @@ def admin_list_job_applications(
         if not tenant_id:
             return []
         rows = db.execute(text("""
-            SELECT 
+            SELECT
                 app.*,
                 s.id as student_id, s.first_name, s.last_name, s.registration_number, s.email,
                 jo.id as job_id, jo.title, jo.company_name
@@ -641,8 +641,8 @@ def admin_list_job_applications(
 class MentorshipRequestCreate(BaseModel):
     mentor_id: str
     student_id: str
-    message: Optional[str] = None
-    goals: Optional[str] = None
+    message: str | None = None
+    goals: str | None = None
     status: str = "pending"
 
 

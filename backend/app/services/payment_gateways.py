@@ -20,9 +20,9 @@ import logging
 import secrets
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import Optional
 
 import httpx
+
 
 logger = logging.getLogger(__name__)
 
@@ -33,10 +33,10 @@ logger = logging.getLogger(__name__)
 class GatewayResult:
     """Returned by every gateway.initiate() call."""
     success: bool
-    payment_url: Optional[str]
+    payment_url: str | None
     transaction_id: str        # our internal reference (PAY-XXXXXX)
-    gateway_ref: Optional[str] # gateway's own reference token
-    error: Optional[str] = None
+    gateway_ref: str | None # gateway's own reference token
+    error: str | None = None
 
 
 # ─── Base class ───────────────────────────────────────────────────────────────
@@ -56,8 +56,8 @@ class PaymentGateway(ABC):
         tenant_name: str,
         return_url: str,
         notify_url: str,
-        customer_phone: Optional[str] = None,
-        customer_email: Optional[str] = None,
+        customer_phone: str | None = None,
+        customer_email: str | None = None,
     ) -> GatewayResult:
         ...
 
@@ -97,8 +97,8 @@ class CinetPayGateway(PaymentGateway):
         tenant_name: str,
         return_url: str,
         notify_url: str,
-        customer_phone: Optional[str] = None,
-        customer_email: Optional[str] = None,
+        customer_phone: str | None = None,
+        customer_email: str | None = None,
     ) -> GatewayResult:
         # CinetPay requires integer amounts
         amount_int = int(round(amount))
@@ -203,11 +203,11 @@ class CinetPayGateway(PaymentGateway):
             return "COMPLETED"
         return "FAILED"
 
-    def extract_transaction_id(self, payload: dict) -> Optional[str]:
+    def extract_transaction_id(self, payload: dict) -> str | None:
         """Our internal transaction_id from the webhook."""
         return payload.get("cpm_trans_id") or payload.get("transaction_id")
 
-    def extract_amount(self, payload: dict) -> Optional[float]:
+    def extract_amount(self, payload: dict) -> float | None:
         try:
             return float(payload.get("cpm_amount", 0))
         except (TypeError, ValueError):
@@ -241,8 +241,8 @@ class PayTechGateway(PaymentGateway):
         tenant_name: str,
         return_url: str,
         notify_url: str,
-        customer_phone: Optional[str] = None,
-        customer_email: Optional[str] = None,
+        customer_phone: str | None = None,
+        customer_email: str | None = None,
     ) -> GatewayResult:
         transaction_id = f"PT-{secrets.token_hex(8).upper()}"
         payload = {
@@ -312,10 +312,10 @@ class PayTechGateway(PaymentGateway):
     def parse_webhook_status(self, payload: dict) -> str:
         return "COMPLETED" if payload.get("type_event") == "sale_complete" else "FAILED"
 
-    def extract_transaction_id(self, payload: dict) -> Optional[str]:
+    def extract_transaction_id(self, payload: dict) -> str | None:
         return payload.get("ref_command")
 
-    def extract_amount(self, payload: dict) -> Optional[float]:
+    def extract_amount(self, payload: dict) -> float | None:
         try:
             return float(payload.get("item_price", 0))
         except (TypeError, ValueError):
@@ -324,7 +324,7 @@ class PayTechGateway(PaymentGateway):
 
 # ─── Factory ──────────────────────────────────────────────────────────────────
 
-def get_gateway(method: str, tenant_settings: dict) -> Optional[PaymentGateway]:
+def get_gateway(method: str, tenant_settings: dict) -> PaymentGateway | None:
     """
     Factory — resolve the correct gateway from the payment method string
     and the tenant's stored settings.

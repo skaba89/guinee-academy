@@ -1,29 +1,34 @@
-from typing import List
-from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy.orm import Session
+import logging
 from uuid import UUID
 
-from app.core.database import get_db
-from app.core.security import get_current_user, require_permission
-from fastapi import Query
-from app.crud import academic as crud
-from app.models.associations import subject_levels, classroom_departments, class_subjects
+from fastapi import APIRouter, Depends, Query
 from sqlalchemy import text
-import logging
+from sqlalchemy.orm import Session
+
+from app.core.database import get_db
+from app.core.security import require_permission
+from app.crud import academic as crud
+from app.models.associations import class_subjects, classroom_departments, subject_levels
+
 
 logger = logging.getLogger(__name__)
 
 from app.schemas.academic import (
-    Room, RoomCreate,
-    Classroom, ClassroomCreate, ClassroomUpdate,
-    Enrollment, EnrollmentCreate,
-    Program, ProgramCreate
+    Classroom,
+    ClassroomCreate,
+    Enrollment,
+    EnrollmentCreate,
+    Program,
+    ProgramCreate,
+    Room,
+    RoomCreate,
 )
+
 
 router = APIRouter()
 
 # --- Rooms ---
-@router.get("/rooms/", response_model=List[Room])
+@router.get("/rooms/", response_model=list[Room])
 def read_rooms(
     db: Session = Depends(get_db),
     current_user: dict = Depends(require_permission("rooms:read")),
@@ -41,7 +46,7 @@ def create_room(
     return crud.create_room(db, obj_in=obj_in, tenant_id=current_user.get("tenant_id"))
 
 # --- Programs ---
-@router.get("/programs/", response_model=List[Program])
+@router.get("/programs/", response_model=list[Program])
 def read_programs(
     db: Session = Depends(get_db),
     current_user: dict = Depends(require_permission("rooms:read")),
@@ -59,7 +64,7 @@ def create_program(
     return crud.create_program(db, obj_in=obj_in, tenant_id=current_user.get("tenant_id"))
 
 # --- Classrooms (Classes) ---
-@router.get("/classrooms/", response_model=List[Classroom])
+@router.get("/classrooms/", response_model=list[Classroom])
 def read_classrooms(
     db: Session = Depends(get_db),
     current_user: dict = Depends(require_permission("rooms:read")),
@@ -77,7 +82,7 @@ def create_classroom(
     return crud.create_classroom(db, obj_in=obj_in, tenant_id=current_user.get("tenant_id"))
 
 # --- Enrollments ---
-@router.get("/enrollments/", response_model=List[Enrollment])
+@router.get("/enrollments/", response_model=list[Enrollment])
 def read_enrollments(
     db: Session = Depends(get_db),
     current_user: dict = Depends(require_permission("students:read")),
@@ -153,7 +158,7 @@ def count_rooms(
 
 @router.get("/enrollments/counts/")
 def read_enrollment_counts(
-    class_ids: List[UUID] = Query(...),
+    class_ids: list[UUID] = Query(...),
     db: Session = Depends(get_db),
     current_user: dict = Depends(require_permission("students:read")),
 ):
@@ -162,8 +167,8 @@ def read_enrollment_counts(
     if not class_ids:
         return {}
     rows = db.execute(text("""
-        SELECT class_id, COUNT(*) as count 
-        FROM enrollments 
+        SELECT class_id, COUNT(*) as count
+        FROM enrollments
         WHERE tenant_id = :tenant_id AND class_id = ANY(:class_ids) AND status = 'active'
         GROUP BY class_id
     """), {"tenant_id": tenant_id, "class_ids": class_ids}).fetchall()
@@ -199,8 +204,8 @@ def remove_subject_from_classroom(
     """Remove a subject from a classroom. Requires subjects:write permission."""
     tenant_id = current_user.get("tenant_id")
     db.execute(class_subjects.delete().where(
-        (class_subjects.c.class_id == class_id) & 
-        (class_subjects.c.subject_id == subject_id) & 
+        (class_subjects.c.class_id == class_id) &
+        (class_subjects.c.subject_id == subject_id) &
         (class_subjects.c.tenant_id == tenant_id)
     ))
     db.commit()

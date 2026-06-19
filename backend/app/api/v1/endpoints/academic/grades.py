@@ -1,19 +1,21 @@
 """Grade endpoints"""
 import logging
-from typing import Optional, List
-from fastapi import APIRouter, Depends, HTTPException, status, Query
-from pydantic import BaseModel, field_validator
-from sqlalchemy.orm import Session
-from sqlalchemy import text
-from uuid import UUID
 import math
+from uuid import UUID
+
+from fastapi import APIRouter, Depends, HTTPException, Query, status
+from pydantic import BaseModel, field_validator
+from sqlalchemy import text
+from sqlalchemy.orm import Session
+
 
 logger = logging.getLogger(__name__)
 
 from app.core.database import get_db
-from app.core.security import get_current_user, require_permission
+from app.core.security import require_permission
 from app.crud import grade as crud_grade
-from app.schemas.grade import Grade, GradeCreate, GradeUpdate, GradeList
+from app.schemas.grade import Grade, GradeCreate, GradeList, GradeUpdate
+
 
 router = APIRouter()
 
@@ -24,15 +26,15 @@ def list_grades(
     current_user: dict = Depends(require_permission("grades:read")),
     page: int = Query(1, ge=1),
     page_size: int = Query(50, ge=1, le=100),
-    student_id: Optional[UUID] = None,
-    subject: Optional[str] = None,
-    academic_year: Optional[str] = None,
-    assessment_id: Optional[UUID] = None,
-    class_id: Optional[UUID] = None,
+    student_id: UUID | None = None,
+    subject: str | None = None,
+    academic_year: str | None = None,
+    assessment_id: UUID | None = None,
+    class_id: UUID | None = None,
 ):
     """
     List grades with pagination and filters
-    
+
     Permissions: grades:read
     """
     tenant_id = current_user.get("tenant_id")
@@ -57,9 +59,9 @@ def list_grades(
         assessment_id=assessment_id,
         class_id=class_id,
     )
-    
+
     pages = math.ceil(total / page_size) if total > 0 else 1
-    
+
     return GradeList(
         items=grades,
         total=total,
@@ -74,12 +76,12 @@ def get_student_average(
     student_id: UUID,
     db: Session = Depends(get_db),
     current_user: dict = Depends(require_permission("grades:read")),
-    academic_year: Optional[str] = None,
-    semester: Optional[int] = Query(None, ge=1, le=2),
+    academic_year: str | None = None,
+    semester: int | None = Query(None, ge=1, le=2),
 ):
     """
     Get student's average grades
-    
+
     Permissions: grades:read
     """
     return crud_grade.get_student_average(
@@ -99,7 +101,7 @@ def get_grade(
 ):
     """
     Get grade by ID
-    
+
     Permissions: grades:read
     """
     tenant_id = current_user.get("tenant_id")
@@ -122,7 +124,7 @@ def create_grade(
 ):
     """
     Create a new grade
-    
+
     Permissions: grades:write
     """
     tenant_id = current_user.get("tenant_id")
@@ -140,7 +142,7 @@ def update_grade(
 ):
     """
     Update a grade
-    
+
     Permissions: grades:write
     """
     tenant_id = current_user.get("tenant_id")
@@ -165,7 +167,7 @@ def delete_grade(
 ):
     """
     Delete a grade
-    
+
     Permissions: grades:write
     """
     tenant_id = current_user.get("tenant_id")
@@ -185,12 +187,12 @@ def delete_grade(
 class BulkGradeItem(BaseModel):
     student_id: UUID
     assessment_id: UUID
-    score: Optional[float] = None
-    comment: Optional[str] = None
+    score: float | None = None
+    comment: str | None = None
 
 
 class BulkGradesRequest(BaseModel):
-    grades: List[BulkGradeItem]
+    grades: list[BulkGradeItem]
 
     @field_validator("grades")
     @classmethod
@@ -269,8 +271,8 @@ def create_bulk_grades(
 
 @router.get("/history/")
 def list_grade_history(
-    grade_id: Optional[str] = None,
-    student_id: Optional[str] = None,
+    grade_id: str | None = None,
+    student_id: str | None = None,
     ordering: str = "-created_at",
     db: Session = Depends(get_db),
     current_user: dict = Depends(require_permission("grades:read")),

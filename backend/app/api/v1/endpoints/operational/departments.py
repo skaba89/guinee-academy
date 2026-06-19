@@ -1,15 +1,16 @@
 """Department Portal endpoints — full sovereign API for department heads/members."""
-import logging
-from fastapi import APIRouter, Depends, HTTPException, status, Query
-from sqlalchemy.orm import Session
-from sqlalchemy import text
-from typing import Optional, Any
-from pydantic import BaseModel
 import datetime
+import logging
 
+from fastapi import APIRouter, Depends, HTTPException, Query, status
+from pydantic import BaseModel
+from sqlalchemy import text
+from sqlalchemy.orm import Session
+
+from app.core.config import settings
 from app.core.database import get_db
 from app.core.security import get_current_user, require_permission
-from app.core.config import settings
+
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -34,21 +35,21 @@ def _any_in(column, param_name, values):
 
 class ExamCreate(BaseModel):
     name: str
-    description: Optional[str] = None
+    description: str | None = None
     exam_date: str
-    start_time: Optional[str] = None
-    end_time: Optional[str] = None
-    room_name: Optional[str] = None
+    start_time: str | None = None
+    end_time: str | None = None
+    room_name: str | None = None
     max_score: float = 20
     status: str = "scheduled"
-    class_id: Optional[str] = None
+    class_id: str | None = None
     subject_id: str
     term_id: str
 
 
 # ─── Helper: resolve department for current user ──────────────────────────────
 
-def _get_user_department(db: Session, user_id: str, tenant_id: str) -> Optional[dict]:
+def _get_user_department(db: Session, user_id: str, tenant_id: str) -> dict | None:
     """Find the department for the current user (head only — no separate members table).
 
     NOTE: The schema does not declare a `department_members` table; users are
@@ -172,13 +173,13 @@ def department_dashboard(
 
             # Upcoming exams
             today_str = datetime.date.today().isoformat()
-            stats["upcomingExams"] = db.execute(text(f"""
+            stats["upcomingExams"] = db.execute(text("""
                 SELECT COUNT(*) FROM exams
                 WHERE department_id = :dept_id AND exam_date >= :today AND status = 'scheduled'
             """), {"dept_id": department_id, "today": today_str}).scalar() or 0
 
             # Recent grades (last 5)
-            grades = db.execute(text(f"""
+            grades = db.execute(text("""
                 SELECT g.id, g.score, g.created_at,
                        s.first_name, s.last_name,
                        a.name AS assessment_name,
@@ -257,8 +258,8 @@ def department_classrooms(
 
 @router.get("/students/")
 def department_students(
-    classroom_id: Optional[str] = None,
-    search: Optional[str] = None,
+    classroom_id: str | None = None,
+    search: str | None = None,
     db: Session = Depends(get_db),
     current_user: dict = Depends(get_current_user),
     _perm: None = Depends(require_permission("departments:read"))
@@ -424,7 +425,7 @@ def department_teachers(
 @router.get("/attendance/")
 def department_attendance(
     period: str = Query("week", pattern="^(week|month)$"),
-    classroom_id: Optional[str] = None,
+    classroom_id: str | None = None,
     db: Session = Depends(get_db),
     current_user: dict = Depends(get_current_user),
     _perm: None = Depends(require_permission("departments:read"))
@@ -778,8 +779,8 @@ def department_schedule(
 
 @router.get("/reports/grades/")
 def department_grades_report(
-    term_id: Optional[str] = None,
-    classroom_id: Optional[str] = None,
+    term_id: str | None = None,
+    classroom_id: str | None = None,
     db: Session = Depends(get_db),
     current_user: dict = Depends(get_current_user),
     _perm: None = Depends(require_permission("departments:read"))

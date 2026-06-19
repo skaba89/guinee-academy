@@ -1,15 +1,15 @@
 import logging
-from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy.orm import Session
-from sqlalchemy import text
-from typing import List, Optional
-from pydantic import BaseModel
 from uuid import UUID
-from datetime import datetime
+
+from fastapi import APIRouter, Depends, HTTPException, status
+from pydantic import BaseModel
+from sqlalchemy import text
+from sqlalchemy.orm import Session
 
 from app.core.database import get_db
-from app.core.security import get_current_user, require_permission
+from app.core.security import require_permission
 from app.utils.audit import log_audit
+
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
@@ -19,29 +19,29 @@ logger = logging.getLogger(__name__)
 
 class ClubCreate(BaseModel):
     name: str
-    description: Optional[str] = None
-    advisor_id: Optional[str] = None
-    meeting_day: Optional[str] = None
-    meeting_time: Optional[str] = None
-    location: Optional[str] = None
-    max_members: Optional[int] = None
+    description: str | None = None
+    advisor_id: str | None = None
+    meeting_day: str | None = None
+    meeting_time: str | None = None
+    location: str | None = None
+    max_members: int | None = None
     is_active: bool = True
 
 
 class ClubUpdate(BaseModel):
-    name: Optional[str] = None
-    description: Optional[str] = None
-    advisor_id: Optional[str] = None
-    meeting_day: Optional[str] = None
-    meeting_time: Optional[str] = None
-    location: Optional[str] = None
-    max_members: Optional[int] = None
-    is_active: Optional[bool] = None
+    name: str | None = None
+    description: str | None = None
+    advisor_id: str | None = None
+    meeting_day: str | None = None
+    meeting_time: str | None = None
+    location: str | None = None
+    max_members: int | None = None
+    is_active: bool | None = None
 
 
 class AddMemberRequest(BaseModel):
     student_id: str
-    role: Optional[str] = "MEMBER"
+    role: str | None = "MEMBER"
 
 
 # --- Clubs CRUD ---

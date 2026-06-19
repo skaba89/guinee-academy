@@ -14,8 +14,11 @@ step to keep main.py clean while preserving existing behavior.
 """
 import logging
 import re
+
 from sqlalchemy import text
+
 from app.core.config import settings
+
 
 logger = logging.getLogger(__name__)
 

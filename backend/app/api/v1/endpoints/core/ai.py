@@ -6,9 +6,9 @@ All endpoints require JWT authentication.
 """
 
 import logging
-from typing import Any, Optional
+from typing import Any
 
-from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi import APIRouter, Depends, Request
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
 from slowapi import Limiter
@@ -16,6 +16,7 @@ from slowapi.util import get_remote_address
 
 from app.core.security import get_current_user, require_plan
 from app.services.groq_service import groq_service
+
 
 logger = logging.getLogger(__name__)
 
@@ -35,7 +36,7 @@ class ChatMessage(BaseModel):
 
 class ChatRequest(BaseModel):
     message: str = Field(..., min_length=1, description="Message de l'utilisateur")
-    history: Optional[list[ChatMessage]] = Field(
+    history: list[ChatMessage] | None = Field(
         None, description="Historique de conversation pour le contexte"
     )
     stream: bool = Field(False, description="Activer le streaming de la réponse")
@@ -43,13 +44,13 @@ class ChatRequest(BaseModel):
 
 class ChatRequestV2(BaseModel):
     """Alternative format used by ChatBot.tsx and useAIStream.ts"""
-    messages: Optional[list[dict]] = None
-    sessionId: Optional[str] = None
-    userContext: Optional[dict] = None
-    tenantId: Optional[str] = None
-    tenantName: Optional[str] = None
-    userId: Optional[str] = None
-    language: Optional[str] = "fr"
+    messages: list[dict] | None = None
+    sessionId: str | None = None
+    userContext: dict | None = None
+    tenantId: str | None = None
+    tenantName: str | None = None
+    userId: str | None = None
+    language: str | None = "fr"
 
 
 class AuditRequest(BaseModel):
@@ -63,7 +64,7 @@ class AuditRequest(BaseModel):
         description="Données à analyser (objet JSON, texte, etc.)",
     )
     stream: bool = Field(False, description="Activer le streaming de la réponse")
-    platform_name: Optional[str] = Field(
+    platform_name: str | None = Field(
         None,
         description="Nom de l'établissement à utiliser dans les réponses IA (remplace 'Guinée Academy')",
     )
@@ -157,7 +158,7 @@ async def chat(
         stream,
     )
 
-    history_dicts: Optional[list[dict[str, str]]] = None
+    history_dicts: list[dict[str, str]] | None = None
     if req.history:
         history_dicts = [{"role": m.role, "content": m.content} for m in req.history]
 

@@ -1,32 +1,32 @@
-from typing import Any, Dict, List
-from fastapi import APIRouter, Depends, HTTPException, status, Query
-from sqlalchemy.orm import Session
-from sqlalchemy import text, func
-from sqlalchemy.orm.attributes import flag_modified
-from uuid import uuid4, UUID
-from datetime import datetime, date
-import traceback
 import logging
-import json
-from app.core.config import settings
+import traceback
+from datetime import datetime
+from typing import Any
+from uuid import UUID
+
+from fastapi import APIRouter, Depends, HTTPException, Query, status
+from sqlalchemy import text
+from sqlalchemy.orm import Session
+from sqlalchemy.orm.attributes import flag_modified
+
 
 logger = logging.getLogger(__name__)
 
 from app.core.database import get_db
 from app.core.security import get_current_user, require_permission
-from app.utils.audit import log_audit
+from app.models import AcademicYear, Campus, Level, Subject, Tenant, User, UserRole
 from app.schemas.tenants import (
-    TenantCreate,
-    TenantResponse,
-    TenantLandingSettings,
-    TenantLandingAnnouncement,
-    TenantPublicCard,
-    TenantPublicStats,
-    TenantPublicResponse,
-    TenantWithAdminCreate,
     TenantAdminUserCreate,
+    TenantCreate,
+    TenantLandingSettings,
+    TenantPublicCard,
+    TenantPublicResponse,
+    TenantPublicStats,
+    TenantResponse,
+    TenantWithAdminCreate,
 )
-from app.models import Tenant, AcademicYear, Campus, Level, Subject, User, UserRole
+from app.utils.audit import log_audit
+
 
 router = APIRouter()
 
@@ -76,7 +76,7 @@ async def create_tenant(
         logger.info("Initializing academic year...")
         ay_start_date = tenant_in.academic_year_start.date() if tenant_in.academic_year_start else None
         ay_end_date = tenant_in.academic_year_end.date() if tenant_in.academic_year_end else None
-        
+
         # Ensure both dates are present or compute defaults
         if not ay_start_date or not ay_end_date:
             current_year = datetime.now().year
@@ -84,7 +84,7 @@ async def create_tenant(
             ay_start = current_year if start_month >= 8 else current_year - 1
             ay_start_date = ay_start_date or datetime(ay_start, 9, 1).date()
             ay_end_date = ay_end_date or datetime(ay_start + 1, 7, 31).date()
-        
+
         academic_year = AcademicYear(
             tenant_id=new_tenant.id,
             name=f"{ay_start_date.year}-{ay_end_date.year}",
@@ -101,13 +101,13 @@ async def create_tenant(
             for i, term_data in enumerate(tenant_in.terms):
                 st_date = term_data.get("start_date")
                 ed_date = term_data.get("end_date")
-                
+
                 # Robust date conversion
                 if isinstance(st_date, str) and st_date:
                     st_date = datetime.fromisoformat(st_date.split('T')[0]).date()
                 if isinstance(ed_date, str) and ed_date:
                     ed_date = datetime.fromisoformat(ed_date.split('T')[0]).date()
-                
+
                 if not st_date or not ed_date:
                     continue # Skip terms with missing dates
 
@@ -161,7 +161,7 @@ async def create_tenant(
         # 5. Update/Create current user in DB
         user_id_str = current_user.get("id")
         logger.info(f"Processing tenant creator. current_user info: {current_user}")
-        
+
         user_id = None
         if user_id_str:
             try:
@@ -178,7 +178,7 @@ async def create_tenant(
             user_db = db.query(User).filter(User.id == user_id).first()
         else:
             user_db = db.query(User).filter(User.username == user_id_str).first()
-    
+
         if not user_db:
             # First login user might not be in DB yet
             user_db = User(
@@ -193,17 +193,17 @@ async def create_tenant(
             db.add(user_db)
         else:
             user_db.tenant_id = new_tenant.id
-        
+
         db.flush() # Ensure user_db has an ID before checking or assigning roles
-            
+
         # Always ensure TENANT_ADMIN role for the creator
         # Check if role already exists for this tenant using the database UUID
         role_exists = db.query(UserRole).filter(
-            UserRole.user_id == user_db.id, 
+            UserRole.user_id == user_db.id,
             UserRole.tenant_id == new_tenant.id,
             UserRole.role == "TENANT_ADMIN"
         ).first()
-        
+
         if not role_exists:
             role = UserRole(
                 user_id=user_db.id,
@@ -231,12 +231,12 @@ async def create_tenant(
         logger.error("Error creating tenant: %s", e)
         logger.error(error_traceback)
         db.rollback()
-        
+
         if isinstance(e, HTTPException):
             raise e
         raise HTTPException(status_code=500, detail="Erreur interne lors de la création du tenant")
 
-@router.get("/", response_model=List[TenantResponse])
+@router.get("/", response_model=list[TenantResponse])
 async def list_tenants(
     db: Session = Depends(get_db),
     current_user: dict = Depends(require_permission("tenants:read")),
@@ -362,7 +362,7 @@ async def get_tenant_settings(
 
 @router.patch("/settings/")
 async def update_tenant_settings(
-    settings_update: Dict[str, Any],
+    settings_update: dict[str, Any],
     db: Session = Depends(get_db),
     current_user: dict = Depends(require_permission("settings:write"))
 ):
@@ -380,7 +380,7 @@ async def update_tenant_settings(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Tenant ID not found. Please log out and log back in to refresh your session."
         )
-    
+
     try:
         tid_uuid = UUID(tenant_id)
     except (ValueError, TypeError):
@@ -389,7 +389,7 @@ async def update_tenant_settings(
     tenant = db.query(Tenant).filter(Tenant.id == tid_uuid).first()
     if not tenant:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Tenant not found")
-        
+
     current_settings = tenant.settings or {}
     updated_settings = {**current_settings, **settings_update}
     tenant.settings = updated_settings
@@ -397,7 +397,7 @@ async def update_tenant_settings(
     flag_modified(tenant, 'settings')
     db.commit()
     db.refresh(tenant)
-    
+
     # Log audit
     log_audit(
         db,
@@ -408,7 +408,7 @@ async def update_tenant_settings(
         resource_id=tenant_id,
         details=settings_update
     )
-    
+
     return updated_settings
 
 
@@ -455,7 +455,7 @@ async def get_security_settings(
 
 @router.patch("/security-settings/")
 async def update_security_settings(
-    security_update: Dict[str, Any],
+    security_update: dict[str, Any],
     db: Session = Depends(get_db),
     current_user: dict = Depends(require_permission("settings:write"))
 ):
@@ -503,7 +503,7 @@ async def update_security_settings(
     return updated_security
 
 
-@router.get("/public/", response_model=List[TenantPublicCard])
+@router.get("/public/", response_model=list[TenantPublicCard])
 async def list_public_tenants(
     db: Session = Depends(get_db),
     page: int = Query(1, ge=1),
@@ -524,7 +524,7 @@ async def list_public_tenants(
         offset = (page - 1) * page_size
         tenants = query.offset(offset).limit(page_size).all()
 
-    cards: List[TenantPublicCard] = []
+    cards: list[TenantPublicCard] = []
     for t in tenants:
         landing_raw = (t.settings or {}).get("landing", {}) if isinstance(t.settings, dict) else {}
         cards.append(
@@ -620,7 +620,7 @@ def _build_public_response(tenant: Any, db: Session) -> TenantPublicResponse:
             ).fetchall()
 
             # Group subjects by department_id using a dict
-            subjects_by_dept: Dict[str, list] = {}
+            subjects_by_dept: dict[str, list] = {}
             for sr in all_subject_rows:
                 did = str(sr[0])
                 if did not in subjects_by_dept:
@@ -1102,7 +1102,7 @@ async def get_tenant(
 @router.patch("/{tenant_id}/", response_model=TenantResponse)
 async def update_tenant(
     tenant_id: UUID,
-    tenant_updates: Dict[str, Any],
+    tenant_updates: dict[str, Any],
     db: Session = Depends(get_db),
     current_user: dict = Depends(require_permission("settings:write"))
 ):
@@ -1173,7 +1173,7 @@ async def update_tenant(
 
 @router.post("/onboarding/levels/")
 async def setup_tenant_levels(
-    levels_in: List[str],
+    levels_in: list[str],
     db: Session = Depends(get_db),
     current_user: dict = Depends(require_permission("levels:write"))
 ):
@@ -1181,20 +1181,20 @@ async def setup_tenant_levels(
     tenant_id = current_user.get("tenant_id")
     if not tenant_id:
         raise HTTPException(status_code=400, detail="No tenant associated")
-    
+
     # Clean existing levels if any
     db.execute(text("DELETE FROM levels WHERE tenant_id = :tid"), {"tid": tenant_id})
-    
+
     for i, name in enumerate(levels_in):
         level = Level(tenant_id=tenant_id, name=name, order_index=i+1)
         db.add(level)
-    
+
     db.commit()
     return {"message": f"{len(levels_in)} levels created"}
 
 @router.post("/onboarding/subjects/")
 async def setup_tenant_subjects(
-    subjects_in: List[Dict[str, Any]],
+    subjects_in: list[dict[str, Any]],
     db: Session = Depends(get_db),
     current_user: dict = Depends(require_permission("subjects:write"))
 ):
@@ -1202,9 +1202,9 @@ async def setup_tenant_subjects(
     tenant_id = current_user.get("tenant_id")
     if not tenant_id:
         raise HTTPException(status_code=400, detail="No tenant associated")
-    
+
     db.execute(text("DELETE FROM subjects WHERE tenant_id = :tid"), {"tid": tenant_id})
-    
+
     for sub in subjects_in:
         subject = Subject(
             tenant_id=tenant_id,
@@ -1213,34 +1213,34 @@ async def setup_tenant_subjects(
             coefficient=sub.get("coefficient", 1)
         )
         db.add(subject)
-        
+
     db.commit()
     return {"message": f"{len(subjects_in)} subjects created"}
 
 @router.patch("/onboarding/complete/")
 async def complete_onboarding(
-    data: Dict[str, Any],
+    data: dict[str, Any],
     db: Session = Depends(get_db),
     current_user: dict = Depends(require_permission("settings:write"))
 ):
     """Complete onboarding with signature and director name."""
     tenant_id = current_user.get("tenant_id")
     tenant = db.query(Tenant).filter(Tenant.id == tenant_id).first()
-    
+
     if not tenant:
         raise HTTPException(status_code=404, detail="Tenant not found")
-        
+
     current_settings = tenant.settings or {}
     current_settings["director_name"] = data.get("director_name")
     current_settings["signature_url"] = data.get("signature_url")
-    
+
     # Update settings
     current_settings["onboarding_completed"] = True
     current_settings["onboarding_step"] = 4
-    
+
     tenant.settings = current_settings
     flag_modified(tenant, 'settings')
-    
+
     db.commit()
     return {"message": "Onboarding completed successfully"}
 # ─────────────────────────────────────────────────────────────────────────────
@@ -1296,7 +1296,7 @@ async def get_men_guinea_settings(
 
 @router.patch("/men-guinea/")
 async def update_men_guinea_settings(
-    data: Dict[str, Any],
+    data: dict[str, Any],
     db: Session = Depends(get_db),
     current_user: dict = Depends(require_permission("settings:write")),
 ):
@@ -1479,7 +1479,7 @@ async def get_men_guinea_rapport(
     }
 
 
-@router.get("/slug/{slug}/levels/", response_model=List[dict])
+@router.get("/slug/{slug}/levels/", response_model=list[dict])
 async def get_public_tenant_levels(
     slug: str,
     db: Session = Depends(get_db)
@@ -1488,7 +1488,7 @@ async def get_public_tenant_levels(
     tenant = db.query(Tenant).filter(Tenant.slug == slug, Tenant.is_active == True).first()
     if not tenant:
         raise HTTPException(status_code=404, detail="Tenant not found")
-    
+
     rows = db.execute(
         text("SELECT id, name, order_index FROM levels WHERE tenant_id = :tid ORDER BY order_index"),
         {"tid": tenant.id}
@@ -1505,15 +1505,15 @@ async def get_public_tenant_current_year(
     tenant = db.query(Tenant).filter(Tenant.slug == slug, Tenant.is_active == True).first()
     if not tenant:
         raise HTTPException(status_code=404, detail="Tenant not found")
-    
+
     row = db.query(AcademicYear).filter(
-        AcademicYear.tenant_id == tenant.id, 
+        AcademicYear.tenant_id == tenant.id,
         AcademicYear.is_current == True
     ).first()
-    
+
     if not row:
         raise HTTPException(status_code=404, detail="Current academic year not found")
-    
+
     return {
         "id": str(row.id),
         "name": row.name,

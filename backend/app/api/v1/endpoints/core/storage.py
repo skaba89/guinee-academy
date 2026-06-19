@@ -1,11 +1,13 @@
 import logging
-from fastapi import APIRouter, UploadFile, File, HTTPException, Depends, Request
+import uuid
+
+from fastapi import APIRouter, Depends, File, HTTPException, Request, UploadFile
 from slowapi import Limiter
 from slowapi.util import get_remote_address
-from app.core.security import get_current_user, require_permission
+
+from app.core.security import require_permission
 from app.core.storage import storage_client
-import uuid
-import os
+
 
 logger = logging.getLogger(__name__)
 
@@ -45,7 +47,6 @@ async def upload_file(request: Request, file: UploadFile = File(...), current_us
             )
 
         # SECURITY: Validate MIME type from file content (magic bytes), not just extension
-        import io
         try:
             import magic
             mime_type = magic.from_buffer(content, mime=True)

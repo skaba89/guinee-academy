@@ -1,10 +1,11 @@
-from sqlalchemy import Column, String, DateTime, ForeignKey, Integer, Time
-from sqlalchemy.sql import func
 import uuid
 
-from app.core.database import Base
+from sqlalchemy import Column, DateTime, ForeignKey, Integer, Time
+from sqlalchemy.sql import func
 
+from app.core.database import Base
 from app.models.base import GUID
+
 
 class ScheduleSlot(Base):
     __tablename__ = "schedule"
@@ -18,6 +19,6 @@ class ScheduleSlot(Base):
     start_time = Column(Time, nullable=False)
     end_time = Column(Time, nullable=False)
     room_id = Column(GUID(), ForeignKey("rooms.id"), nullable=True)
-    
+
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())

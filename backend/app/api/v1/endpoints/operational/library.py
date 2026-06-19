@@ -1,17 +1,19 @@
 import logging
-from fastapi import APIRouter, Depends, HTTPException, status, Query
-from sqlalchemy.orm import Session
-from sqlalchemy import text
-from typing import List, Optional
-from pydantic import BaseModel
+from datetime import UTC, datetime
 from uuid import UUID
-from datetime import datetime, timezone
+
+from fastapi import APIRouter, Depends, HTTPException, status
+from pydantic import BaseModel
+from sqlalchemy import text
+from sqlalchemy.orm import Session
+
 
 logger = logging.getLogger(__name__)
 
 from app.core.database import get_db
-from app.core.security import get_current_user, require_permission
+from app.core.security import require_permission
 from app.utils.audit import log_audit
+
 
 router = APIRouter()
 
@@ -28,14 +30,14 @@ def list_categories(db: Session = Depends(get_db), current_user: dict = Depends(
 
 class CategoryCreate(BaseModel):
     name: str
-    description: Optional[str] = None
-    color: Optional[str] = None
+    description: str | None = None
+    color: str | None = None
 
 
 class CategoryUpdate(BaseModel):
-    name: Optional[str] = None
-    description: Optional[str] = None
-    color: Optional[str] = None
+    name: str | None = None
+    description: str | None = None
+    color: str | None = None
 
 
 @router.post("/categories/", status_code=status.HTTP_201_CREATED)
@@ -83,7 +85,7 @@ def update_category(
         raise HTTPException(status_code=403, detail="No tenant context")
     try:
         sets = []
-        params = {"cid": str(category_id), "tid": tenant_id, "now": datetime.now(timezone.utc)}
+        params = {"cid": str(category_id), "tid": tenant_id, "now": datetime.now(UTC)}
         if category.name is not None:
             sets.append("name = :name")
             params["name"] = category.name
@@ -149,9 +151,9 @@ def delete_category(
 
 @router.get("/resources/")
 def list_resources(
-    category: Optional[str] = None,
-    resource_type: Optional[str] = None,
-    search: Optional[str] = None,
+    category: str | None = None,
+    resource_type: str | None = None,
+    search: str | None = None,
     db: Session = Depends(get_db),
     current_user: dict = Depends(require_permission("library:read"))
 ):
@@ -188,28 +190,28 @@ def list_resources(
 
 class ResourceCreate(BaseModel):
     title: str
-    description: Optional[str] = None
-    author: Optional[str] = None
+    description: str | None = None
+    author: str | None = None
     resource_type: str = "BOOK"
-    category_id: Optional[str] = None
-    isbn: Optional[str] = None
+    category_id: str | None = None
+    isbn: str | None = None
     total_copies: int = 1
     available_copies: int = 1
-    file_url: Optional[str] = None
-    cover_url: Optional[str] = None
+    file_url: str | None = None
+    cover_url: str | None = None
 
 
 class ResourceUpdate(BaseModel):
-    title: Optional[str] = None
-    description: Optional[str] = None
-    author: Optional[str] = None
-    resource_type: Optional[str] = None
-    category_id: Optional[str] = None
-    isbn: Optional[str] = None
-    total_copies: Optional[int] = None
-    available_copies: Optional[int] = None
-    file_url: Optional[str] = None
-    cover_url: Optional[str] = None
+    title: str | None = None
+    description: str | None = None
+    author: str | None = None
+    resource_type: str | None = None
+    category_id: str | None = None
+    isbn: str | None = None
+    total_copies: int | None = None
+    available_copies: int | None = None
+    file_url: str | None = None
+    cover_url: str | None = None
 
 
 @router.post("/resources/", status_code=status.HTTP_201_CREATED)
@@ -268,7 +270,7 @@ def update_resource(
         raise HTTPException(status_code=403, detail="No tenant context")
     try:
         sets = []
-        params = {"rid": str(resource_id), "tid": tenant_id, "now": datetime.now(timezone.utc)}
+        params = {"rid": str(resource_id), "tid": tenant_id, "now": datetime.now(UTC)}
         field_map = {
             "title": resource.title,
             "description": resource.description,
@@ -344,12 +346,12 @@ class BorrowRequest(BaseModel):
     resource_id: str
     user_id: str
     due_date: str
-    notes: Optional[str] = None
+    notes: str | None = None
 
 
 class ReturnRequest(BaseModel):
     borrow_id: str
-    notes: Optional[str] = None
+    notes: str | None = None
 
 
 @router.post("/borrow/", status_code=status.HTTP_201_CREATED)

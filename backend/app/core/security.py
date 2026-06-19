@@ -1,15 +1,16 @@
 import logging
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from uuid import UUID
 
 import bcrypt
+import jwt
 from fastapi import Depends, HTTPException, Request, status
 from fastapi.security import OAuth2PasswordBearer
-import jwt
 from jwt.exceptions import InvalidTokenError as JWTError
 from sqlalchemy import text
 
 from app.core.config import settings
+
 
 logger = logging.getLogger(__name__)
 
@@ -70,7 +71,7 @@ def create_access_token(data: dict, expires_delta: timedelta | None = None) -> s
     - Always use a minimum 32-character SECRET_KEY in production
     """
     to_encode = data.copy()
-    expire = datetime.now(timezone.utc) + (
+    expire = datetime.now(UTC) + (
         expires_delta or timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
     )
     to_encode.update({"exp": expire})
@@ -556,8 +557,8 @@ def require_plan(min_plan: str):
 
                 # Check trial validity for "trialing" status
                 if sub_status == "trialing" and tenant.trial_ends_at:
-                    from datetime import datetime, timezone
-                    if tenant.trial_ends_at < datetime.now(timezone.utc).replace(tzinfo=None):
+                    from datetime import datetime
+                    if tenant.trial_ends_at < datetime.now(UTC).replace(tzinfo=None):
                         sub_status = "expired"
 
                 plan_weight = _PLAN_WEIGHT.get(plan, 0)

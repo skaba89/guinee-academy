@@ -1,10 +1,10 @@
 import logging
 import os
-from typing import List, Union
 
 from dotenv import load_dotenv
 from pydantic import field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
 
 load_dotenv()
 
@@ -15,7 +15,7 @@ def get_secret(secret_name: str, default: str = "") -> str:
     """Read from Docker Secrets first, then environment variable, then default."""
     secret_path = f"/run/secrets/{secret_name}"
     if os.path.exists(secret_path):
-        with open(secret_path, "r", encoding="utf-8") as f:
+        with open(secret_path, encoding="utf-8") as f:
             return f.read().strip()
     return os.getenv(secret_name, default)
 
@@ -113,7 +113,7 @@ class Settings(BaseSettings):
     API_V1_STR: str = "/api/v1"
 
     LOG_LEVEL: str = "INFO"
-    BACKEND_CORS_ORIGINS: Union[str, List[str]] = ""
+    BACKEND_CORS_ORIGINS: str | list[str] = ""
 
     DATABASE_URL: str = _BASE_DATABASE_URL
     DATABASE_URL_ASYNC: str = get_secret("DATABASE_URL_ASYNC", _BASE_DATABASE_URL)

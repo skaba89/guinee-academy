@@ -10,14 +10,14 @@ for fast, accent-insensitive, multi-language search.
 Endpoint: GET /api/v1/search/?q=<query>&types=students,teachers&limit=20
 """
 import logging
-from typing import List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy import text
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
-from app.core.security import get_current_user, require_permission
+from app.core.security import require_permission
+
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -137,7 +137,7 @@ def _build_search_query(
 @router.get("/")
 def global_search(
     q: str = Query(..., min_length=2, max_length=100, description="Search query (min 2 characters)"),
-    types: Optional[str] = Query(None, description="Comma-separated resource types. Default: all"),
+    types: str | None = Query(None, description="Comma-separated resource types. Default: all"),
     limit: int = Query(5, ge=1, le=20, description="Max results per resource type"),
     db: Session = Depends(get_db),
     current_user: dict = Depends(require_permission("search:read")),

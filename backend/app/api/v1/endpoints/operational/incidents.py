@@ -1,15 +1,16 @@
 import logging
-from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy.orm import Session
-from sqlalchemy import text
-from typing import List, Optional, Any
-from pydantic import BaseModel
+from datetime import UTC, datetime
 from uuid import UUID
-from datetime import datetime, timezone
+
+from fastapi import APIRouter, Depends, HTTPException, status
+from pydantic import BaseModel
+from sqlalchemy import text
+from sqlalchemy.orm import Session
 
 from app.core.database import get_db
-from app.core.security import get_current_user, require_permission
+from app.core.security import require_permission
 from app.utils.audit import log_audit
+
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
@@ -19,34 +20,34 @@ logger = logging.getLogger(__name__)
 
 class IncidentCreate(BaseModel):
     title: str
-    description: Optional[str] = None
+    description: str | None = None
     incident_type: str
     severity: str = "LOW"
-    occurred_at: Optional[str] = None
-    location: Optional[str] = None
-    student_ids: Optional[List[str]] = None
-    notes: Optional[str] = None
+    occurred_at: str | None = None
+    location: str | None = None
+    student_ids: list[str] | None = None
+    notes: str | None = None
 
 
 class IncidentUpdate(BaseModel):
-    title: Optional[str] = None
-    description: Optional[str] = None
-    incident_type: Optional[str] = None
-    severity: Optional[str] = None
-    occurred_at: Optional[str] = None
-    location: Optional[str] = None
-    status: Optional[str] = None
-    notes: Optional[str] = None
+    title: str | None = None
+    description: str | None = None
+    incident_type: str | None = None
+    severity: str | None = None
+    occurred_at: str | None = None
+    location: str | None = None
+    status: str | None = None
+    notes: str | None = None
 
 
 class ResolveRequest(BaseModel):
-    resolution: Optional[str] = None
-    action_taken: Optional[str] = None
+    resolution: str | None = None
+    action_taken: str | None = None
 
 
 class AssignRequest(BaseModel):
     resolver_id: str
-    notes: Optional[str] = None
+    notes: str | None = None
 
 
 # --- List Incidents ---
@@ -205,7 +206,7 @@ def resolve_incident(
             "resolver": current_user.get("id"),
             "resolution": resolve.resolution,
             "action_taken": resolve.action_taken,
-            "now": datetime.now(timezone.utc),
+            "now": datetime.now(UTC),
         }
         result = db.execute(text("""
             UPDATE incidents SET status = 'RESOLVED', resolved_by = :resolver,

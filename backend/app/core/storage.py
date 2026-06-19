@@ -1,11 +1,10 @@
 import logging
 import os
 import shutil
-import uuid
 from datetime import timedelta
-from typing import Optional
 
 from app.core.config import settings
+
 
 logger = logging.getLogger(__name__)
 
@@ -40,7 +39,7 @@ class MinioClient:
             and settings.MINIO_SECRET_KEY
             and "localhost" not in endpoint
         )
-        self.client: Optional[object] = None
+        self.client: object | None = None
         self._bucket_ready = False
 
         if not self.enabled:
@@ -137,7 +136,7 @@ class LocalStorageClient:
         # Final safety: ensure resolved path is within _UPLOAD_DIR
         resolved = os.path.realpath(file_path)
         if not resolved.startswith(os.path.realpath(_UPLOAD_DIR)):
-            raise ValueError(f"Invalid file path: resolved path escapes upload directory")
+            raise ValueError("Invalid file path: resolved path escapes upload directory")
         os.makedirs(os.path.dirname(file_path), exist_ok=True)
 
         with open(file_path, "wb") as f:

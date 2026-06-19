@@ -1,17 +1,19 @@
 """Analytics / KPI endpoints"""
-from typing import Optional, List, Dict, Any
-from datetime import datetime, timedelta, timezone
-import logging
 import csv
 import io
+import logging
+from datetime import UTC, datetime, timedelta
+from typing import Any
+
 from fastapi import APIRouter, Depends, Query
 from fastapi.responses import StreamingResponse
+from sqlalchemy import text
 from sqlalchemy.orm import Session
-from sqlalchemy import func, case, and_, text
 
-from app.core.database import get_db
-from app.core.security import get_current_user, require_permission
 from app.core.config import settings
+from app.core.database import get_db
+from app.core.security import require_permission
+
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
@@ -19,7 +21,7 @@ logger = logging.getLogger(__name__)
 
 # ─── helpers ─────────────────────────────────────────────────────────────────
 
-def _resolve_academic_year(db: Session, tenant_id: str, ay_id: Optional[str]) -> Optional[str]:
+def _resolve_academic_year(db: Session, tenant_id: str, ay_id: str | None) -> str | None:
     if not ay_id or ay_id == "current":
         sql = text("SELECT id FROM academic_years WHERE tenant_id = :tenant_id AND is_current = true LIMIT 1")
         row = db.execute(sql, {"tenant_id": tenant_id}).fetchone()
@@ -33,8 +35,8 @@ def _resolve_academic_year(db: Session, tenant_id: str, ay_id: Optional[str]) ->
 def get_financial_kpis(
     db: Session = Depends(get_db),
     current_user: dict = Depends(require_permission("analytics:read")),
-    start_date: Optional[str] = Query(None, description="ISO date string, e.g. 2025-01-01"),
-    end_date: Optional[str] = Query(None, description="ISO date string, e.g. 2025-12-31"),
+    start_date: str | None = Query(None, description="ISO date string, e.g. 2025-01-01"),
+    end_date: str | None = Query(None, description="ISO date string, e.g. 2025-12-31"),
 ):
     """
     Financial KPIs: total revenue, paid revenue, pending revenue, collection rate.
@@ -62,7 +64,7 @@ def get_financial_kpis(
         """)
 
         row = db.execute(sql, params).fetchone()
-        
+
         total_revenue = float(row.total_revenue or 0) if row else 0.0
         paid_revenue = float(row.paid_revenue or 0) if row else 0.0
         pending_revenue = float(row.pending_revenue or 0) if row else 0.0
@@ -116,7 +118,7 @@ def get_revenue_trend(
     """Revenue trend by month over the last N months."""
     tenant_id = str(current_user.get("tenant_id"))
     try:
-        start_date = (datetime.now(timezone.utc) - timedelta(days=months * 30)).strftime("%Y-%m-%d")
+        start_date = (datetime.now(UTC) - timedelta(days=months * 30)).strftime("%Y-%m-%d")
 
         # SQLite has no TO_CHAR; use strftime() which returns 'YYYY-MM-DD'.
         # We truncate to 'YYYY-MM' via substr() so the GROUP BY month works
@@ -160,7 +162,7 @@ def get_revenue_trend(
 def get_academic_kpis(
     db: Session = Depends(get_db),
     current_user: dict = Depends(require_permission("analytics:read")),
-    academic_year_id: Optional[str] = None,
+    academic_year_id: str | None = None,
 ):
     """Academic KPIs: success rate, average grade, students at risk."""
     tenant_id = str(current_user.get("tenant_id"))
@@ -210,13 +212,13 @@ def get_academic_kpis(
 def get_academic_stats(
     db: Session = Depends(get_db),
     current_user: dict = Depends(require_permission("analytics:read")),
-    academic_year_id: Optional[str] = None,
+    academic_year_id: str | None = None,
 ):
     """Success rate by class and by subject."""
     tenant_id = str(current_user.get("tenant_id"))
     try:
         ay_id = _resolve_academic_year(db, tenant_id, academic_year_id)
-        
+
         params: dict = {"tenant_id": tenant_id}
         ay_filter = " AND g.academic_year_id = :academic_year_id" if ay_id else ""
         if ay_id:
@@ -286,13 +288,13 @@ def get_academic_stats(
 def get_students_at_risk(
     db: Session = Depends(get_db),
     current_user: dict = Depends(require_permission("analytics:read")),
-    academic_year_id: Optional[str] = None,
+    academic_year_id: str | None = None,
 ):
     """Return students with average grade below passing threshold."""
     tenant_id = str(current_user.get("tenant_id"))
     try:
         ay_id = _resolve_academic_year(db, tenant_id, academic_year_id)
-        
+
         params: dict = {"tenant_id": tenant_id}
         ay_filter = " AND academic_year_id = :academic_year_id" if ay_id else ""
         if ay_id:
@@ -350,9 +352,9 @@ def get_students_at_risk(
 def get_operational_kpis(
     db: Session = Depends(get_db),
     current_user: dict = Depends(require_permission("analytics:read")),
-    academic_year_id: Optional[str] = None,
-    start_date: Optional[str] = None,
-    end_date: Optional[str] = None,
+    academic_year_id: str | None = None,
+    start_date: str | None = None,
+    end_date: str | None = None,
 ):
     """Operational KPIs: attendance rates, dropout rate, teacher workload."""
     tenant_id = str(current_user.get("tenant_id"))
@@ -368,7 +370,7 @@ def get_operational_kpis(
             params["end_date"] = end_date
 
         ay_id = _resolve_academic_year(db, tenant_id, academic_year_id)
-        
+
         ay_filter = ""
         if ay_id:
             ay_filter = " AND academic_year_id = :academic_year_id"
@@ -506,8 +508,8 @@ def get_attendance_trend(
             days = 365
         else:
             days = 30
-            
-        start_date = (datetime.now(timezone.utc) - timedelta(days=days)).strftime("%Y-%m-%d")
+
+        start_date = (datetime.now(UTC) - timedelta(days=days)).strftime("%Y-%m-%d")
 
         # SQLite has no TO_CHAR; strftime('%Y-%m-%d', date) returns the same
         # 'YYYY-MM-DD' format that PostgreSQL's TO_CHAR(date, 'YYYY-MM-DD') does.
@@ -528,11 +530,11 @@ def get_attendance_trend(
             ORDER BY day ASC
         """)
         rows = db.execute(sql, {"tenant_id": tenant_id, "start_date": start_date}).fetchall()
-        
+
         return [
             {
                 "date": r.day,
-                "taux": int((r.present / r.total * 100)) if (r and r.total) else 0,
+                "taux": int(r.present / r.total * 100) if (r and r.total) else 0,
                 "présents": int(r.present or 0),
                 "absents": int(r.absent or 0)
             }
@@ -551,14 +553,14 @@ def get_grades_distribution(
     tenant_id = str(current_user.get("tenant_id"))
     try:
         sql = text("""
-            SELECT 
-                score, 
-                max_score 
-            FROM grades 
+            SELECT
+                score,
+                max_score
+            FROM grades
             WHERE tenant_id = :tenant_id AND score IS NOT NULL
         """)
         rows = db.execute(sql, {"tenant_id": tenant_id}).fetchall()
-        
+
         distribution = {"0-5": 0, "5-10": 0, "10-12": 0, "12-14": 0, "14-16": 0, "16-20": 0}
         for r in rows:
             max_s = float(r.max_score) if r.max_score else 20.0
@@ -679,11 +681,11 @@ def get_ministry_kpis(
     try:
         # 1. Effectifs par genre
         gender_sql = text("""
-            SELECT 
+            SELECT
                 COUNT(*) FILTER (WHERE gender = 'MALE') as male,
                 COUNT(*) FILTER (WHERE gender = 'FEMALE') as female,
                 COUNT(*) as total
-            FROM students 
+            FROM students
             WHERE tenant_id = :tenant_id AND status = 'ACTIVE'
         """)
         gender_row = db.execute(gender_sql, {"tenant_id": tenant_id}).fetchone()
@@ -789,7 +791,7 @@ def get_ministry_stats_by_level(
 def export_ministry_csv(
     db: Session = Depends(get_db),
     current_user: dict = Depends(require_permission("analytics:read")),
-    academic_year: Optional[str] = Query(None),
+    academic_year: str | None = Query(None),
 ):
     """
     GET /analytics/ministry-export/csv/
@@ -988,7 +990,7 @@ def get_cash_flow_forecast(
     """
     Cash-flow forecast: projections of revenue and expenses.
     """
-    tenant_id = str(current_user.get("tenant_id"))
+    tenant_id = str(current_user.get("tenant_id"))  # noqa: F841 — reserved for upcoming DB-backed forecast
     months_ahead = body.get("months_ahead", 3)
     months_ahead = max(1, min(24, int(months_ahead)))  # clamp to 1-24
     # Mock response for now
@@ -1005,24 +1007,25 @@ def get_cash_flow_forecast(
 # =============================================================================
 from pydantic import BaseModel
 
+
 class CourseCreate(BaseModel):
     title: str
-    description: Optional[str] = None
-    subject_id: Optional[str] = None
-    level_id: Optional[str] = None
+    description: str | None = None
+    subject_id: str | None = None
+    level_id: str | None = None
     status: str = "draft"
     is_published: bool = False
-    duration_hours: Optional[float] = None
+    duration_hours: float | None = None
 
 
 class CourseUpdate(BaseModel):
-    title: Optional[str] = None
-    description: Optional[str] = None
-    subject_id: Optional[str] = None
-    level_id: Optional[str] = None
-    status: Optional[str] = None
-    is_published: Optional[bool] = None
-    duration_hours: Optional[float] = None
+    title: str | None = None
+    description: str | None = None
+    subject_id: str | None = None
+    level_id: str | None = None
+    status: str | None = None
+    is_published: bool | None = None
+    duration_hours: float | None = None
 
 
 @router.get("/elearning/courses/")
@@ -1094,7 +1097,7 @@ def update_elearning_course(
         raise HTTPException(status_code=400, detail="No fields to update")
 
     set_clauses = ", ".join(f"{k} = :{k}" for k in updates)
-    updates.update({"id": course_id, "tid": tenant_id, "now": datetime.now(timezone.utc)})
+    updates.update({"id": course_id, "tid": tenant_id, "now": datetime.now(UTC)})
 
     row = db.execute(text(f"""
         UPDATE elearning_courses
@@ -1165,11 +1168,11 @@ def list_course_enrollments(
 def get_analytics_risk_scores(
     db: Session = Depends(get_db),
     current_user: dict = Depends(require_permission("analytics:read")),
-    student_ids: Optional[str] = Query(None),
+    student_ids: str | None = Query(None),
 ):
     """Risk scores for students — wrapper around student_risk_scores table."""
     tenant_id = current_user.get("tenant_id")
-    params: Dict[str, Any] = {"tid": tenant_id}
+    params: dict[str, Any] = {"tid": tenant_id}
     where = ["sr.tenant_id = :tid"]
 
     if student_ids:

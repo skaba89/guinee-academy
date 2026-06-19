@@ -4,11 +4,11 @@ Serialization helpers that work uniformly across SQLite and PostgreSQL.
 SQLite returns datetimes/dates as strings; PostgreSQL returns datetime/date objects.
 Use these helpers instead of `value.isoformat()` to support both backends.
 """
-from datetime import datetime, date
-from typing import Optional, Any
+from datetime import date, datetime
+from typing import Any
 
 
-def to_iso(val: Any) -> Optional[str]:
+def to_iso(val: Any) -> str | None:
     """Convert a datetime, date, or string to an ISO-format string.
 
     - datetime → val.isoformat()

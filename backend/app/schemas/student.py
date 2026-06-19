@@ -1,7 +1,8 @@
 """Student schemas for request/response validation"""
 from datetime import date, datetime
-from typing import Optional
-from pydantic import BaseModel, EmailStr, Field, UUID4
+
+from pydantic import UUID4, BaseModel, EmailStr, Field
+
 from app.models.student import Gender, StudentStatus
 
 
@@ -11,17 +12,17 @@ class StudentBase(BaseModel):
     last_name: str = Field(..., min_length=1, max_length=100)
     date_of_birth: date
     gender: Gender
-    email: Optional[EmailStr] = None
-    phone: Optional[str] = Field(None, max_length=20)
-    address: Optional[str] = Field(None, max_length=500)
-    city: Optional[str] = Field(None, max_length=100)
-    level: Optional[str] = Field(None, max_length=50)
-    class_name: Optional[str] = Field(None, max_length=100)
-    academic_year: Optional[str] = Field(None, max_length=20)
-    photo_url: Optional[str] = Field(None, max_length=500)
-    parent_name: Optional[str] = Field(None, max_length=200)
-    parent_phone: Optional[str] = Field(None, max_length=20)
-    parent_email: Optional[EmailStr] = None
+    email: EmailStr | None = None
+    phone: str | None = Field(None, max_length=20)
+    address: str | None = Field(None, max_length=500)
+    city: str | None = Field(None, max_length=100)
+    level: str | None = Field(None, max_length=50)
+    class_name: str | None = Field(None, max_length=100)
+    academic_year: str | None = Field(None, max_length=20)
+    photo_url: str | None = Field(None, max_length=500)
+    parent_name: str | None = Field(None, max_length=200)
+    parent_phone: str | None = Field(None, max_length=20)
+    parent_email: EmailStr | None = None
 
 
 # Schema for creating a student
@@ -31,22 +32,22 @@ class StudentCreate(StudentBase):
 
 # Schema for updating a student
 class StudentUpdate(BaseModel):
-    first_name: Optional[str] = Field(None, min_length=1, max_length=100)
-    last_name: Optional[str] = Field(None, min_length=1, max_length=100)
-    date_of_birth: Optional[date] = None
-    gender: Optional[Gender] = None
-    email: Optional[EmailStr] = None
-    phone: Optional[str] = Field(None, max_length=20)
-    address: Optional[str] = Field(None, max_length=500)
-    city: Optional[str] = Field(None, max_length=100)
-    level: Optional[str] = Field(None, max_length=50)
-    class_name: Optional[str] = Field(None, max_length=100)
-    academic_year: Optional[str] = Field(None, max_length=20)
-    status: Optional[StudentStatus] = None
-    photo_url: Optional[str] = Field(None, max_length=500)
-    parent_name: Optional[str] = Field(None, max_length=200)
-    parent_phone: Optional[str] = Field(None, max_length=20)
-    parent_email: Optional[EmailStr] = None
+    first_name: str | None = Field(None, min_length=1, max_length=100)
+    last_name: str | None = Field(None, min_length=1, max_length=100)
+    date_of_birth: date | None = None
+    gender: Gender | None = None
+    email: EmailStr | None = None
+    phone: str | None = Field(None, max_length=20)
+    address: str | None = Field(None, max_length=500)
+    city: str | None = Field(None, max_length=100)
+    level: str | None = Field(None, max_length=50)
+    class_name: str | None = Field(None, max_length=100)
+    academic_year: str | None = Field(None, max_length=20)
+    status: StudentStatus | None = None
+    photo_url: str | None = Field(None, max_length=500)
+    parent_name: str | None = Field(None, max_length=200)
+    parent_phone: str | None = Field(None, max_length=20)
+    parent_email: EmailStr | None = None
 
 
 # Schema for student in database (response)
@@ -57,11 +58,11 @@ class Student(StudentBase):
     status: StudentStatus
     created_at: datetime
     updated_at: datetime
-    
+
     # Computed fields
     full_name: str
     age: int
-    
+
     class Config:
         from_attributes = True  # Pydantic v2 (was orm_mode in v1)
 

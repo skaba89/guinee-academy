@@ -1,13 +1,15 @@
-from typing import Optional, Any, Dict
-from pydantic import BaseModel, UUID4
 from datetime import datetime
+from typing import Any
+
+from pydantic import UUID4, BaseModel
+
 
 class AuditLogBase(BaseModel):
     action: str
-    severity: Optional[str] = "INFO"
+    severity: str | None = "INFO"
     resource_type: str
-    resource_id: Optional[str] = None
-    details: Optional[Dict[str, Any]] = None
+    resource_id: str | None = None
+    details: dict[str, Any] | None = None
 
 class AuditLogCreate(AuditLogBase):
     pass
@@ -15,9 +17,9 @@ class AuditLogCreate(AuditLogBase):
 class AuditLog(AuditLogBase):
     id: UUID4
     tenant_id: UUID4
-    user_id: Optional[UUID4] = None
-    ip_address: Optional[str] = None
-    user_agent: Optional[str] = None
+    user_id: UUID4 | None = None
+    ip_address: str | None = None
+    user_agent: str | None = None
     created_at: datetime
 
     class Config:

@@ -288,13 +288,7 @@ export default function ConnectionHub() {
   // Load tenants from the public API
   const { data: apiTenants, isLoading } = usePublicTenants();
 
-  // ─── Access Control: Only SUPER_ADMIN can see all establishments ───
-  // Wait for auth to finish loading before deciding
-  if (!authLoading && !isSuperAdmin()) {
-    return <AccessDenied />;
-  }
-
-  // Filter
+  // Filter (declared before any early return to respect rules-of-hooks)
   const filtered = useMemo(() => {
     let result = apiTenants && apiTenants.length > 0 ? [...apiTenants] : [];
 
@@ -317,6 +311,12 @@ export default function ConnectionHub() {
 
     return result;
   }, [apiTenants, activeTab, search]);
+
+  // ─── Access Control: Only SUPER_ADMIN can see all establishments ───
+  // Wait for auth to finish loading before deciding
+  if (!authLoading && !isSuperAdmin()) {
+    return <AccessDenied />;
+  }
 
   // Redirect to a tenant login page (used by quick-access buttons)
   const goToLogin = (slug: string) => {

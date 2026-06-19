@@ -8,14 +8,14 @@ import io
 import logging
 import random
 import string
-from datetime import datetime, date
-from typing import Optional
-from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form
-from pydantic import BaseModel
+from datetime import date, datetime
+
+from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
 from app.core.security import get_current_user, require_permission, require_plan
+
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
@@ -60,7 +60,7 @@ TEACHER_COLUMN_MAP = {
 }
 
 
-def _detect_columns(headers: list[str], column_map: dict) -> dict[str, Optional[str]]:
+def _detect_columns(headers: list[str], column_map: dict) -> dict[str, str | None]:
     """Map CSV headers → canonical field names, case-insensitively."""
     normalized = {h.lower().strip(): h for h in headers}
     result = {}
@@ -73,7 +73,7 @@ def _detect_columns(headers: list[str], column_map: dict) -> dict[str, Optional[
     return result
 
 
-def _parse_date(val: str) -> Optional[date]:
+def _parse_date(val: str) -> date | None:
     val = val.strip()
     for fmt in ("%Y-%m-%d", "%d/%m/%Y", "%d-%m-%Y", "%Y/%m/%d", "%m/%d/%Y"):
         try:

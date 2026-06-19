@@ -1,19 +1,19 @@
 """Users endpoints — full CRUD + role management"""
 import json
-from typing import Optional, List
-from datetime import datetime
-from fastapi import APIRouter, Depends, HTTPException, status, Query
-from pydantic import BaseModel, EmailStr, Field
-from sqlalchemy.orm import Session
-from sqlalchemy import text
-from uuid import UUID
-import math
-
-from app.core.database import get_db
-from app.core.security import get_current_user, require_permission, ROLE_PERMISSIONS
-from app.core.config import settings
-from app.utils.audit import log_audit
 import logging
+import math
+from datetime import datetime
+
+from fastapi import APIRouter, Depends, HTTPException, Query, status
+from pydantic import BaseModel, EmailStr, Field
+from sqlalchemy import text
+from sqlalchemy.orm import Session
+
+from app.core.config import settings
+from app.core.database import get_db
+from app.core.security import ROLE_PERMISSIONS, get_current_user, require_permission
+from app.utils.audit import log_audit
+
 
 logger = logging.getLogger(__name__)
 
@@ -37,12 +37,12 @@ def _to_iso(val):
 class UserOut(BaseModel):
     id: str
     email: str
-    first_name: Optional[str] = None
-    last_name: Optional[str] = None
+    first_name: str | None = None
+    last_name: str | None = None
     is_active: bool
-    roles: List[str] = []
-    avatar_url: Optional[str] = None
-    created_at: Optional[str] = None
+    roles: list[str] = []
+    avatar_url: str | None = None
+    created_at: str | None = None
 
     class Config:
         from_attributes = True
@@ -52,20 +52,20 @@ class UserCreate(BaseModel):
     email: EmailStr
     first_name: str = Field(max_length=255)
     last_name: str = Field(max_length=255)
-    password: Optional[str] = None
-    roles: List[str] = []
+    password: str | None = None
+    roles: list[str] = []
 
 
 class UserUpdate(BaseModel):
-    first_name: Optional[str] = Field(default=None, max_length=255)
-    last_name: Optional[str] = Field(default=None, max_length=255)
-    email: Optional[EmailStr] = None
-    is_active: Optional[bool] = None
-    avatar_url: Optional[str] = Field(default=None, max_length=500)
+    first_name: str | None = Field(default=None, max_length=255)
+    last_name: str | None = Field(default=None, max_length=255)
+    email: EmailStr | None = None
+    is_active: bool | None = None
+    avatar_url: str | None = Field(default=None, max_length=500)
 
 
 class RoleUpdateRequest(BaseModel):
-    roles: List[str]
+    roles: list[str]
 
 
 class ToggleStatusRequest(BaseModel):
@@ -81,14 +81,14 @@ def read_users_me(
 ):
     """Return the currently authenticated user's profile with full context from DB."""
     user_id = current_user.get("id")
-    
+
     # 1. Fetch user data from DB (lenient on tenant_id for first login)
     # NOTE: must_change_password may not exist yet (pending Alembic migration).
     # Try full query first; fall back to query without that column.
     try:
         sql_user = text("""
-            SELECT 
-                CAST(u.id AS VARCHAR) AS id, u.email, u.first_name, u.last_name, 
+            SELECT
+                CAST(u.id AS VARCHAR) AS id, u.email, u.first_name, u.last_name,
                 u.is_active, u.avatar_url, u.created_at, u.tenant_id,
                 t.slug as tenant_slug, t.name as tenant_name,
                 t.settings as tenant_settings, t.type as tenant_type,
@@ -102,8 +102,8 @@ def read_users_me(
     except Exception:
         logger.warning("must_change_password column missing, using fallback query for /users/me/")
         sql_user = text("""
-            SELECT 
-                CAST(u.id AS VARCHAR) AS id, u.email, u.first_name, u.last_name, 
+            SELECT
+                CAST(u.id AS VARCHAR) AS id, u.email, u.first_name, u.last_name,
                 u.is_active, u.avatar_url, u.created_at, u.tenant_id,
                 t.slug as tenant_slug, t.name as tenant_name,
                 t.settings as tenant_settings, t.type as tenant_type,
@@ -114,15 +114,15 @@ def read_users_me(
             WHERE u.id = :user_id
         """)
         row = db.execute(sql_user, {"user_id": user_id}).fetchone()
-    
+
     # 2. Fetch roles from user_roles table
     sql_roles = text("SELECT role FROM user_roles WHERE user_id = :user_id")
     role_rows = db.execute(sql_roles, {"user_id": user_id}).fetchall()
     db_roles = [r.role for r in role_rows]
-    
+
     # 3. Consolidate roles (Token + DB)
     all_roles = list(set(current_user.get("roles", []) + db_roles))
-    
+
     if not row:
         # Fallback to JWT data if user not yet in DB (e.g. first login)
         return {
@@ -192,9 +192,9 @@ def list_users(
     current_user: dict = Depends(require_permission("users:read")),
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=100),
-    search: Optional[str] = None,
-    role: Optional[str] = None,
-    is_active: Optional[bool] = None,
+    search: str | None = None,
+    role: str | None = None,
+    is_active: bool | None = None,
 ):
     """List all users for the current tenant (paginated)."""
     tenant_id = current_user.get("tenant_id")
@@ -306,7 +306,7 @@ def list_users(
 
 @router.get("/roles/")
 def list_user_roles(
-    tenant_id: Optional[str] = None,
+    tenant_id: str | None = None,
     db: Session = Depends(get_db),
     current_user: dict = Depends(require_permission("users:read")),
 ):
@@ -344,7 +344,7 @@ def list_user_roles(
 class AssignRoleDirectRequest(BaseModel):
     user_id: str
     role: str
-    tenant_id: Optional[str] = None
+    tenant_id: str | None = None
 
 
 @router.post("/roles/", status_code=201)
@@ -397,8 +397,8 @@ def remove_role_direct(
 
 @router.get("/profiles/")
 def list_user_profiles(
-    tenant_id: Optional[str] = None,
-    search: Optional[str] = None,
+    tenant_id: str | None = None,
+    search: str | None = None,
     db: Session = Depends(get_db),
     current_user: dict = Depends(require_permission("users:read")),
 ):
@@ -894,6 +894,7 @@ def reset_user_password(
     """
     import secrets
     import string
+
     from app.core.security import get_password_hash
 
     tenant_id = current_user.get("tenant_id")
@@ -906,7 +907,8 @@ def reset_user_password(
     if not row:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
 
-    target_email = row[1]
+    # target_email = row[1]  # available if needed for email dispatch
+    _ = row  # row consumed above for existence check
 
     # Generate a temporary password
     alphabet = string.ascii_letters + string.digits + "!@#$%^&*"
@@ -937,6 +939,7 @@ def reset_user_password(
     retrieval_key = hashlib.sha256(f"reset_pw:{user_id}:{secrets.token_hex(8)}".encode()).hexdigest()[:16]
     try:
         import asyncio
+
         from app.core.cache import redis_client
         # FIX: Use asyncio.create_task + event loop polling instead of get_event_loop()
         # which crashes in ASGI context where the loop is already running.
@@ -1013,13 +1016,14 @@ def create_user(
         raise HTTPException(status_code=400, detail="User with this email already exists")
 
     # Create user with hashed password (auto-generate if not provided)
-    import uuid
     import secrets
     import string
+    import uuid
+
     from app.core.security import get_password_hash
 
     new_id = str(uuid.uuid4())
-    
+
     if body.password:
         raw_password = body.password
         from app.api.v1.endpoints.core.auth import validate_password_strength
@@ -1028,7 +1032,7 @@ def create_user(
         # Auto-generate a secure temporary password
         alphabet = string.ascii_letters + string.digits + "!@#$%^&*"
         raw_password = ''.join(secrets.choice(alphabet) for _ in range(16))
-    
+
     password_hash = get_password_hash(raw_password)
     _now = datetime.utcnow()
     sql = text("""
@@ -1054,7 +1058,7 @@ def create_user(
             """),
             {"user_id": new_id, "tenant_id": tenant_id, "role": role, "now": _now}
         )
-    
+
     # Log audit BEFORE commit
     log_audit(
         db,
@@ -1075,6 +1079,7 @@ def create_user(
         retrieval_key = hashlib.sha256(f"create_pw:{new_id}:{secrets.token_hex(8)}".encode()).hexdigest()[:16]
         try:
             import asyncio
+
             from app.core.cache import redis_client
             try:
                 loop = asyncio.get_running_loop()
@@ -1115,7 +1120,7 @@ class ConvertRequest(BaseModel):
     first_name: str
     last_name: str
     type: str # 'student' or 'parent'
-    password: Optional[str] = None
+    password: str | None = None
 
 @router.post("/convert/")
 def convert_to_account(
@@ -1126,9 +1131,10 @@ def convert_to_account(
     """Convert a student or parent entry into a full user account."""
     tenant_id = current_user.get("tenant_id")
 
-    import uuid
     import secrets
     import string
+    import uuid
+
     from app.core.security import get_password_hash
 
     new_user_id = str(uuid.uuid4())
@@ -1162,8 +1168,9 @@ def convert_to_account(
     # 2. Update Student/Parent record
     if body.type not in ("student", "parent"):
         raise HTTPException(status_code=400, detail="Invalid type")
-    table_map = {"student": "students", "parent": "parents"}
-    table = table_map[body.type]
+    # `table_map` documents the table-per-type mapping; the actual UPDATE
+    # below picks the right table via a ternary on body.type.
+    _table_map = {"student": "students", "parent": "parents"}
     db.execute(
         text("UPDATE students SET user_id = :user_id WHERE id = :id AND tenant_id = :tenant_id") if body.type == "student"
         else text("UPDATE parents SET user_id = :user_id WHERE id = :id AND tenant_id = :tenant_id"),
@@ -1189,6 +1196,7 @@ def convert_to_account(
         retrieval_key = hashlib.sha256(f"convert_pw:{new_user_id}:{secrets.token_hex(8)}".encode()).hexdigest()[:16]
         try:
             import asyncio
+
             from app.core.cache import redis_client
             try:
                 loop = asyncio.get_running_loop()
@@ -1223,12 +1231,12 @@ def convert_to_account(
 # ─── Profile update endpoint ──────────────────────────────────────────────────
 
 class ProfileUpdate(BaseModel):
-    first_name: Optional[str] = Field(default=None, max_length=255)
-    last_name: Optional[str] = Field(default=None, max_length=255)
-    email: Optional[EmailStr] = None
-    avatar_url: Optional[str] = Field(default=None, max_length=500)
-    phone: Optional[str] = Field(default=None, max_length=50)
-    bio: Optional[str] = Field(default=None, max_length=2000)
+    first_name: str | None = Field(default=None, max_length=255)
+    last_name: str | None = Field(default=None, max_length=255)
+    email: EmailStr | None = None
+    avatar_url: str | None = Field(default=None, max_length=500)
+    phone: str | None = Field(default=None, max_length=50)
+    bio: str | None = Field(default=None, max_length=2000)
 
 
 @router.patch("/profiles/{user_id}/")

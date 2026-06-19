@@ -1,14 +1,14 @@
 """CRUD operations for Grade model"""
-from typing import Optional
-from sqlalchemy.orm import Session
-from sqlalchemy import func
 from uuid import UUID
+
+from sqlalchemy import func
+from sqlalchemy.orm import Session
 
 from app.models.grade import Grade
 from app.schemas.grade import GradeCreate, GradeUpdate
 
 
-def get_grade(db: Session, grade_id: UUID, tenant_id: UUID) -> Optional[Grade]:
+def get_grade(db: Session, grade_id: UUID, tenant_id: UUID) -> Grade | None:
     """Get a grade by ID"""
     return db.query(Grade).filter(
         Grade.id == grade_id,
@@ -21,24 +21,24 @@ def get_grades(
     tenant_id: UUID,
     skip: int = 0,
     limit: int = 100,
-    student_id: Optional[UUID] = None,
-    subject: Optional[str] = None,
-    academic_year: Optional[str] = None,
-    assessment_id: Optional[UUID] = None,
-    class_id: Optional[UUID] = None,
+    student_id: UUID | None = None,
+    subject: str | None = None,
+    academic_year: str | None = None,
+    assessment_id: UUID | None = None,
+    class_id: UUID | None = None,
 ) -> tuple[list[Grade], int]:
     """Get grades with pagination and filters"""
     query = db.query(Grade).filter(Grade.tenant_id == tenant_id)
-    
+
     if student_id:
         query = query.filter(Grade.student_id == student_id)
-    
+
     if subject:
         query = query.filter(Grade.subject_id == subject)
-    
+
     if assessment_id:
         query = query.filter(Grade.assessment_id == assessment_id)
-    
+
     if class_id:
         # Filter grades by assessment's class_id (column may exist in DB table but not ORM)
         from sqlalchemy import text
@@ -51,16 +51,16 @@ def get_grades(
         else:
             # No assessments match this class_id, return empty
             return [], 0
-    
+
     if academic_year:
         # Filter grades by assessment's academic_year_id
         from app.models.assessment import Assessment
         ay_subq = db.query(Assessment.id).filter(Assessment.academic_year_id == academic_year).subquery()
         query = query.filter(Grade.assessment_id.in_(ay_subq))
-    
+
     total = query.count()
     grades = query.order_by(Grade.created_at.desc()).offset(skip).limit(limit).all()
-    
+
     return grades, total
 
 
@@ -68,8 +68,8 @@ def get_student_average(
     db: Session,
     student_id: UUID,
     tenant_id: UUID,
-    academic_year: Optional[str] = None,
-    semester: Optional[int] = None,
+    academic_year: str | None = None,
+    semester: int | None = None,
 ) -> dict:
     """Calculate student's average grades"""
     query = db.query(
@@ -79,13 +79,13 @@ def get_student_average(
         Grade.student_id == student_id,
         Grade.tenant_id == tenant_id
     )
-    
+
     if academic_year:
         # Filter grades by assessment's academic_year_id
         from app.models.assessment import Assessment
         ay_subq = db.query(Assessment.id).filter(Assessment.academic_year_id == academic_year).subquery()
         query = query.filter(Grade.assessment_id.in_(ay_subq))
-    
+
     if semester:
         # Filter grades by assessment's term and sequence number
         from app.models.assessment import Assessment
@@ -93,9 +93,9 @@ def get_student_average(
         term_subq = db.query(Term.id).filter(Term.sequence_number == semester).subquery()
         assessment_subq = db.query(Assessment.id).filter(Assessment.term_id.in_(term_subq)).subquery()
         query = query.filter(Grade.assessment_id.in_(assessment_subq))
-    
+
     result = query.first()
-    
+
     return {
         'average': float(result.average) if result.average else 0.0,
         'count': result.count or 0
@@ -119,16 +119,16 @@ def update_grade(
     grade_id: UUID,
     grade_update: GradeUpdate,
     tenant_id: UUID
-) -> Optional[Grade]:
+) -> Grade | None:
     """Update a grade"""
     db_grade = get_grade(db, grade_id, tenant_id)
     if not db_grade:
         return None
-    
+
     update_data = grade_update.model_dump(exclude_unset=True)
     for field, value in update_data.items():
         setattr(db_grade, field, value)
-    
+
     db.commit()
     db.refresh(db_grade)
     return db_grade
@@ -139,7 +139,7 @@ def delete_grade(db: Session, grade_id: UUID, tenant_id: UUID) -> bool:
     db_grade = get_grade(db, grade_id, tenant_id)
     if not db_grade:
         return False
-    
+
     db.delete(db_grade)
     db.commit()
     return True

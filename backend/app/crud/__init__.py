@@ -1,4 +1,5 @@
 """CRUD package initialization"""
-from app.crud import student, grade, payment
+from app.crud import grade, payment, student
 
-__all__ = ["student", "grade", "payment"]
+
+__all__ = ["grade", "payment", "student"]

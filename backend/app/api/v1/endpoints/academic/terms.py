@@ -1,19 +1,20 @@
-from typing import List
+import logging
+from uuid import UUID
+
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
-from uuid import UUID
-import logging
 
 from app.core.database import get_db
 from app.core.security import require_permission
 from app.crud import academic as crud_academic
 from app.schemas.academic import Term, TermCreate, TermUpdate
 
+
 router = APIRouter()
 logger = logging.getLogger(__name__)
 
 
-@router.get("/", response_model=List[Term])
+@router.get("/", response_model=list[Term])
 def list_terms(
     db: Session = Depends(get_db),
     current_user: dict = Depends(require_permission("settings:read")),

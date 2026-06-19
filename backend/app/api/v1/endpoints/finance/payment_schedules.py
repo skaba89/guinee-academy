@@ -1,16 +1,17 @@
 """Payment Schedules CRUD endpoints"""
 import logging
-from typing import Optional, List
-from fastapi import APIRouter, Depends, HTTPException, status, Query
-from pydantic import BaseModel, Field
-from sqlalchemy.orm import Session
-from sqlalchemy import text
 import math
 
+from fastapi import APIRouter, Depends, HTTPException, Query, status
+from pydantic import BaseModel, Field
+from sqlalchemy import text
+from sqlalchemy.orm import Session
+
 from app.core.database import get_db
-from app.core.security import get_current_user, require_permission
+from app.core.security import require_permission
 from app.core.serialization import to_iso as _to_iso
 from app.utils.audit import log_audit
+
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -36,17 +37,17 @@ class PaymentScheduleCreate(BaseModel):
     amount: float = Field(0.0, ge=0, le=10_000_000)
     due_date: str
     status: str = "PENDING"
-    notes: Optional[str] = None
-    paid_date: Optional[str] = None
+    notes: str | None = None
+    paid_date: str | None = None
 
 
 class PaymentScheduleUpdate(BaseModel):
-    installment_number: Optional[int] = None
-    amount: Optional[float] = Field(None, ge=0, le=10_000_000)
-    due_date: Optional[str] = None
-    status: Optional[str] = None
-    notes: Optional[str] = None
-    paid_date: Optional[str] = None
+    installment_number: int | None = None
+    amount: float | None = Field(None, ge=0, le=10_000_000)
+    due_date: str | None = None
+    status: str | None = None
+    notes: str | None = None
+    paid_date: str | None = None
 
     @classmethod
     def validate_amounts(cls, values):
@@ -83,10 +84,10 @@ def list_payment_schedules(
     current_user: dict = Depends(require_permission("payments:read")),
     page: int = Query(1, ge=1),
     page_size: int = Query(50, ge=1, le=100),
-    student_id: Optional[str] = None,
-    invoice_id: Optional[str] = None,
-    ps_status: Optional[str] = Query(None, alias="status"),
-    ordering: Optional[str] = Query("installment_number"),
+    student_id: str | None = None,
+    invoice_id: str | None = None,
+    ps_status: str | None = Query(None, alias="status"),
+    ordering: str | None = Query("installment_number"),
 ):
     """List payment schedules with optional filters and pagination."""
     tenant_id = _get_tenant_id(current_user)
@@ -151,7 +152,7 @@ def list_payment_schedules(
 
 @router.post("/", status_code=status.HTTP_201_CREATED)
 def create_payment_schedules(
-    body: List[PaymentScheduleCreate],
+    body: list[PaymentScheduleCreate],
     db: Session = Depends(get_db),
     current_user: dict = Depends(require_permission("payments:write")),
 ):
@@ -296,7 +297,7 @@ def update_payment_schedule(
 def delete_payment_schedules_by_filter(
     db: Session = Depends(get_db),
     current_user: dict = Depends(require_permission("payments:write")),
-    invoice_id: Optional[str] = Query(None),
+    invoice_id: str | None = Query(None),
 ):
     """
     Delete payment schedules by filter (e.g. invoice_id).

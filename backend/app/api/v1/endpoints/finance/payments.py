@@ -1,28 +1,25 @@
 """Payment, Invoice and Fees endpoints"""
 import logging
-from typing import Optional, List, Any
-from fastapi import APIRouter, Depends, HTTPException, status, Query, Request
-from pydantic import BaseModel, Field
-from sqlalchemy.orm import Session
-from sqlalchemy import text
-from uuid import UUID
-import math, secrets
+import math
+import secrets
 from datetime import datetime
+from typing import Any
+from uuid import UUID
+
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
+from pydantic import BaseModel, Field
 from slowapi import Limiter
 from slowapi.util import get_remote_address
+from sqlalchemy import text
+from sqlalchemy.orm import Session
 
 from app.core.database import get_db
-from app.core.security import get_current_user, require_permission
+from app.core.security import require_permission
 from app.core.serialization import to_iso as _to_iso
 from app.utils.audit import log_audit
 
+
 limiter = Limiter(key_func=get_remote_address)
-from app.crud import payment as crud_payment
-from app.schemas.payment import (
-    Payment, PaymentCreate, PaymentUpdate, PaymentList,
-    Invoice, InvoiceCreate, InvoiceUpdate, InvoiceList
-)
-from app.models.payment import PaymentStatus, InvoiceStatus
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -49,24 +46,24 @@ class RegisterPaymentRequest(BaseModel):
     invoice_id: str
     amount: float = Field(..., gt=0, le=10_000_000)
     method: str
-    reference: Optional[str] = None
-    notes: Optional[str] = None
+    reference: str | None = None
+    notes: str | None = None
 
 class ReversePaymentRequest(BaseModel):
-    notes: Optional[str] = None
+    notes: str | None = None
 
 class FeeCreate(BaseModel):
     name: str
-    description: Optional[str] = None
+    description: str | None = None
     amount: float = Field(..., gt=0, le=10_000_000)
 
 class FeeUpdate(BaseModel):
-    name: Optional[str] = None
-    description: Optional[str] = None
-    amount: Optional[float] = Field(None, gt=0, le=10_000_000)
+    name: str | None = None
+    description: str | None = None
+    amount: float | None = Field(None, gt=0, le=10_000_000)
 
 class InvoiceReminderRequest(BaseModel):
-    invoice_ids: Optional[List[str]] = None  # None = tous les impayés
+    invoice_ids: list[str] | None = None  # None = tous les impayés
 
 
 # ─── Payment endpoints ────────────────────────────────────────────────────────
@@ -77,7 +74,7 @@ def list_payments(
     current_user: dict = Depends(require_permission("payments:read")),
     page: int = Query(1, ge=1),
     page_size: int = Query(50, ge=1, le=100),
-    student_id: Optional[str] = None,
+    student_id: str | None = None,
 ):
     """List payments with pagination — includes student info."""
     tenant_id = _get_tenant_id(current_user)
@@ -317,8 +314,8 @@ def list_invoices(
     current_user: dict = Depends(require_permission("payments:read")),
     page: int = Query(1, ge=1),
     page_size: int = Query(50, ge=1, le=100),
-    student_id: Optional[str] = None,
-    inv_status: Optional[str] = Query(None, alias="status"),
+    student_id: str | None = None,
+    inv_status: str | None = Query(None, alias="status"),
 ):
     """List invoices with full student info — replaces Supabase join query."""
     tenant_id = _get_tenant_id(current_user)
@@ -372,11 +369,11 @@ def list_invoices(
 
 class InvoiceCreateBody(BaseModel):
     student_id: str
-    invoice_number: Optional[str] = None
+    invoice_number: str | None = None
     total_amount: float = Field(..., gt=0, le=10_000_000)
-    items: Optional[Any] = None
-    due_date: Optional[str] = None
-    notes: Optional[str] = None
+    items: Any | None = None
+    due_date: str | None = None
+    notes: str | None = None
     has_payment_plan: bool = False
     installments_count: int = Field(1, ge=1, le=60)
 
@@ -815,7 +812,7 @@ def send_invoice_email(
 def create_payment_intent(
     amount: float = Query(..., gt=0, le=10_000_000),
     method: str = Query(..., description="MOBILE_MONEY, CARD, CASH"),
-    invoice_id: Optional[UUID] = None,
+    invoice_id: UUID | None = None,
     current_user: dict = Depends(require_permission("payments:write")),
 ):
     """Initiate a multi-method payment (Mobile Money, Card, Cash)."""

@@ -6,11 +6,13 @@ powered by Groq's fast inference API.
 """
 
 import logging
-from typing import Any, AsyncGenerator, Optional
+from collections.abc import AsyncGenerator
+from typing import Any
 
 from groq import AsyncGroq, GroqError
 
 from app.core.config import settings
+
 
 logger = logging.getLogger(__name__)
 
@@ -59,7 +61,7 @@ class GroqService:
                 "AI features will return fallback responses. "
                 "Set the GROQ_API_KEY environment variable to enable Groq."
             )
-        self._client: Optional[AsyncGroq] = (
+        self._client: AsyncGroq | None = (
             AsyncGroq(api_key=api_key) if api_key else None
         )
         self._model: str = settings.GROQ_MODEL
@@ -76,7 +78,7 @@ class GroqService:
         self,
         messages: list[dict[str, str]],
         *,
-        max_tokens: Optional[int] = None,
+        max_tokens: int | None = None,
         temperature: float = 0.7,
     ) -> AsyncGenerator[str, None]:
         """Yield text chunks from a streaming Groq completion."""
@@ -102,7 +104,7 @@ class GroqService:
         except GroqError as exc:
             logger.error("Groq API error during streaming: %s", exc)
             yield "Erreur de connexion au service IA. Veuillez réessayer."
-        except Exception as exc:
+        except Exception:
             logger.exception("Unexpected error during Groq streaming")
             yield "Erreur de connexion au service IA. Veuillez réessayer."
 
@@ -110,7 +112,7 @@ class GroqService:
         self,
         messages: list[dict[str, str]],
         *,
-        max_tokens: Optional[int] = None,
+        max_tokens: int | None = None,
         temperature: float = 0.7,
     ) -> dict[str, Any]:
         """Return a structured dict with the full completion result."""
@@ -150,7 +152,7 @@ class GroqService:
                 "content": "Erreur de connexion au service IA. Veuillez réessayer.",
                 "error": "groq_api_error",
             }
-        except Exception as exc:
+        except Exception:
             logger.exception("Unexpected error during Groq completion")
             return {
                 **fallback,
@@ -165,7 +167,7 @@ class GroqService:
     async def chat_completion(
         self,
         message: str,
-        history: Optional[list[dict[str, str]]] = None,
+        history: list[dict[str, str]] | None = None,
         *,
         stream: bool = False,
         platform_name: str = "Guinée Academy",

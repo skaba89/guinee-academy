@@ -1,9 +1,11 @@
-from sqlalchemy import Column, String, DateTime, Text, Boolean
-from app.models.base import Base, TimestampMixin, UUIDMixin, TenantMixin
+from sqlalchemy import Boolean, Column, DateTime, String, Text
+
+from app.models.base import Base, TenantMixin, TimestampMixin, UUIDMixin
+
 
 class SchoolEvent(Base, UUIDMixin, TimestampMixin, TenantMixin):
     __tablename__ = "school_events"
-    
+
     title = Column(String(255), nullable=False)
     description = Column(Text)
     start_date = Column(DateTime, nullable=False)

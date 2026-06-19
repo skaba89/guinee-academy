@@ -1,19 +1,20 @@
-from typing import List
+import logging
+from uuid import UUID
+
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
-from uuid import UUID
 
 from app.core.database import get_db
 from app.core.security import require_permission
 from app.crud import academic as crud_academic
 from app.schemas.academic import Campus, CampusCreate, CampusUpdate
-import logging
+
 
 logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
-@router.get("/", response_model=List[Campus])
+@router.get("/", response_model=list[Campus])
 def list_campuses(
     db: Session = Depends(get_db),
     current_user: dict = Depends(require_permission("settings:read")),

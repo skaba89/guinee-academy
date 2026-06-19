@@ -3,18 +3,19 @@ Admissions module — workflow complet:
   DRAFT → SUBMITTED → UNDER_REVIEW → ACCEPTED → CONVERTED_TO_STUDENT
                                     ↘ REJECTED
 """
+import logging
 import uuid as _uuid
-from typing import Optional
-from fastapi import APIRouter, Depends, HTTPException, Query
-from sqlalchemy.orm import Session
-from sqlalchemy import text
-from pydantic import BaseModel
 from datetime import date, datetime
 
+from fastapi import APIRouter, Depends, HTTPException, Query
+from pydantic import BaseModel
+from sqlalchemy import text
+from sqlalchemy.orm import Session
+
 from app.core.database import get_db
-from app.core.security import get_current_user, require_permission
+from app.core.security import require_permission
 from app.utils.audit import log_audit
-import logging
+
 
 logger = logging.getLogger(__name__)
 
@@ -38,38 +39,38 @@ VALID_TRANSITIONS: dict = {
 class AdmissionCreate(BaseModel):
     student_first_name: str
     student_last_name: str
-    student_date_of_birth: Optional[date] = None
-    student_gender: Optional[str] = None
-    student_address: Optional[str] = None
-    student_previous_school: Optional[str] = None
+    student_date_of_birth: date | None = None
+    student_gender: str | None = None
+    student_address: str | None = None
+    student_previous_school: str | None = None
     parent_first_name: str
     parent_last_name: str
     parent_email: str
     parent_phone: str
-    parent_address: Optional[str] = None
-    parent_occupation: Optional[str] = None
-    academic_year_id: Optional[str] = None
-    level_id: Optional[str] = None
-    notes: Optional[str] = None
+    parent_address: str | None = None
+    parent_occupation: str | None = None
+    academic_year_id: str | None = None
+    level_id: str | None = None
+    notes: str | None = None
 
 
 class StatusUpdate(BaseModel):
     status: str
-    notes: Optional[str] = None
+    notes: str | None = None
 
 
 class ConvertPayload(BaseModel):
-    registration_number: Optional[str] = None
-    class_name: Optional[str] = None
+    registration_number: str | None = None
+    class_name: str | None = None
 
 
 class AdmissionEdit(BaseModel):
-    notes: Optional[str] = None
-    student_address: Optional[str] = None
-    parent_phone: Optional[str] = None
-    parent_email: Optional[str] = None
-    academic_year_id: Optional[str] = None
-    level_id: Optional[str] = None
+    notes: str | None = None
+    student_address: str | None = None
+    parent_phone: str | None = None
+    parent_email: str | None = None
+    academic_year_id: str | None = None
+    level_id: str | None = None
 
 
 # ─── Internal helper ──────────────────────────────────────────────────────────
@@ -93,10 +94,10 @@ def _fetch(db: Session, admission_id: str, tenant_id: str) -> dict:
 
 @router.get("/")
 def list_admissions(
-    status: Optional[str] = None,
-    academic_year_id: Optional[str] = None,
-    level_id: Optional[str] = None,
-    search: Optional[str] = None,
+    status: str | None = None,
+    academic_year_id: str | None = None,
+    level_id: str | None = None,
+    search: str | None = None,
     limit: int = Query(50, le=200),
     offset: int = 0,
     db: Session = Depends(get_db),
@@ -144,7 +145,7 @@ def list_admissions(
 
 @router.get("/stats/")
 def get_stats(
-    academic_year_id: Optional[str] = None,
+    academic_year_id: str | None = None,
     db: Session = Depends(get_db),
     current_user: dict = Depends(require_permission("admissions:read")),
 ):
@@ -428,7 +429,7 @@ def public_apply(
     tenant_id = payload.get("tenant_id")
     if not tenant_id:
         raise HTTPException(status_code=400, detail="Missing tenant_id")
-    
+
     # Verify tenant exists and is active
     from app.models import Tenant
     tenant = db.query(Tenant).filter(Tenant.id == tenant_id, Tenant.is_active == True).first()
@@ -455,18 +456,18 @@ def public_apply(
         ) RETURNING *
     """), {
         "id": new_id,
-        "tenant_id": tenant_id, 
+        "tenant_id": tenant_id,
         "academic_year_id": payload.get("academic_year_id"),
         "level_id": payload.get("level_id"),
-        "student_first_name": payload.get("student_first_name"), 
+        "student_first_name": payload.get("student_first_name"),
         "student_last_name": payload.get("student_last_name"),
-        "student_date_of_birth": payload.get("student_date_of_birth"), 
+        "student_date_of_birth": payload.get("student_date_of_birth"),
         "student_gender": payload.get("student_gender"),
-        "student_address": payload.get("student_address"), 
+        "student_address": payload.get("student_address"),
         "student_previous_school": payload.get("student_previous_school"),
-        "parent_first_name": payload.get("parent_first_name"), 
+        "parent_first_name": payload.get("parent_first_name"),
         "parent_last_name": payload.get("parent_last_name"),
-        "parent_email": payload.get("parent_email"), 
+        "parent_email": payload.get("parent_email"),
         "parent_phone": payload.get("parent_phone"),
         "parent_address": payload.get("parent_address"),
         "parent_occupation": payload.get("parent_occupation"),
@@ -502,7 +503,7 @@ STATUS_COLORS = {
 def public_check_status(
     tenant_id: str,
     email: str,
-    reference: Optional[str] = None,
+    reference: str | None = None,
     db: Session = Depends(get_db),
 ):
     """Check candidature status by parent email (and optionally application ID)."""
@@ -610,8 +611,8 @@ class ReEnrollPayload(BaseModel):
     academic_year_id: str
     level_id: str
     parent_email: str
-    parent_phone: Optional[str] = None
-    notes: Optional[str] = None
+    parent_phone: str | None = None
+    notes: str | None = None
 
 
 @router.post("/public/reenroll/")
@@ -739,8 +740,8 @@ def public_tenant_info(slug: str, db: Session = Depends(get_db)):
         "country": tenant["country"],
         "admissions_open": settings.get("admissions_open", True),
         "levels": [
-            {"id": str(l["id"]), "name": l["name"], "description": l["description"]}
-            for l in levels
+            {"id": str(lvl["id"]), "name": lvl["name"], "description": lvl["description"]}
+            for lvl in levels
         ],
         "current_academic_year": {
             "id": str(academic_year["id"]),

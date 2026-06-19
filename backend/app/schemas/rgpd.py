@@ -1,22 +1,23 @@
-from typing import Optional, List
-from pydantic import BaseModel, UUID4
 from datetime import datetime
 
+from pydantic import UUID4, BaseModel
+
+
 class DeletionRequestBase(BaseModel):
-    reason: Optional[str] = None
+    reason: str | None = None
 
 class DeletionRequestCreate(DeletionRequestBase):
     pass
 
 class DeletionRequestUpdate(BaseModel):
     status: str
-    rejection_reason: Optional[str] = None
+    rejection_reason: str | None = None
 
 class UserMin(BaseModel):
     id: UUID4
     email: str
-    first_name: Optional[str] = None
-    last_name: Optional[str] = None
+    first_name: str | None = None
+    last_name: str | None = None
 
     class Config:
         from_attributes = True
@@ -27,9 +28,9 @@ class DeletionRequestInDB(DeletionRequestBase):
     user_id: UUID4
     status: str
     requested_at: datetime
-    processed_at: Optional[datetime] = None
-    processed_by: Optional[UUID4] = None
-    rejection_reason: Optional[str] = None
+    processed_at: datetime | None = None
+    processed_by: UUID4 | None = None
+    rejection_reason: str | None = None
     created_at: datetime
     updated_at: datetime
 
@@ -37,5 +38,5 @@ class DeletionRequestInDB(DeletionRequestBase):
         from_attributes = True
 
 class DeletionRequest(DeletionRequestInDB):
-    user: Optional[UserMin] = None
-    processor: Optional[UserMin] = None
+    user: UserMin | None = None
+    processor: UserMin | None = None

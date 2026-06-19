@@ -1,9 +1,11 @@
-from sqlalchemy import Column, String, Integer, Date, ForeignKey, Boolean
-from app.models.base import Base, GUID, UUIDMixin, TimestampMixin, TenantMixin
+from sqlalchemy import Boolean, Column, Date, ForeignKey, Integer, String
+
+from app.models.base import GUID, Base, TenantMixin, TimestampMixin, UUIDMixin
+
 
 class Term(Base, UUIDMixin, TimestampMixin, TenantMixin):
     __tablename__ = "terms"
-    
+
     academic_year_id = Column(GUID(), ForeignKey("academic_years.id"), nullable=False)
     name = Column(String, nullable=False)
     start_date = Column(Date, nullable=False)

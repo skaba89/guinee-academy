@@ -1,8 +1,10 @@
 """Tenant quota enforcement middleware for Guinée Academy."""
 import logging
+
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.requests import Request
 from starlette.responses import JSONResponse, Response
+
 
 logger = logging.getLogger(__name__)
 
@@ -74,7 +76,7 @@ class QuotaMiddleware(BaseHTTPMiddleware):
                         "limit": limit,
                     },
                 )
-        except Exception as exc:  # noqa: BLE001
+        except Exception as exc:
             # Fail open: allow request if quota check fails
             logger.warning("Quota check failed (allowing request): %s", exc)
 
@@ -86,9 +88,10 @@ class QuotaMiddleware(BaseHTTPMiddleware):
     ) -> tuple[bool, int, int]:
         """Return ``(is_exceeded, current_count, limit)``."""
         # Fetch tenant settings to get quota limits
-        from app.core.database import SessionLocal as _SL
-        from app.models.tenant import Tenant as _Tenant
         from sqlalchemy import select as _sel
+
+        from app.core.database import SessionLocal as _SL  # noqa: N814 — intentional constant alias
+        from app.models.tenant import Tenant as _Tenant
 
         limit: int = DEFAULT_QUOTAS.get(quota_key, 99_999)
         try:
@@ -109,12 +112,13 @@ class QuotaMiddleware(BaseHTTPMiddleware):
 
         Uses its own DB session to avoid depending on middleware-injected state.
         """
-        from sqlalchemy import select, func  # noqa: PLC0415
-        from app.core.database import SessionLocal  # noqa: PLC0415
+        from sqlalchemy import func, select
+
+        from app.core.database import SessionLocal
 
         try:
             if quota_key == "max_students":
-                from app.models.student import Student  # noqa: PLC0415
+                from app.models.student import Student
 
                 with SessionLocal() as db:
                     result = db.execute(
@@ -128,7 +132,7 @@ class QuotaMiddleware(BaseHTTPMiddleware):
 
             if quota_key == "max_staff":
                 # No dedicated staff model; count users with STAFF role
-                from sqlalchemy import text  # noqa: PLC0415
+                from sqlalchemy import text
                 with SessionLocal() as db:
                     result = db.execute(
                         text("SELECT COUNT(*) FROM user_roles WHERE role = 'STAFF' AND tenant_id = :tid"),
@@ -136,7 +140,7 @@ class QuotaMiddleware(BaseHTTPMiddleware):
                     )
                     return int(result.scalar() or 0)
 
-        except Exception as exc:  # noqa: BLE001
+        except Exception as exc:
             logger.warning("Could not count resources for quota check: %s", exc)
 
         return 0

@@ -1,22 +1,26 @@
-from typing import List, Optional
-from sqlalchemy.orm import Session
+from datetime import datetime
 from uuid import UUID
-from datetime import date, datetime
 
-from app.models import Grade, Assessment, Attendance, SchoolEvent, StudentCheckIn
+from sqlalchemy.orm import Session
+
+from app.models import Assessment, Attendance, Grade, SchoolEvent, StudentCheckIn
 from app.schemas.school_life import (
-    GradeCreate, GradeUpdate,
-    AssessmentCreate, AssessmentUpdate,
-    AttendanceCreate, AttendanceUpdate,
-    SchoolEventCreate, SchoolEventUpdate,
-    StudentCheckInCreate
+    AssessmentCreate,
+    AssessmentUpdate,
+    AttendanceCreate,
+    GradeCreate,
+    GradeUpdate,
+    SchoolEventCreate,
+    SchoolEventUpdate,
+    StudentCheckInCreate,
 )
 
+
 # --- Assessment ---
-def get_assessments(db: Session, tenant_id: UUID) -> List[Assessment]:
+def get_assessments(db: Session, tenant_id: UUID) -> list[Assessment]:
     return db.query(Assessment).filter(Assessment.tenant_id == tenant_id).order_by(Assessment.date.desc()).all()
 
-def get_assessment(db: Session, assessment_id: UUID, tenant_id: UUID) -> Optional[Assessment]:
+def get_assessment(db: Session, assessment_id: UUID, tenant_id: UUID) -> Assessment | None:
     return db.query(Assessment).filter(Assessment.id == assessment_id, Assessment.tenant_id == tenant_id).first()
 
 def create_assessment(db: Session, obj_in: AssessmentCreate, tenant_id: UUID) -> Assessment:
@@ -29,22 +33,22 @@ def create_assessment(db: Session, obj_in: AssessmentCreate, tenant_id: UUID) ->
     db.refresh(db_obj)
     return db_obj
 
-def update_assessment(db: Session, assessment_id: UUID, obj_in: AssessmentUpdate, tenant_id: UUID) -> Optional[Assessment]:
+def update_assessment(db: Session, assessment_id: UUID, obj_in: AssessmentUpdate, tenant_id: UUID) -> Assessment | None:
     db_obj = get_assessment(db, assessment_id, tenant_id)
     if not db_obj:
         return None
-    
+
     update_data = obj_in.model_dump(exclude_unset=True)
     for field, value in update_data.items():
         setattr(db_obj, field, value)
-    
+
     db.add(db_obj)
     db.commit()
     db.refresh(db_obj)
     return db_obj
 
 # --- Grade ---
-def get_grades(db: Session, tenant_id: UUID, student_id: Optional[UUID] = None) -> List[Grade]:
+def get_grades(db: Session, tenant_id: UUID, student_id: UUID | None = None) -> list[Grade]:
     query = db.query(Grade).filter(Grade.tenant_id == tenant_id)
     if student_id:
         query = query.filter(Grade.student_id == student_id)
@@ -60,22 +64,22 @@ def create_grade(db: Session, obj_in: GradeCreate, tenant_id: UUID) -> Grade:
     db.refresh(db_obj)
     return db_obj
 
-def update_grade(db: Session, grade_id: UUID, obj_in: GradeUpdate, tenant_id: UUID) -> Optional[Grade]:
+def update_grade(db: Session, grade_id: UUID, obj_in: GradeUpdate, tenant_id: UUID) -> Grade | None:
     db_obj = db.query(Grade).filter(Grade.id == grade_id, Grade.tenant_id == tenant_id).first()
     if not db_obj:
         return None
-    
+
     update_data = obj_in.model_dump(exclude_unset=True)
     for field, value in update_data.items():
         setattr(db_obj, field, value)
-    
+
     db.add(db_obj)
     db.commit()
     db.refresh(db_obj)
     return db_obj
 
 # --- Attendance ---
-def get_attendance(db: Session, tenant_id: UUID, student_ids: Optional[List[UUID]] = None) -> List[Attendance]:
+def get_attendance(db: Session, tenant_id: UUID, student_ids: list[UUID] | None = None) -> list[Attendance]:
     query = db.query(Attendance).filter(Attendance.tenant_id == tenant_id)
     if student_ids:
         query = query.filter(Attendance.student_id.in_(student_ids))
@@ -92,13 +96,13 @@ def create_attendance(db: Session, obj_in: AttendanceCreate, tenant_id: UUID) ->
     return db_obj
 
 # --- School Event ---
-def get_events(db: Session, tenant_id: UUID, start_after: Optional[datetime] = None) -> List[SchoolEvent]:
+def get_events(db: Session, tenant_id: UUID, start_after: datetime | None = None) -> list[SchoolEvent]:
     query = db.query(SchoolEvent).filter(SchoolEvent.tenant_id == tenant_id)
     if start_after:
         query = query.filter(SchoolEvent.start_date >= start_after)
     return query.order_by(SchoolEvent.start_date.asc()).all()
 
-def get_event(db: Session, event_id: UUID, tenant_id: UUID) -> Optional[SchoolEvent]:
+def get_event(db: Session, event_id: UUID, tenant_id: UUID) -> SchoolEvent | None:
     return db.query(SchoolEvent).filter(SchoolEvent.id == event_id, SchoolEvent.tenant_id == tenant_id).first()
 
 def create_event(db: Session, obj_in: SchoolEventCreate, tenant_id: UUID) -> SchoolEvent:
@@ -111,7 +115,7 @@ def create_event(db: Session, obj_in: SchoolEventCreate, tenant_id: UUID) -> Sch
     db.refresh(db_obj)
     return db_obj
 
-def update_event(db: Session, event_id: UUID, obj_in: SchoolEventUpdate, tenant_id: UUID) -> Optional[SchoolEvent]:
+def update_event(db: Session, event_id: UUID, obj_in: SchoolEventUpdate, tenant_id: UUID) -> SchoolEvent | None:
     db_obj = get_event(db, event_id, tenant_id)
     if not db_obj:
         return None
@@ -132,7 +136,7 @@ def delete_event(db: Session, event_id: UUID, tenant_id: UUID) -> bool:
     return True
 
 # --- Student Check-In ---
-def get_check_ins(db: Session, tenant_id: UUID, student_ids: Optional[List[UUID]] = None) -> List[StudentCheckIn]:
+def get_check_ins(db: Session, tenant_id: UUID, student_ids: list[UUID] | None = None) -> list[StudentCheckIn]:
     query = db.query(StudentCheckIn).filter(StudentCheckIn.tenant_id == tenant_id)
     if student_ids:
         query = query.filter(StudentCheckIn.student_id.in_(student_ids))

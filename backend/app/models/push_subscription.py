@@ -1,8 +1,10 @@
-from sqlalchemy import Column, String, Boolean, DateTime, ForeignKey, Text
-from sqlalchemy.sql import func
 import uuid
 
-from app.models.base import Base, GUID
+from sqlalchemy import Boolean, Column, DateTime, ForeignKey, String, Text
+from sqlalchemy.sql import func
+
+from app.models.base import GUID, Base
+
 
 class PushSubscription(Base):
     __tablename__ = "push_subscriptions"

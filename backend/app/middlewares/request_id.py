@@ -1,9 +1,11 @@
 """Request ID middleware — attaches a UUID to every request/response."""
-import uuid
 import logging
+import uuid
+
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.requests import Request
 from starlette.responses import Response
+
 
 logger = logging.getLogger(__name__)
 

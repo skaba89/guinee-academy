@@ -1,8 +1,8 @@
 """Tenant model"""
-from sqlalchemy import Column, String, Boolean, JSON, Text, DateTime
+from sqlalchemy import JSON, Boolean, Column, DateTime, String
 from sqlalchemy.orm import relationship
 
-from app.models.base import Base, UUIDMixin, TimestampMixin
+from app.models.base import Base, TimestampMixin, UUIDMixin
 
 
 class Tenant(Base, UUIDMixin, TimestampMixin):
@@ -37,7 +37,7 @@ class Tenant(Base, UUIDMixin, TimestampMixin):
     secretary_name = Column(String(255))
     secretary_signature_url = Column(String(500))
     city = Column(String(255))
-    
+
     # Relationships
     users = relationship("User", back_populates="tenant")
     students = relationship("Student", back_populates="tenant")

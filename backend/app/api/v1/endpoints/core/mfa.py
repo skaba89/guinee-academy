@@ -1,18 +1,20 @@
 """MFA / Backup Codes endpoints"""
-import secrets
 import hashlib
-import uuid
 import logging
-from datetime import datetime, timezone
-from fastapi import APIRouter, Depends, HTTPException, status, Request
+import secrets
+import uuid
+from datetime import UTC, datetime
+
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from pydantic import BaseModel
-from sqlalchemy.orm import Session
-from sqlalchemy import text
 from slowapi import Limiter
 from slowapi.util import get_remote_address
+from sqlalchemy import text
+from sqlalchemy.orm import Session
 
 from app.core.database import get_db
 from app.core.security import get_current_user
+
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -44,7 +46,7 @@ def _ensure_mfa_tables(db: Session):
         # Check if mfa_backup_codes table exists
         table_check = db.execute(text("""
             SELECT EXISTS (
-                SELECT 1 FROM information_schema.tables 
+                SELECT 1 FROM information_schema.tables
                 WHERE table_name = 'mfa_backup_codes' AND table_schema = 'public'
             )
         """)).scalar()
@@ -69,7 +71,7 @@ def _ensure_mfa_tables(db: Session):
         # Check if email_otps table exists
         otp_table_check = db.execute(text("""
             SELECT EXISTS (
-                SELECT 1 FROM information_schema.tables 
+                SELECT 1 FROM information_schema.tables
                 WHERE table_name = 'email_otps' AND table_schema = 'public'
             )
         """)).scalar()
@@ -93,7 +95,7 @@ def _ensure_mfa_tables(db: Session):
         # Ensure mfa_enabled column exists on users table
         col_check = db.execute(text("""
             SELECT EXISTS (
-                SELECT 1 FROM information_schema.columns 
+                SELECT 1 FROM information_schema.columns
                 WHERE table_name = 'users' AND column_name = 'mfa_enabled'
             )
         """)).scalar()
@@ -152,7 +154,7 @@ def generate_backup_codes(
                     "user_id": user_id,
                     "tenant_id": tenant_id,
                     "code_hash": code_hash,
-                    "created_at": datetime.now(timezone.utc)
+                    "created_at": datetime.now(UTC)
                 }
             )
             plain_codes.append(code)
@@ -200,7 +202,7 @@ def verify_backup_code(
 
         db.execute(
             text("UPDATE mfa_backup_codes SET used = TRUE, used_at = :used_at WHERE id = :id"),
-            {"id": row.id, "used_at": datetime.now(timezone.utc)}
+            {"id": row.id, "used_at": datetime.now(UTC)}
         )
         db.commit()
         return {"valid": True, "message": "Code vérifié avec succès"}
@@ -327,7 +329,7 @@ def request_otp(
         # Generate 6-digit code using cryptographically secure secrets.choice
         code = "".join(secrets.choice(string.digits) for _ in range(6))
         code_hash = _hash_code(code)
-        expires_at = datetime.now(timezone.utc) + timedelta(minutes=15)
+        expires_at = datetime.now(UTC) + timedelta(minutes=15)
 
         # Invalidate previous OTPs
         db.execute(
@@ -390,7 +392,7 @@ def verify_otp(
         if not row:
             return {"valid": False}
 
-        if row.expires_at < datetime.now(timezone.utc):
+        if row.expires_at < datetime.now(UTC):
             db.execute(text("UPDATE email_otps SET is_valid = false WHERE id = :id"), {"id": row.id})
             db.commit()
             return {"valid": False}

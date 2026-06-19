@@ -211,6 +211,21 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Create .env.docker from example (for docker-compose)
+        run: |
+          # docker-compose.yml references env_file: .env.docker which is
+          # gitignored. Create a CI-safe copy from the example so compose
+          # can start the postgres service.
+          cp .env.docker.example .env.docker
+          # Override with CI-specific values (must match DATABASE_URL below)
+          sed -i 's|^POSTGRES_DB=.*|POSTGRES_DB=schoolflow_test|' .env.docker
+          sed -i 's|^POSTGRES_USER=.*|POSTGRES_USER=schoolflow|' .env.docker
+          sed -i 's|^POSTGRES_PASSWORD=.*|POSTGRES_PASSWORD=testpassword|' .env.docker
+          sed -i 's|^POSTGRES_PORT=.*|POSTGRES_PORT=5432|' .env.docker
+          # Redis password (required by redis service healthcheck, even if not used by tests)
+          sed -i 's|^REDIS_PASSWORD=.*|REDIS_PASSWORD=ciredispassword|' .env.docker
+          echo "Created .env.docker for CI"
+
       - name: Start PostgreSQL service
         run: |
           docker compose -f docker-compose.yml up postgres -d --wait
@@ -282,6 +297,19 @@ jobs:
 
       - name: Install Playwright browsers
         run: npx playwright install --with-deps chromium
+
+      - name: Create .env.docker from example (for docker-compose)
+        run: |
+          # docker-compose.yml references env_file: .env.docker which is
+          # gitignored. Create a CI-safe copy from the example so compose
+          # can start the postgres + redis services.
+          cp .env.docker.example .env.docker
+          sed -i 's|^POSTGRES_DB=.*|POSTGRES_DB=schoolflow_test|' .env.docker
+          sed -i 's|^POSTGRES_USER=.*|POSTGRES_USER=schoolflow|' .env.docker
+          sed -i 's|^POSTGRES_PASSWORD=.*|POSTGRES_PASSWORD=testpassword|' .env.docker
+          sed -i 's|^POSTGRES_PORT=.*|POSTGRES_PORT=5432|' .env.docker
+          sed -i 's|^REDIS_PASSWORD=.*|REDIS_PASSWORD=ciredispassword|' .env.docker
+          echo "Created .env.docker for CI"
 
       - name: Start services (Docker Compose)
         run: |

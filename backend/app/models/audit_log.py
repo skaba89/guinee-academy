@@ -1,6 +1,8 @@
 """Audit log model for tracking system actions"""
-from sqlalchemy import Column, String, JSON, Text, ForeignKey
-from app.models.base import Base, GUID, UUIDMixin, TimestampMixin
+from sqlalchemy import JSON, Column, ForeignKey, String, Text
+
+from app.models.base import GUID, Base, TimestampMixin, UUIDMixin
+
 
 class AuditLog(Base, UUIDMixin, TimestampMixin):
     __tablename__ = "audit_logs"

@@ -1,18 +1,27 @@
-from fastapi import APIRouter, Depends, HTTPException, Query
-from sqlalchemy.orm import Session
-from typing import List, Optional
+import logging
 from uuid import UUID
 
+from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy.orm import Session
+
 from app.core.database import get_db
-from app.core.security import get_current_user, require_permission
-from app.schemas.hr import (
-    Employee, EmployeeCreate, EmployeeUpdate,
-    Contract, ContractCreate, ContractUpdate,
-    LeaveRequest, LeaveRequestCreate, LeaveRequestUpdate,
-    Payslip, PayslipCreate, PayslipUpdate
-)
+from app.core.security import require_permission
 from app.crud import hr as crud_hr
-import logging
+from app.schemas.hr import (
+    Contract,
+    ContractCreate,
+    ContractUpdate,
+    Employee,
+    EmployeeCreate,
+    EmployeeUpdate,
+    LeaveRequest,
+    LeaveRequestCreate,
+    LeaveRequestUpdate,
+    Payslip,
+    PayslipCreate,
+    PayslipUpdate,
+)
+
 
 logger = logging.getLogger(__name__)
 
@@ -20,7 +29,7 @@ router = APIRouter()
 
 # --- Employees ---
 
-@router.get("/employees/", response_model=List[Employee])
+@router.get("/employees/", response_model=list[Employee])
 def read_employees(
     db: Session = Depends(get_db),
     current_user: dict = Depends(require_permission("hr:read")),
@@ -78,7 +87,7 @@ def delete_employee(
 
 # --- Contracts ---
 
-@router.get("/contracts/", response_model=List[Contract])
+@router.get("/contracts/", response_model=list[Contract])
 def read_contracts(
     db: Session = Depends(get_db),
     current_user: dict = Depends(require_permission("hr:read")),
@@ -124,7 +133,7 @@ def delete_contract(
 
 # --- Leave Requests ---
 
-@router.get("/leave-requests/", response_model=List[LeaveRequest])
+@router.get("/leave-requests/", response_model=list[LeaveRequest])
 def read_leave_requests(
     db: Session = Depends(get_db),
     current_user: dict = Depends(require_permission("hr:read")),
@@ -170,7 +179,7 @@ def delete_leave_request(
 
 # --- Payslips ---
 
-@router.get("/payslips/", response_model=List[Payslip])
+@router.get("/payslips/", response_model=list[Payslip])
 def read_payslips(
     db: Session = Depends(get_db),
     current_user: dict = Depends(require_permission("hr:read")),

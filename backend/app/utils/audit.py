@@ -1,9 +1,12 @@
 """Utilities for audit logging"""
 import logging
 import uuid
+from typing import Any
+
 from sqlalchemy.orm import Session
+
 from app.models.audit_log import AuditLog
-from typing import Optional, Any
+
 
 logger = logging.getLogger(__name__)
 
@@ -13,15 +16,15 @@ def log_audit(
     tenant_id: str,
     action: str,
     resource_type: str,
-    resource_id: Optional[str] = None,
-    details: Optional[Any] = None,
-    ip_address: Optional[str] = None,
-    severity: Optional[str] = "INFO",
-    user_agent: Optional[str] = None
+    resource_id: str | None = None,
+    details: Any | None = None,
+    ip_address: str | None = None,
+    severity: str | None = "INFO",
+    user_agent: str | None = None
 ):
     """
     Helper function to record an audit log entry.
-    
+
     All ID parameters are coerced to strings to ensure compatibility with
     both PostgreSQL (native UUID) and SQLite (CHAR/String) backends.
     """
@@ -34,7 +37,7 @@ def log_audit(
             tenant_id = str(tenant_id)
         if isinstance(resource_id, uuid.UUID):
             resource_id = str(resource_id)
-            
+
         audit_entry = AuditLog(
             user_id=str(user_id) if user_id else None,
             tenant_id=str(tenant_id) if tenant_id else None,

@@ -1,18 +1,18 @@
 """Grade schemas for request/response validation"""
 from datetime import datetime
-from typing import Optional
-from pydantic import BaseModel, Field, UUID4
+
+from pydantic import UUID4, BaseModel, Field
 
 
 # Base schema — aligned with the Grade SQLAlchemy model
 class GradeBase(BaseModel):
     student_id: UUID4
-    subject_id: Optional[UUID4] = None
-    assessment_id: Optional[UUID4] = None
+    subject_id: UUID4 | None = None
+    assessment_id: UUID4 | None = None
     score: float = Field(..., ge=0)
     max_score: float = Field(default=20.0, gt=0)
     coefficient: float = Field(default=1.0, gt=0)
-    comments: Optional[str] = Field(None, max_length=500)
+    comments: str | None = Field(None, max_length=500)
 
 
 # Schema for creating a grade
@@ -22,13 +22,13 @@ class GradeCreate(GradeBase):
 
 # Schema for updating a grade
 class GradeUpdate(BaseModel):
-    student_id: Optional[UUID4] = None
-    subject_id: Optional[UUID4] = None
-    assessment_id: Optional[UUID4] = None
-    score: Optional[float] = Field(None, ge=0)
-    max_score: Optional[float] = Field(None, gt=0)
-    coefficient: Optional[float] = Field(None, gt=0)
-    comments: Optional[str] = Field(None, max_length=500)
+    student_id: UUID4 | None = None
+    subject_id: UUID4 | None = None
+    assessment_id: UUID4 | None = None
+    score: float | None = Field(None, ge=0)
+    max_score: float | None = Field(None, gt=0)
+    coefficient: float | None = Field(None, gt=0)
+    comments: str | None = Field(None, max_length=500)
 
 
 # Schema for grade in database (response)
@@ -36,12 +36,12 @@ class Grade(BaseModel):
     id: UUID4
     tenant_id: UUID4
     student_id: UUID4
-    subject_id: Optional[UUID4] = None
-    assessment_id: Optional[UUID4] = None
+    subject_id: UUID4 | None = None
+    assessment_id: UUID4 | None = None
     score: float
     max_score: float
     coefficient: float
-    comments: Optional[str] = None
+    comments: str | None = None
     created_at: datetime
     updated_at: datetime
 

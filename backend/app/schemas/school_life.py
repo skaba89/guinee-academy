@@ -1,7 +1,8 @@
-from pydantic import BaseModel
-from typing import Optional, List
-from uuid import UUID
 from datetime import date, datetime
+from uuid import UUID
+
+from pydantic import BaseModel
+
 
 # --- Assessment Schemas ---
 
@@ -9,19 +10,19 @@ class AssessmentBase(BaseModel):
     name: str
     max_score: float = 20.0
     date: datetime
-    assessment_type: Optional[str] = None
+    assessment_type: str | None = None
     subject_id: UUID
-    academic_year_id: Optional[UUID] = None
-    term_id: Optional[UUID] = None
+    academic_year_id: UUID | None = None
+    term_id: UUID | None = None
 
 class AssessmentCreate(AssessmentBase):
     pass
 
 class AssessmentUpdate(BaseModel):
-    name: Optional[str] = None
-    max_score: Optional[float] = None
-    date: Optional[datetime] = None
-    assessment_type: Optional[str] = None
+    name: str | None = None
+    max_score: float | None = None
+    date: datetime | None = None
+    assessment_type: str | None = None
 
 class Assessment(AssessmentBase):
     id: UUID
@@ -36,30 +37,30 @@ class Assessment(AssessmentBase):
 
 class GradeBase(BaseModel):
     student_id: UUID
-    assessment_id: Optional[UUID] = None
-    subject_id: Optional[UUID] = None
+    assessment_id: UUID | None = None
+    subject_id: UUID | None = None
     score: float
     max_score: float = 20.0
     coefficient: float = 1.0
-    comments: Optional[str] = None
+    comments: str | None = None
 
 class GradeCreate(GradeBase):
     pass
 
 class GradeUpdate(BaseModel):
-    score: Optional[float] = None
-    max_score: Optional[float] = None
-    coefficient: Optional[float] = None
-    comments: Optional[str] = None
+    score: float | None = None
+    max_score: float | None = None
+    coefficient: float | None = None
+    comments: str | None = None
 
 class Grade(GradeBase):
     id: UUID
     tenant_id: UUID
     created_at: datetime
     updated_at: datetime
-    
+
     # Inclusion of Assessment and Student details for frontend
-    assessment: Optional[Assessment] = None
+    assessment: Assessment | None = None
 
     class Config:
         from_attributes = True
@@ -69,17 +70,17 @@ class Grade(GradeBase):
 class AttendanceBase(BaseModel):
     date: date
     status: str
-    reason: Optional[str] = None
+    reason: str | None = None
     student_id: UUID
-    subject_id: Optional[UUID] = None
-    classroom_id: Optional[UUID] = None
+    subject_id: UUID | None = None
+    classroom_id: UUID | None = None
 
 class AttendanceCreate(AttendanceBase):
     pass
 
 class AttendanceUpdate(BaseModel):
-    status: Optional[str] = None
-    reason: Optional[str] = None
+    status: str | None = None
+    reason: str | None = None
 
 class Attendance(AttendanceBase):
     id: UUID
@@ -94,24 +95,24 @@ class Attendance(AttendanceBase):
 
 class SchoolEventBase(BaseModel):
     title: str
-    description: Optional[str] = None
+    description: str | None = None
     start_date: datetime
-    end_date: Optional[datetime] = None
-    location: Optional[str] = None
+    end_date: datetime | None = None
+    location: str | None = None
     is_all_day: bool = False
-    event_type: Optional[str] = None
+    event_type: str | None = None
 
 class SchoolEventCreate(SchoolEventBase):
     pass
 
 class SchoolEventUpdate(BaseModel):
-    title: Optional[str] = None
-    description: Optional[str] = None
-    start_date: Optional[datetime] = None
-    end_date: Optional[datetime] = None
-    location: Optional[str] = None
-    is_all_day: Optional[bool] = None
-    event_type: Optional[str] = None
+    title: str | None = None
+    description: str | None = None
+    start_date: datetime | None = None
+    end_date: datetime | None = None
+    location: str | None = None
+    is_all_day: bool | None = None
+    event_type: str | None = None
 
 class SchoolEvent(SchoolEventBase):
     id: UUID
@@ -127,7 +128,7 @@ class SchoolEvent(SchoolEventBase):
 class StudentCheckInBase(BaseModel):
     checked_at: datetime
     direction: str = "IN"
-    source: Optional[str] = None
+    source: str | None = None
     student_id: UUID
 
 class StudentCheckInCreate(StudentCheckInBase):

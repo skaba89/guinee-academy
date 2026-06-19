@@ -1,22 +1,23 @@
-from typing import Optional, List
-from pydantic import BaseModel, ConfigDict
-from uuid import UUID
 from datetime import datetime
+from uuid import UUID
+
+from pydantic import BaseModel, ConfigDict
+
 
 class NotificationBase(BaseModel):
     title: str
-    message: Optional[str] = None
-    type: Optional[str] = "info"
-    link: Optional[str] = None
+    message: str | None = None
+    type: str | None = "info"
+    link: str | None = None
 
 class NotificationCreate(NotificationBase):
     user_id: UUID
 
 class NotificationBulkCreate(BaseModel):
-    notifications: List[NotificationCreate]
+    notifications: list[NotificationCreate]
 
 class NotificationUpdate(BaseModel):
-    is_read: Optional[bool] = None
+    is_read: bool | None = None
 
 class NotificationResponse(NotificationBase):
     id: UUID
@@ -24,5 +25,5 @@ class NotificationResponse(NotificationBase):
     tenant_id: UUID
     is_read: bool
     created_at: datetime
-    
+
     model_config = ConfigDict(from_attributes=True)

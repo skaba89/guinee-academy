@@ -1,5 +1,6 @@
-from sqlalchemy import Column, String, ForeignKey, UniqueConstraint
-from app.models.base import Base, UUIDMixin, TimestampMixin, GUID
+from sqlalchemy import Column, ForeignKey, String, UniqueConstraint
+
+from app.models.base import GUID, Base, TimestampMixin, UUIDMixin
 
 
 class UserRole(Base, UUIDMixin, TimestampMixin):

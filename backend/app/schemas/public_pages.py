@@ -1,8 +1,9 @@
 """Pydantic schemas for public pages."""
-from typing import Optional, Dict, Any, List
-from pydantic import BaseModel, ConfigDict, field_validator
-from uuid import UUID
 from datetime import datetime
+from typing import Any
+from uuid import UUID
+
+from pydantic import BaseModel, ConfigDict, field_validator
 
 
 # ─── Enums / Constants ────────────────────────────────────────────────
@@ -19,16 +20,16 @@ class PublicPageCreate(BaseModel):
     title: str
     slug: str
     page_type: str = "CUSTOM"
-    content: Optional[Dict[str, Any]] = None
-    template: Optional[str] = "default"
-    primary_color: Optional[str] = None
-    secondary_color: Optional[str] = None
+    content: dict[str, Any] | None = None
+    template: str | None = "default"
+    primary_color: str | None = None
+    secondary_color: str | None = None
     is_published: bool = False
     sort_order: int = 0
-    meta_title: Optional[str] = None
-    meta_description: Optional[str] = None
+    meta_title: str | None = None
+    meta_description: str | None = None
     show_in_nav: bool = True
-    nav_label: Optional[str] = None
+    nav_label: str | None = None
 
     @field_validator("page_type")
     @classmethod
@@ -49,7 +50,7 @@ class PublicPageCreate(BaseModel):
 
     @field_validator("primary_color", "secondary_color", mode="before")
     @classmethod
-    def validate_color(cls, v: Optional[str]) -> Optional[str]:
+    def validate_color(cls, v: str | None) -> str | None:
         if v is None:
             return None
         v = v.strip()
@@ -60,23 +61,23 @@ class PublicPageCreate(BaseModel):
 
 class PublicPageUpdate(BaseModel):
     """Schema for updating an existing public page (all fields optional)."""
-    title: Optional[str] = None
-    slug: Optional[str] = None
-    page_type: Optional[str] = None
-    content: Optional[Dict[str, Any]] = None
-    template: Optional[str] = None
-    primary_color: Optional[str] = None
-    secondary_color: Optional[str] = None
-    is_published: Optional[bool] = None
-    sort_order: Optional[int] = None
-    meta_title: Optional[str] = None
-    meta_description: Optional[str] = None
-    show_in_nav: Optional[bool] = None
-    nav_label: Optional[str] = None
+    title: str | None = None
+    slug: str | None = None
+    page_type: str | None = None
+    content: dict[str, Any] | None = None
+    template: str | None = None
+    primary_color: str | None = None
+    secondary_color: str | None = None
+    is_published: bool | None = None
+    sort_order: int | None = None
+    meta_title: str | None = None
+    meta_description: str | None = None
+    show_in_nav: bool | None = None
+    nav_label: str | None = None
 
     @field_validator("page_type")
     @classmethod
-    def validate_page_type(cls, v: Optional[str]) -> Optional[str]:
+    def validate_page_type(cls, v: str | None) -> str | None:
         if v is None:
             return None
         v_upper = v.upper()
@@ -86,7 +87,7 @@ class PublicPageUpdate(BaseModel):
 
     @field_validator("slug")
     @classmethod
-    def validate_slug(cls, v: Optional[str]) -> Optional[str]:
+    def validate_slug(cls, v: str | None) -> str | None:
         if v is None:
             return None
         slug = v.strip().lower()
@@ -96,7 +97,7 @@ class PublicPageUpdate(BaseModel):
 
     @field_validator("primary_color", "secondary_color", mode="before")
     @classmethod
-    def validate_color(cls, v: Optional[str]) -> Optional[str]:
+    def validate_color(cls, v: str | None) -> str | None:
         if v is None:
             return None
         v = v.strip()
@@ -113,7 +114,7 @@ class PageReorderItem(BaseModel):
 
 class PageReorderRequest(BaseModel):
     """Schema for reordering multiple pages."""
-    pages: List[PageReorderItem]
+    pages: list[PageReorderItem]
 
 
 # ─── Response schemas ─────────────────────────────────────────────────
@@ -125,16 +126,16 @@ class PublicPageResponse(BaseModel):
     title: str
     slug: str
     page_type: str
-    content: Optional[Dict[str, Any]] = {}
-    template: Optional[str] = "default"
-    primary_color: Optional[str] = None
-    secondary_color: Optional[str] = None
+    content: dict[str, Any] | None = {}
+    template: str | None = "default"
+    primary_color: str | None = None
+    secondary_color: str | None = None
     is_published: bool = False
     sort_order: int = 0
-    meta_title: Optional[str] = None
-    meta_description: Optional[str] = None
+    meta_title: str | None = None
+    meta_description: str | None = None
     show_in_nav: bool = True
-    nav_label: Optional[str] = None
+    nav_label: str | None = None
     created_at: datetime
     updated_at: datetime
 
@@ -147,11 +148,11 @@ class PublicPageListItem(BaseModel):
     title: str
     slug: str
     page_type: str
-    template: Optional[str] = "default"
+    template: str | None = "default"
     is_published: bool = False
     sort_order: int = 0
     show_in_nav: bool = True
-    nav_label: Optional[str] = None
+    nav_label: str | None = None
     created_at: datetime
     updated_at: datetime
 
@@ -164,14 +165,14 @@ class PublicPagePublicResponse(BaseModel):
     title: str
     slug: str
     page_type: str
-    content: Optional[Dict[str, Any]] = {}
-    template: Optional[str] = "default"
-    primary_color: Optional[str] = None
-    secondary_color: Optional[str] = None
-    meta_title: Optional[str] = None
-    meta_description: Optional[str] = None
+    content: dict[str, Any] | None = {}
+    template: str | None = "default"
+    primary_color: str | None = None
+    secondary_color: str | None = None
+    meta_title: str | None = None
+    meta_description: str | None = None
     show_in_nav: bool = True
-    nav_label: Optional[str] = None
+    nav_label: str | None = None
     updated_at: datetime
 
     model_config = ConfigDict(from_attributes=True)
@@ -182,7 +183,7 @@ class PublicPageNavResponse(BaseModel):
     id: UUID
     title: str
     slug: str
-    nav_label: Optional[str] = None
+    nav_label: str | None = None
     page_type: str
     sort_order: int = 0
 

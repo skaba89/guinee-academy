@@ -1,7 +1,8 @@
-from sqlalchemy import Column, ForeignKey, Boolean, Float, Table, UniqueConstraint
-from app.core.database import Base
+from sqlalchemy import Boolean, Column, Float, ForeignKey, Table, UniqueConstraint
 
+from app.core.database import Base
 from app.models.base import GUID
+
 
 # Association between Subjects and Levels
 subject_levels = Table(

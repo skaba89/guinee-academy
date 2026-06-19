@@ -1,14 +1,16 @@
 import logging
-from fastapi import APIRouter, Depends, HTTPException, status, Query
-from sqlalchemy.orm import Session
-from sqlalchemy import text
-from typing import List, Optional
-from pydantic import BaseModel
+from datetime import datetime
 from uuid import UUID
 
+from fastapi import APIRouter, Depends, HTTPException, Query, status
+from pydantic import BaseModel
+from sqlalchemy import text
+from sqlalchemy.orm import Session
+
 from app.core.database import get_db
-from app.core.security import get_current_user, require_permission
+from app.core.security import require_permission
 from app.utils.audit import log_audit
+
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
@@ -16,20 +18,20 @@ logger = logging.getLogger(__name__)
 
 class TeacherAssignmentCreate(BaseModel):
     teacher_id: str
-    class_id: Optional[str] = None
-    subject_id: Optional[str] = None
+    class_id: str | None = None
+    subject_id: str | None = None
 
 
 class TeacherAssignmentUpdate(BaseModel):
-    class_id: Optional[str] = None
-    subject_id: Optional[str] = None
+    class_id: str | None = None
+    subject_id: str | None = None
 
 
 @router.get("/")
 def list_teachers(
-    search: Optional[str] = None,
-    class_id: Optional[str] = None,
-    subject_id: Optional[str] = None,
+    search: str | None = None,
+    class_id: str | None = None,
+    subject_id: str | None = None,
     page: int = Query(1, ge=1),
     page_size: int = Query(50, ge=1, le=100),
     db: Session = Depends(get_db),

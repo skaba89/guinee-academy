@@ -1,13 +1,14 @@
 import logging
-from fastapi import APIRouter, Depends, HTTPException, status, Query
-from sqlalchemy.orm import Session
-from sqlalchemy import text
-from typing import List, Optional
-from pydantic import BaseModel
 from uuid import UUID
 
+from fastapi import APIRouter, Depends, HTTPException
+from pydantic import BaseModel
+from sqlalchemy import text
+from sqlalchemy.orm import Session
+
 from app.core.database import get_db
-from app.core.security import get_current_user, require_permission
+from app.core.security import require_permission
+
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
@@ -15,33 +16,33 @@ logger = logging.getLogger(__name__)
 
 class AssessmentCreate(BaseModel):
     subject_id: str
-    term_id: Optional[str] = None
+    term_id: str | None = None
     name: str
     type: str  # Maps to assessment_type in DB
     date: str
     max_score: float
-    weight: Optional[float] = None
-    description: Optional[str] = None
-    class_id: Optional[str] = None
+    weight: float | None = None
+    description: str | None = None
+    class_id: str | None = None
 
 
 class AssessmentUpdate(BaseModel):
-    subject_id: Optional[str] = None
-    term_id: Optional[str] = None
-    name: Optional[str] = None
-    type: Optional[str] = None
-    date: Optional[str] = None
-    max_score: Optional[float] = None
-    weight: Optional[float] = None
-    description: Optional[str] = None
-    class_id: Optional[str] = None
+    subject_id: str | None = None
+    term_id: str | None = None
+    name: str | None = None
+    type: str | None = None
+    date: str | None = None
+    max_score: float | None = None
+    weight: float | None = None
+    description: str | None = None
+    class_id: str | None = None
 
 
 @router.get("/")
 def get_assessments(
-    classId: Optional[str] = None,
-    subjectId: Optional[str] = None,
-    termId: Optional[str] = None,
+    classId: str | None = None,
+    subjectId: str | None = None,
+    termId: str | None = None,
     db: Session = Depends(get_db),
     current_user: dict = Depends(require_permission("settings:read")),
 ):

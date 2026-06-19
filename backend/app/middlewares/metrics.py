@@ -1,20 +1,22 @@
 """Prometheus metrics middleware for Guinée Academy."""
+import logging
 import re
 import time
-import logging
+
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.requests import Request
 from starlette.responses import Response
+
 
 logger = logging.getLogger(__name__)
 
 try:
     from prometheus_client import (  # type: ignore[import-untyped]
-        Counter,
-        Histogram,
-        Gauge,
-        generate_latest,
         CONTENT_TYPE_LATEST,
+        Counter,
+        Gauge,
+        Histogram,
+        generate_latest,
     )
 
     REQUEST_COUNT = Counter(
@@ -94,7 +96,7 @@ class MetricsMiddleware(BaseHTTPMiddleware):
 async def metrics_endpoint(_request: Request) -> Response:
     """Expose Prometheus metrics at GET /metrics."""
     if not PROMETHEUS_AVAILABLE:
-        from starlette.responses import PlainTextResponse  # noqa: PLC0415
+        from starlette.responses import PlainTextResponse
 
         return PlainTextResponse(
             "prometheus_client not installed", status_code=503

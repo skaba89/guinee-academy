@@ -1,9 +1,9 @@
 import logging
 import os
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
+
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 from fastapi.security import OAuth2PasswordRequestForm
-from typing import Optional
 from pydantic import BaseModel, EmailStr, Field, field_validator
 from slowapi import Limiter
 from slowapi.util import get_remote_address
@@ -12,9 +12,16 @@ from sqlalchemy.orm import Session
 
 from app.core.config import settings
 from app.core.database import get_db
-from app.core.security import create_access_token, get_current_user, require_permission, verify_password, verify_token_raw
+from app.core.security import (
+    create_access_token,
+    get_current_user,
+    require_permission,
+    verify_password,
+    verify_token_raw,
+)
 from app.models.user import User
 from app.models.user_role import UserRole
+
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -64,7 +71,6 @@ async def blacklist_all_user_tokens(user_id: str, except_jti: str = None) -> int
         from app.core.cache import redis_client
         key = f"user_token_version:{user_id}"
         # Atomically increment the version
-        import asyncio
         client = await redis_client.client
         new_version = await client.incr(f"sfp:{key}")
         # Set a long expiry so it doesn't disappear
@@ -194,7 +200,7 @@ async def login(request: Request, form_data: OAuth2PasswordRequestForm = Depends
             )
 
         # Check per-account lockout (prevents distributed brute-force)
-        is_locked, remaining = await _check_account_lockout(str(user.id))
+        is_locked, _remaining = await _check_account_lockout(str(user.id))
         if is_locked:
             logger.warning("Login blocked: account %s is locked due to too many failed attempts", user.email)
             raise HTTPException(
@@ -271,7 +277,7 @@ async def login(request: Request, form_data: OAuth2PasswordRequestForm = Depends
             pass
 
         import hashlib
-        token_jti = hashlib.sha256(f"{user.id}:{datetime.now(timezone.utc).timestamp()}".encode()).hexdigest()[:16]
+        token_jti = hashlib.sha256(f"{user.id}:{datetime.now(UTC).timestamp()}".encode()).hexdigest()[:16]
 
         # Create access token (wrap in try/except to catch SECRET_KEY issues)
         # For SUPER_ADMIN without a tenant_id, use the resolved tenant from
@@ -336,7 +342,7 @@ async def login(request: Request, form_data: OAuth2PasswordRequestForm = Depends
 
         return Token(
             access_token=access_token,
-            token_type="bearer",
+            token_type="bearer",  # noqa: S106
             refresh_token=None,
             expires_in=settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60,
             token_version=token_version,
@@ -418,7 +424,7 @@ async def refresh_token(request: Request, db: Session = Depends(get_db)):
     all_roles = list(dict.fromkeys([*token_roles, *roles]))
 
     # 5. Generate new token
-    token_jti = hashlib.sha256(f"{user_id}:{datetime.now(timezone.utc).timestamp()}".encode()).hexdigest()[:16]
+    token_jti = hashlib.sha256(f"{user_id}:{datetime.now(UTC).timestamp()}".encode()).hexdigest()[:16]
 
     token_version = 0
     try:
@@ -457,7 +463,7 @@ async def refresh_token(request: Request, db: Session = Depends(get_db)):
     )
     return Token(
         access_token=access_token,
-        token_type="bearer",
+        token_type="bearer",  # noqa: S106
         refresh_token=None,
         expires_in=settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60,
         token_version=token_version,
@@ -541,7 +547,7 @@ async def change_password(
     db: Session = Depends(get_db),
 ):
     """Change the authenticated user's password."""
-    from app.core.security import verify_password, get_password_hash
+    from app.core.security import get_password_hash, verify_password
 
     user_id = current_user.get("id")
     user = db.query(User).filter(User.id == user_id).first()
@@ -557,7 +563,6 @@ async def change_password(
     try:
         from app.core.cache import redis_client
         client = await redis_client.client
-        import hashlib
         # Check last 5 password hashes
         for i in range(5):
             hist_key = f"sfp:pw_history:{user_id}:{i}"
@@ -583,7 +588,7 @@ async def change_password(
         logger.warning("Password history check failed (Redis unavailable): %s", exc)
 
     user.password_hash = get_password_hash(body.new_password)
-    user.updated_at = datetime.now(timezone.utc)
+    user.updated_at = datetime.now(UTC)
     db.commit()
 
     # SECURITY: Invalidate all other sessions after password change
@@ -657,7 +662,6 @@ async def reset_forced_password(
     try:
         from app.core.cache import redis_client
         client = await redis_client.client
-        import hashlib
         for i in range(5):
             hist_key = f"sfp:pw_history:{user_id}:{i}"
             old_hash = await client.get(hist_key)
@@ -682,7 +686,7 @@ async def reset_forced_password(
     # Clear the forced password change flag so the user is not prompted again
     if hasattr(user, "must_change_password"):
         user.must_change_password = False
-    user.updated_at = datetime.now(timezone.utc)
+    user.updated_at = datetime.now(UTC)
     db.commit()
 
     # SECURITY: Invalidate all sessions after forced password change
@@ -698,7 +702,7 @@ class RegisterRequest(BaseModel):
     first_name: str = Field(default="", max_length=255)
     last_name: str = Field(default="", max_length=255)
     role: str = "PARENT"
-    tenant_slug: Optional[str] = None
+    tenant_slug: str | None = None
 
     @field_validator("role")
     @classmethod
@@ -721,6 +725,7 @@ async def register(
 ):
     """Public registration endpoint — create a new user account."""
     import uuid
+
     from app.core.security import get_password_hash
     from app.models.tenant import Tenant
 
@@ -805,8 +810,8 @@ class RegisterSchoolRequest(BaseModel):
     email: EmailStr
     password: str
     # Optional
-    phone: Optional[str] = None
-    slug: Optional[str] = None   # auto-generated if omitted
+    phone: str | None = None
+    slug: str | None = None   # auto-generated if omitted
 
     @field_validator("school_type")
     @classmethod
@@ -842,10 +847,10 @@ async def register_school(
     Returns a JWT so the user is immediately logged in.
     """
     import uuid as _uuid
-    from datetime import timedelta
-    from app.core.security import get_password_hash, create_access_token
+
+    from app.core.security import create_access_token, get_password_hash
     from app.models.tenant import Tenant
-    from app.services.notifications import EmailSender, Templates
+    from app.services.notifications import EmailSender
 
     # 1. Check email uniqueness
     existing_user = db.query(User).filter(User.email == body.email).first()
@@ -864,7 +869,7 @@ async def register_school(
         suffix += 1
 
     # 4. Create tenant
-    trial_ends = datetime.now(timezone.utc).replace(tzinfo=None) + timedelta(days=30)
+    trial_ends = datetime.now(UTC).replace(tzinfo=None) + timedelta(days=30)
     tenant = Tenant(
         id=str(_uuid.uuid4()),
         name=body.school_name,
@@ -962,7 +967,7 @@ async def register_school(
 
 class BootstrapRequest(BaseModel):
     bootstrap_key: str
-    new_password: Optional[str] = None
+    new_password: str | None = None
 
 
 @router.post("/bootstrap/")
@@ -1002,8 +1007,10 @@ def bootstrap_admin(
                    "Contact your system administrator to manage admin accounts.",
         )
 
-    import sqlalchemy
     import uuid as _uuid
+
+    import sqlalchemy
+
     from app.core.security import get_password_hash
 
     admin_email = settings.ADMIN_DEFAULT_EMAIL or "admin@guinee-academy.local"
@@ -1208,8 +1215,9 @@ async def login_diagnostics(
     and Redis connectivity. Returns detailed status for each component.
     Remove this endpoint after resolving deployment issues.
     """
-    import sqlalchemy
     import traceback
+
+    import sqlalchemy
 
     # SECURITY: Require BOOTSTRAP_SECRET in production
     bootstrap_secret = settings.BOOTSTRAP_SECRET or os.environ.get("BOOTSTRAP_SECRET", "")
@@ -1302,9 +1310,9 @@ async def login_diagnostics(
                     result["components"]["admin_user"]["password_verification"] = f"error: {e}"
                     result["errors"].append(f"Password verify: {e}")
             elif not admin_password:
-                result["components"]["admin_user"]["password_verification"] = "skipped (ADMIN_DEFAULT_PASSWORD not set)"
+                result["components"]["admin_user"]["password_verification"] = "skipped (ADMIN_DEFAULT_PASSWORD not set)"  # noqa: S105
             else:
-                result["components"]["admin_user"]["password_verification"] = "skipped (no hash in DB)"
+                result["components"]["admin_user"]["password_verification"] = "skipped (no hash in DB)"  # noqa: S105
         else:
             result["components"]["admin_user"] = {
                 "status": "NOT_FOUND",
@@ -1335,7 +1343,8 @@ async def login_diagnostics(
         from app.core.cache import redis_client
         client = await redis_client.client
         await client.set("sfp:_diag_ping", "1", expire=10)
-        pong = await client.get("_diag_ping")
+        # We don't need the returned value — just verify the round-trip works.
+        await client.get("_diag_ping")
         await client.delete("_diag_ping")
         result["components"]["redis"] = {"status": "ok"}
     except Exception as e:
@@ -1385,6 +1394,7 @@ async def forgot_password(
     user enumeration attacks.
     """
     import secrets
+
     from app.services.notifications import EmailSender, Templates
 
     # Lookup user — no error on miss (anti-enumeration)
@@ -1494,7 +1504,7 @@ async def reset_password(
 
     # Update password
     user.password_hash = get_password_hash(body.new_password)
-    user.updated_at = datetime.now(timezone.utc)
+    user.updated_at = datetime.now(UTC)
     db.commit()
 
     # Consume the token (delete from Redis — single-use)

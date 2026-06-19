@@ -1,5 +1,7 @@
-from sqlalchemy import Column, String, ForeignKey
-from app.models.base import Base, GUID, UUIDMixin, TimestampMixin
+from sqlalchemy import Column, ForeignKey, String
+
+from app.models.base import GUID, Base, TimestampMixin, UUIDMixin
+
 
 class Profile(Base, UUIDMixin, TimestampMixin):
     __tablename__ = "profiles"

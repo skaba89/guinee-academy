@@ -1,12 +1,13 @@
 import logging
-import jwt
 
+import jwt
 from fastapi import Request
 from fastapi.responses import JSONResponse
 from starlette.middleware.base import BaseHTTPMiddleware
 
 from app.core.config import settings
 from app.core.database import tenant_context
+
 
 logger = logging.getLogger(__name__)
 

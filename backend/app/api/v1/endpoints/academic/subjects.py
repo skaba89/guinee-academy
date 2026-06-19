@@ -1,19 +1,20 @@
-from typing import List
+import logging
+from uuid import UUID
+
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
-from uuid import UUID
 
 from app.core.database import get_db
 from app.core.security import require_permission
 from app.crud import academic as crud_academic
 from app.schemas.academic import Subject, SubjectCreate, SubjectUpdate
-import logging
+
 
 logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
-@router.get("/", response_model=List[Subject])
+@router.get("/", response_model=list[Subject])
 def list_subjects(
     db: Session = Depends(get_db),
     current_user: dict = Depends(require_permission("settings:read")),
@@ -144,8 +145,8 @@ def remove_subject_from_level(
         raise HTTPException(status_code=400, detail="Tenant ID required")
     from app.models.associations import subject_levels
     db.execute(subject_levels.delete().where(
-        (subject_levels.c.subject_id == subject_id) & 
-        (subject_levels.c.level_id == level_id) & 
+        (subject_levels.c.subject_id == subject_id) &
+        (subject_levels.c.level_id == level_id) &
         (subject_levels.c.tenant_id == tenant_id)
     ))
     db.commit()

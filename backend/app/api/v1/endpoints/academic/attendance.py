@@ -1,16 +1,18 @@
 import logging
-from fastapi import APIRouter, Depends, HTTPException, Query
-from sqlalchemy.orm import Session
-from sqlalchemy import text
-from typing import List, Optional
-from pydantic import BaseModel, field_validator
-from uuid import UUID
 from datetime import date
+from uuid import UUID
+
+from fastapi import APIRouter, Depends, HTTPException, Query
+from pydantic import BaseModel, field_validator
+from sqlalchemy import text
+from sqlalchemy.orm import Session
+
 
 logger = logging.getLogger(__name__)
 
 from app.core.database import get_db
-from app.core.security import get_current_user, require_permission
+from app.core.security import require_permission
+
 
 router = APIRouter()
 
@@ -19,13 +21,13 @@ class AttendanceCreate(BaseModel):
     student_id: str
     date: date
     status: str  # PRESENT, ABSENT, LATE, EXCUSED
-    reason: Optional[str] = None
-    subject_id: Optional[str] = None
-    classroom_id: Optional[str] = None
+    reason: str | None = None
+    subject_id: str | None = None
+    classroom_id: str | None = None
 
 
 class AttendanceBulkCreate(BaseModel):
-    records: List[AttendanceCreate]
+    records: list[AttendanceCreate]
 
     @field_validator("records")
     @classmethod
@@ -39,19 +41,19 @@ class AttendanceBulkCreate(BaseModel):
 
 class AttendanceUpdate(BaseModel):
     status: str
-    reason: Optional[str] = None
+    reason: str | None = None
 
 
 # ─── GET /attendance ───────────────────────────────────────────────────────────
 
 @router.get("/")
 def get_attendance(
-    student_id: Optional[str] = None,
-    classroom_id: Optional[str] = None,
-    subject_id: Optional[str] = None,
-    date_from: Optional[date] = None,
-    date_to: Optional[date] = None,
-    status: Optional[str] = None,
+    student_id: str | None = None,
+    classroom_id: str | None = None,
+    subject_id: str | None = None,
+    date_from: date | None = None,
+    date_to: date | None = None,
+    status: str | None = None,
     limit: int = Query(100, le=500),
     offset: int = 0,
     db: Session = Depends(get_db),
@@ -129,10 +131,10 @@ def get_attendance(
 
 @router.get("/stats/")
 def get_attendance_stats(
-    student_id: Optional[str] = None,
-    classroom_id: Optional[str] = None,
-    date_from: Optional[date] = None,
-    date_to: Optional[date] = None,
+    student_id: str | None = None,
+    classroom_id: str | None = None,
+    date_from: date | None = None,
+    date_to: date | None = None,
     db: Session = Depends(get_db),
     current_user: dict = Depends(require_permission("attendance:read")),
 ):

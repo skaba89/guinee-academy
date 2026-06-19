@@ -7,16 +7,19 @@ Each router below maps a frontend-called URL to existing backend logic
 while fixing 404s.
 """
 import logging
-from typing import List, Optional, Any, Dict
-from fastapi import APIRouter, Depends, HTTPException, status, Query
-from pydantic import BaseModel
-from sqlalchemy.orm import Session
-from sqlalchemy import text
+from datetime import UTC, datetime
+from typing import Any
 from uuid import UUID
-from datetime import datetime, timezone
+
+from fastapi import APIRouter, Depends, HTTPException, Query, status
+from pydantic import BaseModel
+from sqlalchemy import text
+from sqlalchemy.orm import Session
+
 
 logger = logging.getLogger(__name__)
 
+from app.core.config import settings
 from app.core.database import get_db
 from app.core.security import get_current_user, require_permission
 from app.core.serialization import to_iso as _to_iso
@@ -27,7 +30,7 @@ from app.core.serialization import to_iso as _to_iso
 enrollments_alias_router = APIRouter()
 
 
-@enrollments_alias_router.get("/", response_model=List[dict])
+@enrollments_alias_router.get("/", response_model=list[dict])
 def list_enrollments_alias(
     db: Session = Depends(get_db),
     current_user: dict = Depends(require_permission("enrollments:read")),
@@ -40,10 +43,10 @@ def list_enrollments_alias(
 class EnrollmentCreateAlias(BaseModel):
     student_id: UUID
     class_id: UUID
-    level_id: Optional[UUID] = None
-    academic_year_id: Optional[UUID] = None
+    level_id: UUID | None = None
+    academic_year_id: UUID | None = None
     status: str = "active"
-    enrolled_date: Optional[str] = None
+    enrolled_date: str | None = None
 
 
 @enrollments_alias_router.post("/", status_code=status.HTTP_201_CREATED)
@@ -64,7 +67,7 @@ def create_enrollment_alias(
 
 @enrollments_alias_router.get("/counts/")
 def enrollment_counts_alias(
-    class_ids: List[UUID] = Query(...),
+    class_ids: list[UUID] = Query(...),
     db: Session = Depends(get_db),
     current_user: dict = Depends(require_permission("enrollments:read")),
 ):
@@ -92,8 +95,8 @@ def list_invoices_alias(
     current_user: dict = Depends(require_permission("payments:read")),
     page: int = Query(1, ge=1),
     page_size: int = Query(50, ge=1, le=100),
-    student_id: Optional[str] = None,
-    status: Optional[str] = Query(None),
+    student_id: str | None = None,
+    status: str | None = Query(None),
 ):
     """GET /invoices/ — mirrors GET /payments/invoices/"""
     import math
@@ -151,11 +154,11 @@ def list_invoices_alias(
 
 class InvoiceCreateAlias(BaseModel):
     student_id: str
-    invoice_number: Optional[str] = None
+    invoice_number: str | None = None
     total_amount: float
-    items: Optional[Any] = None
-    due_date: Optional[str] = None
-    notes: Optional[str] = None
+    items: Any | None = None
+    due_date: str | None = None
+    notes: str | None = None
     has_payment_plan: bool = False
     installments_count: int = 1
 
@@ -167,7 +170,9 @@ def create_invoice_alias(
     current_user: dict = Depends(require_permission("payments:write")),
 ):
     """POST /invoices/ — mirrors POST /payments/invoices/"""
-    import json, secrets
+    import json
+    import secrets
+
     from app.utils.audit import log_audit
     tenant_id = current_user.get("tenant_id")
     if not tenant_id:
@@ -210,6 +215,7 @@ def update_invoice_alias(
 ):
     """PUT /invoices/{id}/ — mirrors PUT /payments/invoices/{id}/"""
     import json
+
     from app.utils.audit import log_audit
     tenant_id = current_user.get("tenant_id")
     if not tenant_id:
@@ -356,7 +362,7 @@ school_events_router = APIRouter()
 def list_school_events(
     db: Session = Depends(get_db),
     current_user: dict = Depends(require_permission("school_life:read")),
-    start_after: Optional[datetime] = Query(None),
+    start_after: datetime | None = Query(None),
 ):
     """GET /school-events/ — mirrors GET /school-life/events/"""
     from app.crud import school_life as crud_sl
@@ -376,7 +382,7 @@ class StudentParentLinkRequest(BaseModel):
     parent_id: UUID
     student_id: UUID
     is_primary: bool = False
-    relation_type: Optional[str] = None
+    relation_type: str | None = None
 
 
 @student_parents_router.post("/", status_code=status.HTTP_201_CREATED)
@@ -386,8 +392,8 @@ def create_student_parent_link(
     current_user: dict = Depends(require_permission("settings:write")),
 ):
     """POST /student-parents/ — mirrors POST /parents/link/"""
-    from app.schemas.parents import ParentStudentCreate
     from app.crud import parents as crud_parents
+    from app.schemas.parents import ParentStudentCreate
     from app.utils.audit import log_audit
     tenant_id = current_user.get("tenant_id")
     if not tenant_id:
@@ -414,9 +420,9 @@ def create_student_parent_link(
 
 @student_parents_router.delete("/")
 def delete_student_parent_link(
-    parent_id: Optional[UUID] = Query(None),
-    student_id: Optional[UUID] = Query(None),
-    link_id: Optional[UUID] = Query(None),
+    parent_id: UUID | None = Query(None),
+    student_id: UUID | None = Query(None),
+    link_id: UUID | None = Query(None),
     db: Session = Depends(get_db),
     current_user: dict = Depends(require_permission("settings:write")),
 ):
@@ -460,8 +466,8 @@ student_subjects_router = APIRouter()
 
 class StudentSubjectAssign(BaseModel):
     student_id: UUID
-    subject_ids: List[UUID]
-    class_id: Optional[UUID] = None
+    subject_ids: list[UUID]
+    class_id: UUID | None = None
 
 
 @student_subjects_router.post("/", status_code=status.HTTP_201_CREATED)
@@ -509,9 +515,9 @@ push_subscriptions_router = APIRouter()
 
 class PushSubscriptionUpsert(BaseModel):
     endpoint: str
-    keys_auth: Optional[str] = None
-    keys_p256dh: Optional[str] = None
-    keys: Optional[dict] = None
+    keys_auth: str | None = None
+    keys_p256dh: str | None = None
+    keys: dict | None = None
 
 
 @push_subscriptions_router.post("/upsert/", status_code=status.HTTP_200_OK)
@@ -558,7 +564,7 @@ def upsert_push_subscription(
 
 @push_subscriptions_router.delete("/", status_code=status.HTTP_204_NO_CONTENT)
 def delete_push_subscription(
-    endpoint: Optional[str] = Query(None),
+    endpoint: str | None = Query(None),
     db: Session = Depends(get_db),
     current_user: dict = Depends(require_permission("notifications:write")),
 ):
@@ -576,7 +582,7 @@ def delete_push_subscription(
 class OneSignalLinkPayload(BaseModel):
     user_id: str
     tenant_id: str
-    fcm_token: Optional[str] = None
+    fcm_token: str | None = None
 
 
 @push_subscriptions_router.post("/onesignal-link/", status_code=status.HTTP_200_OK)
@@ -592,8 +598,8 @@ async def onesignal_link_user(
     Requires the tenant to have oneSignalAppId + oneSignalApiKey configured in settings.
     """
     import httpx
-    from app.models import Tenant
     from sqlalchemy import text as sa_text
+
 
     tenant_id = current_user.get("tenant_id")
     if not tenant_id:
@@ -654,13 +660,13 @@ presence_router = APIRouter()
 class PresenceUpdate(BaseModel):
     user_id: str
     # Frontend sends is_online bool; accept both shapes for compatibility
-    is_online: Optional[bool] = None
-    status: Optional[str] = None   # "online", "offline", "away" (legacy shape)
-    is_typing: Optional[bool] = None
-    last_seen_at: Optional[str] = None
-    current_conversation_id: Optional[str] = None
-    tenant_id: Optional[str] = None  # ignored — taken from JWT
-    metadata: Optional[Dict[str, Any]] = None
+    is_online: bool | None = None
+    status: str | None = None   # "online", "offline", "away" (legacy shape)
+    is_typing: bool | None = None
+    last_seen_at: str | None = None
+    current_conversation_id: str | None = None
+    tenant_id: str | None = None  # ignored — taken from JWT
+    metadata: dict[str, Any] | None = None
 
 
 @presence_router.put("/")
@@ -734,7 +740,7 @@ def update_presence(
             "metadata": metadata_json,
         })
         db.commit()
-        return {"user_id": body.user_id, "status": resolved_status, "updated_at": datetime.now(timezone.utc).isoformat()}
+        return {"user_id": body.user_id, "status": resolved_status, "updated_at": datetime.now(UTC).isoformat()}
     except Exception as e:
         db.rollback()
         logger.error("Failed to update presence: %s", e, exc_info=True)
@@ -748,14 +754,14 @@ rooms_alias_router = APIRouter()
 
 class RoomCreateAlias(BaseModel):
     name: str
-    capacity: Optional[int] = None
-    campus_id: Optional[UUID] = None
+    capacity: int | None = None
+    campus_id: UUID | None = None
 
 
-@rooms_alias_router.get("/", response_model=List[dict])
+@rooms_alias_router.get("/", response_model=list[dict])
 def list_rooms_alias(
-    tenant_id: Optional[str] = Query(None),
-    ordering: Optional[str] = Query(None, description="Field to order by (e.g. name)"),
+    tenant_id: str | None = Query(None),
+    ordering: str | None = Query(None, description="Field to order by (e.g. name)"),
     db: Session = Depends(get_db),
     current_user: dict = Depends(require_permission("rooms:read")),
 ):
@@ -809,16 +815,16 @@ classrooms_alias_router = APIRouter()
 
 class ClassroomCreateAlias(BaseModel):
     name: str
-    capacity: Optional[int] = None
-    level_id: Optional[UUID] = None
-    campus_id: Optional[UUID] = None
-    department_ids: Optional[List[UUID]] = None
+    capacity: int | None = None
+    level_id: UUID | None = None
+    campus_id: UUID | None = None
+    department_ids: list[UUID] | None = None
 
 
-@classrooms_alias_router.get("/", response_model=List[dict])
+@classrooms_alias_router.get("/", response_model=list[dict])
 def list_classrooms_alias(
-    level_id: Optional[str] = Query(None),
-    department_id: Optional[str] = Query(None),
+    level_id: str | None = Query(None),
+    department_id: str | None = Query(None),
     db: Session = Depends(get_db),
     current_user: dict = Depends(require_permission("rooms:read")),
 ):
@@ -864,10 +870,10 @@ def create_classroom_alias(
 schedule_slots_alias_router = APIRouter()
 
 
-@schedule_slots_alias_router.get("/", response_model=List[dict])
+@schedule_slots_alias_router.get("/", response_model=list[dict])
 def list_schedule_slots_alias(
-    class_id: Optional[str] = Query(None),
-    tenant_id: Optional[str] = Query(None),
+    class_id: str | None = Query(None),
+    tenant_id: str | None = Query(None),
     db: Session = Depends(get_db),
     current_user: dict = Depends(require_permission("schedule:read")),
 ):
@@ -928,7 +934,7 @@ parents_list_alias_router = APIRouter()
 def list_all_parents(
     db: Session = Depends(get_db),
     current_user: dict = Depends(require_permission("parents:read")),
-    search: Optional[str] = Query(None),
+    search: str | None = Query(None),
 ):
     """GET /parents/ — list all parents for the tenant."""
     tenant_id = current_user.get("tenant_id")
@@ -989,8 +995,8 @@ achievement_router = APIRouter()
 
 class AchievementDefCreate(BaseModel):
     name: str
-    description: Optional[str] = None
-    icon: Optional[str] = None
+    description: str | None = None
+    icon: str | None = None
     category: str = "general"
     points_value: int = 10
     trigger_type: str = "manual"
@@ -1084,7 +1090,7 @@ student_achievement_router = APIRouter()
 def list_student_achievements(
     db: Session = Depends(get_db),
     current_user: dict = Depends(require_permission("achievements:read")),
-    student_id: Optional[str] = Query(None),
+    student_id: str | None = Query(None),
 ):
     tenant_id = current_user.get("tenant_id")
     extra = ""
@@ -1177,7 +1183,7 @@ def process_gamification_event(
 
 @gamification_router.get("/rules/")
 def list_gamification_rules(
-    is_active: Optional[str] = None,
+    is_active: str | None = None,
     db: Session = Depends(get_db),
     current_user: dict = Depends(require_permission("gamification:read")),
 ):
@@ -1209,7 +1215,8 @@ def create_gamification_rule(
     current_user: dict = Depends(require_permission("school_life:write")),
 ):
     """POST /gamification/rules/ — create a new rule."""
-    import uuid as _uuid, json as _json
+    import json as _json
+    import uuid as _uuid
     tenant_id = current_user.get("tenant_id")
     try:
         new_id = str(_uuid.uuid4())
@@ -1320,8 +1327,8 @@ homework_submissions_router = APIRouter()
 
 @homework_submissions_router.get("/")
 def list_homework_submissions(
-    homework_id: Optional[str] = None,
-    student_id: Optional[str] = None,
+    homework_id: str | None = None,
+    student_id: str | None = None,
     db: Session = Depends(get_db),
     current_user: dict = Depends(require_permission("homework:read")),
 ):
@@ -1403,8 +1410,8 @@ grade_history_router = APIRouter()
 
 @grade_history_router.get("/")
 def list_grade_history_alias(
-    grade_id: Optional[str] = None,
-    student_id: Optional[str] = None,
+    grade_id: str | None = None,
+    student_id: str | None = None,
     ordering: str = "-created_at",
     db: Session = Depends(get_db),
     current_user: dict = Depends(require_permission("grades:read")),
@@ -1537,8 +1544,8 @@ shared_note_likes_router = APIRouter()
 
 @shared_note_likes_router.get("/")
 def list_note_likes(
-    note_id__in: Optional[str] = None,
-    user_id: Optional[str] = None,
+    note_id__in: str | None = None,
+    user_id: str | None = None,
     db: Session = Depends(get_db),
     current_user: dict = Depends(require_permission("school_life:read")),
 ):
@@ -1605,8 +1612,8 @@ shared_note_comments_router = APIRouter()
 
 @shared_note_comments_router.get("/")
 def list_note_comments(
-    note_id: Optional[str] = None,
-    note_id__in: Optional[str] = None,
+    note_id: str | None = None,
+    note_id__in: str | None = None,
     ordering: str = "created_at",
     db: Session = Depends(get_db),
     current_user: dict = Depends(require_permission("school_life:read")),
@@ -1677,7 +1684,7 @@ courses_alias_router = APIRouter()
 
 @courses_alias_router.get("/")
 def list_courses_alias(
-    is_published: Optional[bool] = None,
+    is_published: bool | None = None,
     ordering: str = "-created_at",
     limit: int = Query(20, le=100),
     db: Session = Depends(get_db),
@@ -1719,7 +1726,7 @@ course_discussions_router = APIRouter()
 
 @course_discussions_router.get("/")
 def list_course_discussions(
-    course_id: Optional[str] = None,
+    course_id: str | None = None,
     ordering: str = "-created_at",
     limit: int = Query(10, le=100),
     db: Session = Depends(get_db),
@@ -1792,8 +1799,8 @@ student_check_ins_router = APIRouter()
 
 @student_check_ins_router.get("/")
 def list_student_check_ins(
-    student_id: Optional[str] = None,
-    classroom_id: Optional[str] = None,
+    student_id: str | None = None,
+    classroom_id: str | None = None,
     db: Session = Depends(get_db),
     current_user: dict = Depends(require_permission("attendance:read")),
 ):
@@ -1839,8 +1846,8 @@ student_badges_router = APIRouter()
 
 @student_badges_router.get("/")
 def list_student_badges(
-    student_id: Optional[str] = None,
-    classroom_id: Optional[str] = None,
+    student_id: str | None = None,
+    classroom_id: str | None = None,
     db: Session = Depends(get_db),
     current_user: dict = Depends(require_permission("school_life:read")),
 ):
@@ -1979,7 +1986,7 @@ point_transactions_router = APIRouter()
 
 @point_transactions_router.get("/")
 def list_point_transactions(
-    student_id: Optional[str] = None,
+    student_id: str | None = None,
     limit: int = Query(100, le=500),
     db: Session = Depends(get_db),
     current_user: dict = Depends(require_permission("gamification:read")),
@@ -2047,7 +2054,7 @@ quiz_questions_router = APIRouter()
 
 @quiz_questions_router.get("/")
 def list_quiz_questions(
-    quiz_id: Optional[str] = None,
+    quiz_id: str | None = None,
     db: Session = Depends(get_db),
     current_user: dict = Depends(require_permission("homework:read")),
 ):
@@ -2083,8 +2090,8 @@ def create_quiz_question(
 ):
     """POST /quiz-questions/"""
     tenant_id = current_user.get("tenant_id")
-    import uuid as _uuid
     import json as _json
+    import uuid as _uuid
     try:
         new_id = str(_uuid.uuid4())
         options = body.get("options")

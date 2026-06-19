@@ -1,9 +1,11 @@
 import logging
-import jwt
 
-from fastapi import APIRouter, WebSocket, WebSocketDisconnect, Query
+import jwt
+from fastapi import APIRouter, Query, WebSocket, WebSocketDisconnect
+
 from app.core.cache import redis_client
 from app.core.config import settings
+
 
 logger = logging.getLogger(__name__)
 router = APIRouter()

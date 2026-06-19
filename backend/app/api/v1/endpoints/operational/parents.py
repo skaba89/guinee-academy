@@ -1,35 +1,37 @@
+import json
 import logging
-from fastapi import APIRouter, Depends, HTTPException, status, Query, Request
-from sqlalchemy.orm import Session
-from sqlalchemy import text
-from typing import List, Optional, Any
-from uuid import UUID
-from datetime import datetime
-from pydantic import BaseModel
 import math
 import secrets
-import json
+from datetime import datetime
+from uuid import UUID
+
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
+from pydantic import BaseModel
+from sqlalchemy import text
+from sqlalchemy.orm import Session
+
 
 logger = logging.getLogger(__name__)
 
-from app.core.database import get_db
 from app.core.config import settings
-from app.core.security import get_current_user, require_permission
+from app.core.database import get_db
+from app.core.security import require_permission
 from app.core.serialization import to_iso as _to_iso
-from app.schemas.parents import ParentStudent, ParentStudentCreate
 from app.crud import parents as crud_parents
-from app.utils.audit import log_audit
+from app.schemas.parents import ParentStudent, ParentStudentCreate
 from app.services.payment_gateways import get_gateway
+from app.utils.audit import log_audit
+
 
 router = APIRouter()
 
 # --- List all parents ---
 
-@router.get("/", response_model=List[dict])
+@router.get("/", response_model=list[dict])
 def list_parents(
     db: Session = Depends(get_db),
     current_user: dict = Depends(require_permission("parents:read")),
-    search: Optional[str] = Query(None, description="Search by first_name, last_name, or email"),
+    search: str | None = Query(None, description="Search by first_name, last_name, or email"),
 ):
     """List all parents for the tenant. GET /parents/"""
     tenant_id = current_user.get("tenant_id")
@@ -89,10 +91,10 @@ def list_parents(
 class ParentCreate(BaseModel):
     first_name: str
     last_name: str
-    email: Optional[str] = None
-    phone: Optional[str] = None
-    occupation: Optional[str] = None
-    address: Optional[str] = None
+    email: str | None = None
+    phone: str | None = None
+    occupation: str | None = None
+    address: str | None = None
 
 
 @router.post("/", status_code=status.HTTP_201_CREATED)
@@ -145,7 +147,7 @@ def create_parent(
 
 # --- Existing endpoints ---
 
-@router.get("/children/", response_model=List[ParentStudent])
+@router.get("/children/", response_model=list[ParentStudent])
 def read_parent_children(
     db: Session = Depends(get_db),
     current_user: dict = Depends(require_permission("parents:read")),
@@ -153,7 +155,7 @@ def read_parent_children(
     """Retrieve all children associated with the current parent user."""
     return crud_parents.get_parent_children(db, parent_id=current_user.get("id"), tenant_id=current_user.get("tenant_id"))
 
-@router.get("/students/{student_id}/parents/", response_model=List[ParentStudent])
+@router.get("/students/{student_id}/parents/", response_model=list[ParentStudent])
 def read_student_parents(
     student_id: UUID,
     db: Session = Depends(get_db),
@@ -169,7 +171,7 @@ class LinkRequest(BaseModel):
     parent_id: UUID
     student_id: UUID
     is_primary: bool = False
-    relation_type: Optional[str] = None
+    relation_type: str | None = None
 
 
 @router.post("/link/", status_code=status.HTTP_201_CREATED)
@@ -462,9 +464,9 @@ def get_risk_scores(
 def list_parent_payment_schedules(
     db: Session = Depends(get_db),
     current_user: dict = Depends(require_permission("parents:read")),
-    student_id: Optional[str] = Query(None),
-    invoice_id: Optional[str] = Query(None),
-    ps_status: Optional[str] = Query(None, alias="status"),
+    student_id: str | None = Query(None),
+    invoice_id: str | None = Query(None),
+    ps_status: str | None = Query(None, alias="status"),
     page: int = Query(1, ge=1),
     page_size: int = Query(50, ge=1, le=100),
 ):
@@ -556,14 +558,14 @@ class ParentPaymentCreate(BaseModel):
     invoice_id: str
     amount: float
     method: str = "CASH"
-    reference: Optional[str] = None
-    notes: Optional[str] = None
+    reference: str | None = None
+    notes: str | None = None
     # Online payment extras (sent by the frontend)
-    invoiceNumber: Optional[str] = None
-    studentName: Optional[str] = None
-    tenantName: Optional[str] = None
-    customerPhone: Optional[str] = None
-    customerEmail: Optional[str] = None
+    invoiceNumber: str | None = None
+    studentName: str | None = None
+    tenantName: str | None = None
+    customerPhone: str | None = None
+    customerEmail: str | None = None
 
 
 @router.post("/payments/create/", status_code=status.HTTP_201_CREATED)
@@ -718,7 +720,7 @@ def create_parent_payment(
 
 # ─── Payment webhooks (gateway callbacks) ─────────────────────────────────────
 
-def _confirm_gateway_payment(db: Session, transaction_id: str, amount: float, tenant_id_hint: Optional[str] = None):
+def _confirm_gateway_payment(db: Session, transaction_id: str, amount: float, tenant_id_hint: str | None = None):
     """
     Shared logic: find the pending payment by reference and mark it COMPLETED,
     then update the invoice accordingly.
@@ -862,7 +864,7 @@ async def paytech_webhook(request: Request, db: Session = Depends(get_db)):
 
 @router.get("/payments/return/")
 def payment_return(
-    invoice_id: Optional[str] = Query(None),
+    invoice_id: str | None = Query(None),
     db: Session = Depends(get_db),
 ):
     """
@@ -881,7 +883,7 @@ def payment_return(
 
 class ReportCardGenerateRequest(BaseModel):
     student_id: str
-    term_id: Optional[str] = None
+    term_id: str | None = None
 
 
 @router.post("/report-cards/generate/")
@@ -1109,12 +1111,12 @@ def list_parent_appointments(
 # --- POST /parents/appointments/ --- Create appointment ---
 
 class AppointmentCreate(BaseModel):
-    teacher_id: Optional[str] = None
-    student_id: Optional[str] = None
+    teacher_id: str | None = None
+    student_id: str | None = None
     appointment_date: str
-    appointment_time: Optional[str] = None
-    slot_id: Optional[str] = None
-    notes: Optional[str] = None
+    appointment_time: str | None = None
+    slot_id: str | None = None
+    notes: str | None = None
     status: str = "REQUESTED"
 
 
@@ -1183,9 +1185,9 @@ def create_parent_appointment(
 def list_parent_appointment_slots(
     db: Session = Depends(get_db),
     current_user: dict = Depends(require_permission("parents:read")),
-    teacher_id: Optional[str] = Query(None),
-    date_from: Optional[str] = Query(None),
-    date_to: Optional[str] = Query(None),
+    teacher_id: str | None = Query(None),
+    date_from: str | None = Query(None),
+    date_to: str | None = Query(None),
 ):
     """List available appointment slots for booking."""
     tenant_id = current_user.get("tenant_id")
@@ -1226,12 +1228,12 @@ def list_parent_appointment_slots(
 # --- POST /parents/appointment-slots/ --- Create appointment slot ---
 
 class AppointmentSlotCreate(BaseModel):
-    teacher_id: Optional[str] = None
+    teacher_id: str | None = None
     date: str
     start_time: str
     end_time: str
     max_appointments: int = 1
-    location: Optional[str] = None
+    location: str | None = None
 
 
 @router.post("/appointment-slots/", status_code=status.HTTP_201_CREATED)

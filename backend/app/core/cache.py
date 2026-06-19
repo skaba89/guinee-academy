@@ -1,5 +1,7 @@
 import redis.asyncio as redis
+
 from app.core.config import settings
+
 
 # Prefix for all Guinée Academy Redis keys to avoid collisions
 REDIS_KEY_PREFIX = "sfp:"

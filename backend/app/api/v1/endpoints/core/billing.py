@@ -16,10 +16,9 @@ Plans:
 from __future__ import annotations
 
 import logging
-from datetime import datetime, timezone
-from typing import Optional
+from datetime import UTC, datetime
 
-from fastapi import APIRouter, Depends, Header, HTTPException, Request, status
+from fastapi import APIRouter, Depends, Header, HTTPException, Request
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
@@ -27,6 +26,7 @@ from app.core.config import settings
 from app.core.database import get_db
 from app.core.security import get_current_user, require_permission
 from app.models.tenant import Tenant
+
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -88,13 +88,13 @@ def _ensure_stripe_customer(stripe, tenant: Tenant, db: Session) -> str:
 
 class CheckoutRequest(BaseModel):
     plan: str                       # "pro" | "enterprise"
-    success_url: Optional[str] = None
-    cancel_url: Optional[str] = None
-    billing_email: Optional[str] = None
+    success_url: str | None = None
+    cancel_url: str | None = None
+    billing_email: str | None = None
 
 
 class PortalRequest(BaseModel):
-    return_url: Optional[str] = None
+    return_url: str | None = None
 
 
 # ─── Endpoints ───────────────────────────────────────────────────────────────
@@ -118,7 +118,7 @@ async def get_subscription(
     trial_ends_at = None
     if tenant.trial_ends_at:
         trial_ends_at = tenant.trial_ends_at.isoformat()
-        trial_active = tenant.trial_ends_at > datetime.now(timezone.utc).replace(tzinfo=None)
+        trial_active = tenant.trial_ends_at > datetime.now(UTC).replace(tzinfo=None)
 
     return {
         "plan": tenant.subscription_plan or "starter",
@@ -274,7 +274,7 @@ async def cancel_subscription(
 @router.post("/webhook/", include_in_schema=False)
 async def stripe_webhook(
     request: Request,
-    stripe_signature: Optional[str] = Header(None, alias="stripe-signature"),
+    stripe_signature: str | None = Header(None, alias="stripe-signature"),
     db: Session = Depends(get_db),
 ):
     """Receive and process Stripe webhook events."""
@@ -367,7 +367,7 @@ async def stripe_webhook(
 # ─── Webhook helpers ──────────────────────────────────────────────────────────
 
 def _handle_subscription_activated(
-    db: Session, tenant_id: str, subscription_id: Optional[str], plan: str, status: str
+    db: Session, tenant_id: str, subscription_id: str | None, plan: str, status: str
 ):
     tenant = db.query(Tenant).filter(Tenant.id == tenant_id).first()
     if not tenant:
@@ -382,7 +382,7 @@ def _handle_subscription_activated(
 
 
 def _handle_subscription_updated(
-    db: Session, tenant_id: str, sub_id: Optional[str], plan: Optional[str], sub_status: str
+    db: Session, tenant_id: str, sub_id: str | None, plan: str | None, sub_status: str
 ):
     tenant = db.query(Tenant).filter(Tenant.id == tenant_id).first()
     if not tenant:

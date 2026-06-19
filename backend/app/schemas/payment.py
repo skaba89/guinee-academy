@@ -1,15 +1,17 @@
 """Payment schemas for request/response validation"""
 from datetime import date, datetime
-from typing import Optional
-from pydantic import BaseModel, Field, UUID4
-from app.models.payment import PaymentStatus, PaymentMethod, InvoiceStatus
+
+from pydantic import UUID4, BaseModel, Field
+
+from app.models.payment import InvoiceStatus, PaymentMethod, PaymentStatus
+
 
 class StudentMin(BaseModel):
     id: UUID4
     first_name: str
     last_name: str
     registration_number: str
-    
+
     class Config:
         from_attributes = True
 
@@ -20,36 +22,36 @@ class PaymentBase(BaseModel):
     currency: str = Field(default="GNF", max_length=3)
     payment_date: date
     payment_method: PaymentMethod
-    notes: Optional[str] = Field(None, max_length=500)
+    notes: str | None = Field(None, max_length=500)
 
 
 class PaymentCreate(PaymentBase):
     student_id: UUID4
-    invoice_id: Optional[UUID4] = None
-    transaction_id: Optional[str] = Field(None, max_length=255)
+    invoice_id: UUID4 | None = None
+    transaction_id: str | None = Field(None, max_length=255)
 
 
 class PaymentUpdate(BaseModel):
-    amount: Optional[float] = Field(None, gt=0)
-    payment_date: Optional[date] = None
-    payment_method: Optional[PaymentMethod] = None
-    status: Optional[PaymentStatus] = None
-    notes: Optional[str] = Field(None, max_length=500)
+    amount: float | None = Field(None, gt=0)
+    payment_date: date | None = None
+    payment_method: PaymentMethod | None = None
+    status: PaymentStatus | None = None
+    notes: str | None = Field(None, max_length=500)
 
 
 class Payment(PaymentBase):
     id: UUID4
     tenant_id: UUID4
     student_id: UUID4
-    invoice_id: Optional[UUID4]
+    invoice_id: UUID4 | None
     status: PaymentStatus
     reference: str
-    transaction_id: Optional[str]
-    receipt_url: Optional[str]
-    students: Optional[StudentMin] = Field(None, alias="student")
+    transaction_id: str | None
+    receipt_url: str | None
+    students: StudentMin | None = Field(None, alias="student")
     created_at: datetime
     updated_at: datetime
-    
+
     class Config:
         from_attributes = True
         populate_by_name = True
@@ -72,8 +74,8 @@ class InvoiceBase(BaseModel):
     discount_amount: float = Field(default=0.0, ge=0)
     total_amount: float = Field(..., gt=0)
     currency: str = Field(default="GNF", max_length=3)
-    description: Optional[str] = Field(None, max_length=500)
-    notes: Optional[str] = Field(None, max_length=500)
+    description: str | None = Field(None, max_length=500)
+    notes: str | None = Field(None, max_length=500)
 
 
 class InvoiceCreate(InvoiceBase):
@@ -82,14 +84,14 @@ class InvoiceCreate(InvoiceBase):
 
 
 class InvoiceUpdate(BaseModel):
-    due_date: Optional[date] = None
-    subtotal: Optional[float] = Field(None, ge=0)
-    tax_amount: Optional[float] = Field(None, ge=0)
-    discount_amount: Optional[float] = Field(None, ge=0)
-    total_amount: Optional[float] = Field(None, gt=0)
-    status: Optional[InvoiceStatus] = None
-    description: Optional[str] = Field(None, max_length=500)
-    notes: Optional[str] = Field(None, max_length=500)
+    due_date: date | None = None
+    subtotal: float | None = Field(None, ge=0)
+    tax_amount: float | None = Field(None, ge=0)
+    discount_amount: float | None = Field(None, ge=0)
+    total_amount: float | None = Field(None, gt=0)
+    status: InvoiceStatus | None = None
+    description: str | None = Field(None, max_length=500)
+    notes: str | None = Field(None, max_length=500)
 
 
 class Invoice(InvoiceBase):
@@ -99,14 +101,14 @@ class Invoice(InvoiceBase):
     invoice_number: str
     status: InvoiceStatus
     amount_paid: float
-    pdf_url: Optional[str]
+    pdf_url: str | None
     created_at: datetime
     updated_at: datetime
-    
+
     amount_due: float
     is_paid: bool
-    student: Optional[StudentMin] = None
-    
+    student: StudentMin | None = None
+
     class Config:
         from_attributes = True
 

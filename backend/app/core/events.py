@@ -23,9 +23,11 @@ Usage::
 """
 import asyncio
 import logging
-from datetime import datetime, timezone
+from collections.abc import Callable
+from datetime import UTC, datetime
 from enum import Enum
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any
+
 
 logger = logging.getLogger(__name__)
 
@@ -63,7 +65,7 @@ class EventType(str, Enum):
     USER_UPDATED = "user.updated"
     USER_LOGIN = "user.login"
     USER_LOGOUT = "user.logout"
-    USER_PASSWORD_CHANGED = "user.password_changed"
+    USER_PASSWORD_CHANGED = "user.password_changed"  # noqa: S105 — event name, not a password
     USER_DEACTIVATED = "user.deactivated"
 
     # ── Tenant lifecycle ───────────────────────────────────────────────────
@@ -104,18 +106,24 @@ class DomainEvent:
     """
 
     __slots__ = (
-        "event_type", "tenant_id", "actor_id", "resource_type",
-        "resource_id", "data", "timestamp", "version",
+        "actor_id",
+        "data",
+        "event_type",
+        "resource_id",
+        "resource_type",
+        "tenant_id",
+        "timestamp",
+        "version",
     )
 
     def __init__(
         self,
         event_type: EventType,
-        tenant_id: Optional[str],
-        actor_id: Optional[str],
+        tenant_id: str | None,
+        actor_id: str | None,
         resource_type: str,
-        resource_id: Optional[str] = None,
-        data: Optional[Dict[str, Any]] = None,
+        resource_id: str | None = None,
+        data: dict[str, Any] | None = None,
     ):
         self.event_type = event_type
         self.tenant_id = tenant_id
@@ -123,7 +131,7 @@ class DomainEvent:
         self.resource_type = resource_type
         self.resource_id = resource_id
         self.data = data or {}
-        self.timestamp = datetime.now(timezone.utc).isoformat()
+        self.timestamp = datetime.now(UTC).isoformat()
         self.version = "1.0"
 
     def to_dict(self) -> dict:
@@ -148,7 +156,7 @@ class DomainEvent:
 # ─── Event Bus ────────────────────────────────────────────────────────────────
 
 # Registry: event_type.value → list of handlers
-_handlers: Dict[str, List[Callable]] = {}
+_handlers: dict[str, list[Callable]] = {}
 
 
 def subscribe(event_type: EventType, handler: Callable) -> None:

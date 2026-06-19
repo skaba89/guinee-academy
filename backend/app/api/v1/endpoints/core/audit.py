@@ -1,30 +1,32 @@
-from typing import List, Optional, Dict, Any
+import logging
+from datetime import UTC, datetime
+from typing import Any
+
 from fastapi import APIRouter, Depends, Query
 from pydantic import BaseModel
-from sqlalchemy.orm import Session
 from sqlalchemy import text
-from datetime import datetime, timezone
+from sqlalchemy.orm import Session
 
 from app.core.database import get_db
 from app.core.security import require_permission
 from app.schemas.audit import AuditLog
-import logging
+
 
 logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
 
-@router.get("/", response_model=List[AuditLog])
+@router.get("/", response_model=list[AuditLog])
 def list_audit_logs(
     db: Session = Depends(get_db),
     current_user: dict = Depends(require_permission("audit:read")),
     page: int = Query(1, ge=1),
     page_size: int = Query(50, ge=1, le=100),
-    user_id: Optional[str] = None,
-    action: Optional[str] = None,
-    resource_type: Optional[str] = None,
-    severity: Optional[str] = None,
+    user_id: str | None = None,
+    action: str | None = None,
+    resource_type: str | None = None,
+    severity: str | None = None,
 ):
     """List audit logs for the current tenant with filtering and pagination."""
     tenant_id = current_user.get("tenant_id")
@@ -64,10 +66,10 @@ def list_audit_logs(
 
 class AuditLogCreate(BaseModel):
     action: str
-    severity: Optional[str] = "INFO"
-    resource_type: Optional[str] = None
-    resource_id: Optional[str] = None
-    details: Optional[Dict[str, Any]] = None
+    severity: str | None = "INFO"
+    resource_type: str | None = None
+    resource_id: str | None = None
+    details: dict[str, Any] | None = None
 
 
 @router.post("/", status_code=201)
@@ -105,21 +107,21 @@ def create_audit_log(
 
 class DataQualityResolve(BaseModel):
     is_resolved: bool
-    resolved_at: Optional[str] = None
+    resolved_at: str | None = None
 
 
 @router.get("/data-quality/")
 def list_data_quality_anomalies(
     db: Session = Depends(get_db),
     current_user: dict = Depends(require_permission("audit:read")),
-    is_resolved: Optional[bool] = Query(None),
+    is_resolved: bool | None = Query(None),
     ordering: str = Query("-detected_at"),
-    category: Optional[str] = None,
+    category: str | None = None,
 ):
     """List data quality anomalies for the current tenant."""
     tenant_id = current_user.get("tenant_id")
     where = ["tenant_id = :tenant_id"]
-    params: Dict[str, Any] = {"tenant_id": tenant_id}
+    params: dict[str, Any] = {"tenant_id": tenant_id}
 
     if is_resolved is not None:
         where.append("is_resolved = :is_resolved")
@@ -155,7 +157,7 @@ def run_data_quality_checks(
 ):
     """Run automated data quality checks and persist any new anomalies found."""
     tenant_id = current_user.get("tenant_id")
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     issues_found = []
 
     checks = [
@@ -242,7 +244,7 @@ def resolve_data_quality_anomaly(
     """Mark a data quality anomaly as resolved."""
     tenant_id = current_user.get("tenant_id")
     user_id = current_user.get("id")
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
 
     row = db.execute(text("""
         UPDATE data_quality_anomalies

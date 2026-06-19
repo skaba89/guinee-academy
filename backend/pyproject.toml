@@ -83,11 +83,38 @@ ignore = [
     "N805",   # First argument of method (Pydantic validator pattern)
     "N815",   # Mixed-case variable in class scope (SQLAlchemy models)
     "RUF012", # Mutable class attributes (Pydantic/SQLAlchemy)
+    # Pragmatic additions for existing codebase — revisit later:
+    "B904",   # raise-without-from-inside-except — would need `from err` everywhere
+    "S608",   # hardcoded-sql-expression — we use parameterized raw SQL throughout
+    "S110",   # try-except-pass — common in fallback/cleanup patterns
+    "E402",   # module-import-not-at-top-of-file — FastAPI router pattern
+    "E701",   # multiple-statements-on-one-line-colon — compact guard clauses
+    "E712",   # true-false-comparison — SQLAlchemy requires `== True` in queries
+    "N806",   # non-lowercase-variable-in-function — SQL column names
+    "N818",   # error-suffix-on-exception-name — domain exception names
+    "SIM105", # suppressible-exception — `contextlib.suppress` not always clearer
+    "SIM102", # collapsible-if — nested ifs read better sometimes
+    "SIM108", # if-else-block-instead-of-if-exp — ternary not always clearer
+    "SIM201", # negate-equal-op — `not x == y` vs `x != y` semantic nuance
+    "SIM210", # if-expr-with-true-false — `bool(x)` not always equivalent
+    "UP042",  # replace-str-enum — StrEnum breaks SQLAlchemy Enum() column
+    "TC002",  # typing-only-third-party-import — FastAPI needs runtime imports
+    "RUF013", # implicit-optional — pervasive in legacy type hints
+    "RUF046", # unnecessary-cast-to-int — false positives on UUID-int conversions
+    "RUF006", # asyncio-dangling-task — intentional fire-and-forget tasks
+    "S311",   # suspicious-non-cryptographic-random-usage — not used for security
+    "S108",   # hardcoded-temp-file — /tmp is fine in dev scripts
+    "B023",   # function-uses-loop-variable — false positive in closures
+    "B007",   # unused-loop-control-variable — common in retry/dummy loops
 ]
 
 [tool.ruff.lint.per-file-ignores]
 "tests/*" = ["S101", "S105", "S106", "D100", "D103", "RUF012"]
-"app/api/*" = ["B008"]
+"app/api/*" = ["B008", "N803"]   # camelCase query params for frontend compat
+# Models __init__ re-exports for SQLAlchemy metadata registration
+"app/models/__init__.py" = ["F401"]
+# main.py has intentional side-effect imports + lifespan setup
+"app/main.py" = ["E402", "F401"]
 
 [tool.ruff.lint.isort]
 known-first-party = ["app"]

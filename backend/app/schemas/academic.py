@@ -1,7 +1,8 @@
-from typing import Optional, List
-from pydantic import BaseModel, ConfigDict, field_validator
-from uuid import UUID
 from datetime import date, datetime
+from uuid import UUID
+
+from pydantic import BaseModel, ConfigDict, field_validator
+
 
 # --- Academic Year ---
 class AcademicYearBase(BaseModel):
@@ -15,11 +16,11 @@ class AcademicYearCreate(AcademicYearBase):
     pass
 
 class AcademicYearUpdate(BaseModel):
-    name: Optional[str] = None
-    code: Optional[str] = None
-    start_date: Optional[date] = None
-    end_date: Optional[date] = None
-    is_current: Optional[bool] = None
+    name: str | None = None
+    code: str | None = None
+    start_date: date | None = None
+    end_date: date | None = None
+    is_current: bool | None = None
 
 class AcademicYear(AcademicYearBase):
     id: UUID
@@ -45,16 +46,16 @@ class TermCreate(TermBase):
     pass
 
 class TermUpdate(BaseModel):
-    name: Optional[str] = None
-    start_date: Optional[date] = None
-    end_date: Optional[date] = None
-    sequence_number: Optional[int] = None
-    is_active: Optional[bool] = None
+    name: str | None = None
+    start_date: date | None = None
+    end_date: date | None = None
+    sequence_number: int | None = None
+    is_active: bool | None = None
 
 class Term(TermBase):
     id: UUID
     tenant_id: UUID
-    academic_year: Optional[AcademicYearRef] = None
+    academic_year: AcademicYearRef | None = None
     created_at: datetime
     updated_at: datetime
 
@@ -63,18 +64,18 @@ class Term(TermBase):
 # --- Campus ---
 class CampusBase(BaseModel):
     name: str
-    address: Optional[str] = None
-    phone: Optional[str] = None
+    address: str | None = None
+    phone: str | None = None
     is_main: bool = False
 
 class CampusCreate(CampusBase):
     pass
 
 class CampusUpdate(BaseModel):
-    name: Optional[str] = None
-    address: Optional[str] = None
-    phone: Optional[str] = None
-    is_main: Optional[bool] = None
+    name: str | None = None
+    address: str | None = None
+    phone: str | None = None
+    is_main: bool | None = None
 
 class Campus(CampusBase):
     id: UUID
@@ -87,18 +88,18 @@ class Campus(CampusBase):
 # --- Level ---
 class LevelBase(BaseModel):
     name: str
-    code: Optional[str] = None
-    label: Optional[str] = None
+    code: str | None = None
+    label: str | None = None
     order_index: int = 0
 
 class LevelCreate(LevelBase):
     pass
 
 class LevelUpdate(BaseModel):
-    name: Optional[str] = None
-    code: Optional[str] = None
-    label: Optional[str] = None
-    order_index: Optional[int] = None
+    name: str | None = None
+    code: str | None = None
+    label: str | None = None
+    order_index: int | None = None
 
 class Level(LevelBase):
     id: UUID
@@ -111,13 +112,13 @@ class Level(LevelBase):
 # --- Subject ---
 class SubjectBase(BaseModel):
     name: str
-    code: Optional[str] = None
-    coefficient: Optional[float] = 1.0
-    ects: Optional[float] = 0
-    cm_hours: Optional[int] = 0
-    td_hours: Optional[int] = 0
-    tp_hours: Optional[int] = 0
-    description: Optional[str] = None
+    code: str | None = None
+    coefficient: float | None = 1.0
+    ects: float | None = 0
+    cm_hours: int | None = 0
+    td_hours: int | None = 0
+    tp_hours: int | None = 0
+    description: str | None = None
 
     @field_validator('coefficient', 'ects', 'cm_hours', 'td_hours', 'tp_hours', mode='before')
     @classmethod
@@ -131,20 +132,20 @@ class SubjectBase(BaseModel):
         return 1.0 if (v is None or v == 0) else v
 
 class SubjectCreate(SubjectBase):
-    department_ids: Optional[List[UUID]] = None
-    level_ids: Optional[List[UUID]] = None
+    department_ids: list[UUID] | None = None
+    level_ids: list[UUID] | None = None
 
 class SubjectUpdate(BaseModel):
-    name: Optional[str] = None
-    code: Optional[str] = None
-    coefficient: Optional[float] = None
-    ects: Optional[float] = None
-    cm_hours: Optional[int] = None
-    td_hours: Optional[int] = None
-    tp_hours: Optional[int] = None
-    description: Optional[str] = None
-    department_ids: Optional[List[UUID]] = None
-    level_ids: Optional[List[UUID]] = None
+    name: str | None = None
+    code: str | None = None
+    coefficient: float | None = None
+    ects: float | None = None
+    cm_hours: int | None = None
+    td_hours: int | None = None
+    tp_hours: int | None = None
+    description: str | None = None
+    department_ids: list[UUID] | None = None
+    level_ids: list[UUID] | None = None
 
 class Subject(SubjectBase):
     id: UUID
@@ -157,18 +158,18 @@ class Subject(SubjectBase):
 # --- Department ---
 class DepartmentBase(BaseModel):
     name: str
-    code: Optional[str] = None
-    description: Optional[str] = None
-    head_id: Optional[UUID] = None
+    code: str | None = None
+    description: str | None = None
+    head_id: UUID | None = None
 
 class DepartmentCreate(DepartmentBase):
     pass
 
 class DepartmentUpdate(BaseModel):
-    name: Optional[str] = None
-    code: Optional[str] = None
-    description: Optional[str] = None
-    head_id: Optional[UUID] = None
+    name: str | None = None
+    code: str | None = None
+    description: str | None = None
+    head_id: UUID | None = None
 
 class Department(DepartmentBase):
     id: UUID
@@ -181,16 +182,16 @@ class Department(DepartmentBase):
 # --- Program ---
 class ProgramBase(BaseModel):
     name: str
-    code: Optional[str] = None
-    description: Optional[str] = None
+    code: str | None = None
+    description: str | None = None
 
 class ProgramCreate(ProgramBase):
     pass
 
 class ProgramUpdate(BaseModel):
-    name: Optional[str] = None
-    code: Optional[str] = None
-    description: Optional[str] = None
+    name: str | None = None
+    code: str | None = None
+    description: str | None = None
 
 class Program(ProgramBase):
     id: UUID
@@ -203,16 +204,16 @@ class Program(ProgramBase):
 # --- Room ---
 class RoomBase(BaseModel):
     name: str
-    capacity: Optional[int] = None
-    campus_id: Optional[UUID] = None
+    capacity: int | None = None
+    campus_id: UUID | None = None
 
 class RoomCreate(RoomBase):
     pass
 
 class RoomUpdate(BaseModel):
-    name: Optional[str] = None
-    capacity: Optional[int] = None
-    campus_id: Optional[UUID] = None
+    name: str | None = None
+    capacity: int | None = None
+    campus_id: UUID | None = None
 
 class Room(RoomBase):
     id: UUID
@@ -225,25 +226,25 @@ class Room(RoomBase):
 # --- Classroom (Classes) ---
 class ClassroomBase(BaseModel):
     name: str
-    capacity: Optional[int] = None
-    level_id: Optional[UUID] = None
-    campus_id: Optional[UUID] = None
-    program_id: Optional[UUID] = None
-    academic_year_id: Optional[UUID] = None
-    main_room_id: Optional[UUID] = None
+    capacity: int | None = None
+    level_id: UUID | None = None
+    campus_id: UUID | None = None
+    program_id: UUID | None = None
+    academic_year_id: UUID | None = None
+    main_room_id: UUID | None = None
 
 class ClassroomCreate(ClassroomBase):
-    department_ids: Optional[List[UUID]] = None
+    department_ids: list[UUID] | None = None
 
 class ClassroomUpdate(BaseModel):
-    name: Optional[str] = None
-    capacity: Optional[int] = None
-    level_id: Optional[UUID] = None
-    campus_id: Optional[UUID] = None
-    program_id: Optional[UUID] = None
-    academic_year_id: Optional[UUID] = None
-    main_room_id: Optional[UUID] = None
-    department_ids: Optional[List[UUID]] = None
+    name: str | None = None
+    capacity: int | None = None
+    level_id: UUID | None = None
+    campus_id: UUID | None = None
+    program_id: UUID | None = None
+    academic_year_id: UUID | None = None
+    main_room_id: UUID | None = None
+    department_ids: list[UUID] | None = None
 
 class Classroom(ClassroomBase):
     id: UUID
@@ -258,17 +259,17 @@ class EnrollmentBase(BaseModel):
     student_id: UUID
     class_id: UUID
     academic_year_id: UUID
-    enrollment_date: Optional[date] = None
+    enrollment_date: date | None = None
     status: str = "ACTIVE"
 
 class EnrollmentCreate(EnrollmentBase):
     pass
 
 class EnrollmentUpdate(BaseModel):
-    class_id: Optional[UUID] = None
-    academic_year_id: Optional[UUID] = None
-    enrollment_date: Optional[date] = None
-    status: Optional[str] = None
+    class_id: UUID | None = None
+    academic_year_id: UUID | None = None
+    enrollment_date: date | None = None
+    status: str | None = None
 
 class Enrollment(EnrollmentBase):
     id: UUID

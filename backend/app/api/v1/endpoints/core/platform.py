@@ -8,11 +8,10 @@ POST /platform/tenants/{id}/impersonate/  — get a short-lived token for a tena
 from __future__ import annotations
 
 import logging
-from datetime import datetime, timezone, timedelta
-from typing import Optional
+from datetime import UTC, datetime, timedelta
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
-from sqlalchemy import func, case, text
+from sqlalchemy import func, text
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
@@ -20,6 +19,7 @@ from app.core.security import get_current_user
 from app.models.tenant import Tenant
 from app.models.user import User
 from app.models.user_role import UserRole
+
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -47,7 +47,7 @@ PLAN_MONTHLY_USD: dict[str, float] = {
 # ─── Helpers ─────────────────────────────────────────────────────────────────
 
 def _now_utc() -> datetime:
-    return datetime.now(timezone.utc).replace(tzinfo=None)
+    return datetime.now(UTC).replace(tzinfo=None)
 
 
 def _is_trial_valid(tenant: Tenant) -> bool:
@@ -255,9 +255,9 @@ async def get_saas_metrics(
 async def list_platform_tenants(
     page: int = Query(1, ge=1),
     page_size: int = Query(25, ge=1, le=100),
-    search: Optional[str] = Query(None),
-    plan: Optional[str] = Query(None),
-    sub_status: Optional[str] = Query(None),
+    search: str | None = Query(None),
+    plan: str | None = Query(None),
+    sub_status: str | None = Query(None),
     db: Session = Depends(get_db),
     _admin: dict = Depends(_require_super_admin),
 ):

@@ -1,10 +1,11 @@
 """Standardized exception hierarchy for Guinée Academy."""
-from typing import Any, Optional
 import logging
+from typing import Any
 
 from fastapi import HTTPException
 from fastapi.responses import JSONResponse
 from starlette.requests import Request
+
 
 logger = logging.getLogger(__name__)
 
@@ -37,8 +38,8 @@ class ErrorCode:
 def api_error(
     status_code: int,
     message: str,
-    error_code: Optional[str] = None,
-    details: Optional[dict] = None,
+    error_code: str | None = None,
+    details: dict | None = None,
 ) -> HTTPException:
     """Create a consistent API error response.
 
@@ -74,9 +75,9 @@ class GuineeAcademyException(Exception):
 
     def __init__(
         self,
-        message: Optional[str] = None,
-        error_code: Optional[str] = None,
-        details: Optional[Any] = None,
+        message: str | None = None,
+        error_code: str | None = None,
+        details: Any | None = None,
     ):
         self.message = message or self.__class__.message
         self.error_code = error_code or self.__class__.error_code
@@ -246,7 +247,7 @@ async def unhandled_exception_handler(
     # Only show the exception type and message when DEBUG is enabled.
     from app.core.config import settings
     if settings.DEBUG:
-        error_msg = f"{type(exc).__name__}: {str(exc)}"
+        error_msg = f"{type(exc).__name__}: {exc!s}"
     else:
         # Include exception type (but NOT message) for easier debugging in production
         error_msg = f"{type(exc).__name__}. Contact support with request ID {request_id}."

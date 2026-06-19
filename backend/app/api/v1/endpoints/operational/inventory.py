@@ -1,13 +1,13 @@
 import logging
-from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy.orm import Session
-from sqlalchemy import text
-from typing import List, Optional, Any
+
+from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
-from uuid import UUID
+from sqlalchemy import text
+from sqlalchemy.orm import Session
 
 from app.core.database import get_db
-from app.core.security import get_current_user, require_permission
+from app.core.security import require_permission
+
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -15,31 +15,31 @@ router = APIRouter()
 # --- Schemas ---
 
 class InventoryItemCreate(BaseModel):
-    category_id: Optional[str] = None
+    category_id: str | None = None
     name: str
     unit_price: float = 0.0
     stock_quantity: int = 0
 
 class InventoryItemUpdate(BaseModel):
-    name: Optional[str] = None
-    description: Optional[str] = None
-    unit_price: Optional[float] = None
-    stock_quantity: Optional[int] = None
-    category_id: Optional[str] = None
+    name: str | None = None
+    description: str | None = None
+    unit_price: float | None = None
+    stock_quantity: int | None = None
+    category_id: str | None = None
 
 class AdjustmentBody(BaseModel):
     item_id: str
     quantity: int
     type: str # IN | OUT | ADJUST
-    notes: Optional[str] = None
+    notes: str | None = None
 
 class OrderCreateBody(BaseModel):
-    student_id: Optional[str] = None
+    student_id: str | None = None
     total_amount: float
     payment_method: str
     status: str = "COMPLETED"
-    notes: Optional[str] = None
-    items: List[dict]
+    notes: str | None = None
+    items: list[dict]
 
 # --- Endpoints ---
 
@@ -77,10 +77,10 @@ def list_items(db: Session = Depends(get_db), current_user: dict = Depends(requi
         return []
     try:
         rows = db.execute(text("""
-            SELECT i.*, c.name as category_name 
-            FROM inventory_items i 
-            LEFT JOIN inventory_categories c ON c.id = i.category_id 
-            WHERE i.tenant_id = :tid 
+            SELECT i.*, c.name as category_name
+            FROM inventory_items i
+            LEFT JOIN inventory_categories c ON c.id = i.category_id
+            WHERE i.tenant_id = :tid
             ORDER BY i.name
         """), {"tid": tenant_id}).fetchall()
         return [{**dict(r._mapping), "category": {"id": r.category_id, "name": r.category_name}} for r in rows]
@@ -99,7 +99,7 @@ def create_item(item: InventoryItemCreate, db: Session = Depends(get_db), curren
             INSERT INTO inventory_items (tenant_id, category_id, name, unit_price, stock_quantity)
             VALUES (:tid, :cid, :name, :price, :qty) RETURNING *
         """), {
-            "tid": tenant_id, "cid": item.category_id, "name": item.name, 
+            "tid": tenant_id, "cid": item.category_id, "name": item.name,
             "price": item.unit_price, "qty": item.stock_quantity
         }).mappings().first()
         db.commit()
@@ -159,10 +159,10 @@ def list_transactions(db: Session = Depends(get_db), current_user: dict = Depend
         return []
     try:
         return db.execute(text("""
-            SELECT t.*, i.name as item_name 
-            FROM inventory_transactions t 
-            JOIN inventory_items i ON i.id = t.item_id 
-            WHERE t.tenant_id = :tid 
+            SELECT t.*, i.name as item_name
+            FROM inventory_transactions t
+            JOIN inventory_items i ON i.id = t.item_id
+            WHERE t.tenant_id = :tid
             ORDER BY t.created_at DESC
         """), {"tid": tenant_id}).mappings().all()
     except Exception as e:
@@ -279,10 +279,10 @@ def create_order(body: OrderCreateBody, db: Session = Depends(get_db), current_u
             INSERT INTO orders (tenant_id, student_id, total_amount, payment_method, status, notes)
             VALUES (:tid, :sid, :amount, :method, :status, :notes) RETURNING id
         """), {
-            "tid": tenant_id, "sid": body.student_id, "amount": body.total_amount, 
+            "tid": tenant_id, "sid": body.student_id, "amount": body.total_amount,
             "method": body.payment_method, "status": body.status, "notes": body.notes
         }).scalar()
-        
+
         for item in body.items:
             db.execute(text("""
                 INSERT INTO order_items (order_id, item_id, item_name, quantity, unit_price, total_price)

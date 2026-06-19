@@ -1,8 +1,8 @@
 """School Settings model — SaaS governance configuration per tenant."""
-from sqlalchemy import Column, String, Boolean, Integer, Numeric, ForeignKey
+from sqlalchemy import Boolean, Column, ForeignKey, Integer, Numeric, String
 from sqlalchemy.dialects.postgresql import UUID
 
-from app.models.base import Base, UUIDMixin, TimestampMixin
+from app.models.base import Base, TimestampMixin, UUIDMixin
 
 
 class SchoolSetting(Base, UUIDMixin, TimestampMixin):
