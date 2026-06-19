@@ -1028,23 +1028,29 @@ _DDL = [
 def ensure_operational_tables(engine) -> None:
     """Execute all operational DDL statements.
 
-    Each statement runs in its own transaction so a single failure
+    Each statement runs in its own SAVEPOINT so a single failure
     (e.g. table already exists with a different schema) does not
-    block subsequent statements.
+    block subsequent statements. The outer transaction is committed
+    only once at the end — this avoids the ~174 separate COMMIT
+    round-trips we used to do, which made PostgreSQL startup take
+    60+ seconds on CI runners and exceed the Playwright global-setup
+    timeout.
 
     On SQLite, each statement is converted to SQLite-compatible syntax
     via _to_sqlite_ddl() before execution.
     """
     is_sqlite = settings.is_sqlite
-    with engine.connect() as conn:
+    # Single outer transaction → 1 COMMIT instead of N COMMITS.
+    # SAVEPOINTs preserve the "one failure does not block others"
+    # semantics of the previous per-statement commit loop.
+    with engine.begin() as conn:
         for stmt in _DDL:
             if is_sqlite:
                 stmt = _to_sqlite_ddl(stmt)
                 if not stmt.strip():
                     continue  # skipped PostgreSQL-only construct (e.g. DO $$)
             try:
-                conn.execute(text(stmt))
-                conn.commit()
+                with conn.begin_nested():  # SAVEPOINT ... RELEASE/ROLLBACK
+                    conn.execute(text(stmt))
             except Exception as exc:
-                conn.rollback()
                 logger.warning("Operational DDL skipped: %s (%s)", stmt[:80], exc)

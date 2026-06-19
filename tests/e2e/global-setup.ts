@@ -42,12 +42,14 @@ export default async () => {
   }
 
   // ── 2. Wait for API ───────────────────────────────────────────────────────
+  // The backend runs Alembic migrations + operational DDL on first startup,
+  // which can take 30-60s on a cold CI runner. Give it up to 180s.
   console.log('  ⏳ Waiting for API...');
-  await waitForUrl('http://localhost:8000/api/v1/health/', 40, 'API (localhost:8000)');
+  await waitForUrl('http://localhost:8000/api/v1/health/', 120, 'API (localhost:8000)');
 
   // ── 3. Wait for frontend (started by Playwright webServer) ───────────────
   console.log('  ⏳ Waiting for frontend dev server...');
-  await waitForUrl('http://localhost:3000', 30, 'Frontend (localhost:3000)');
+  await waitForUrl('http://localhost:3000', 60, 'Frontend (localhost:3000)');
 
   console.log('\n✅ All services ready — starting tests!\n');
 };
