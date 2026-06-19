@@ -387,7 +387,11 @@ jobs:
           CI: true
 
       - name: Run Playwright tests
-        run: npx playwright test --reporter=html
+        # Restrict to chromium on CI for speed. The full matrix (chromium +
+        # firefox + webkit + Mobile Chrome) is too slow for a per-push gate
+        # (~15-20 min). Cross-browser testing should be done in a separate
+        # scheduled job or manually triggered.
+        run: npx playwright test --project=chromium --reporter=html
         env:
           CI: true
           BASE_URL: http://localhost:3000
