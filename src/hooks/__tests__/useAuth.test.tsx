@@ -1,5 +1,6 @@
 import { renderHook, waitFor, act } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { MemoryRouter } from 'react-router-dom';
 import { AuthProvider, useAuth } from '@/contexts/AuthContext';
 import { trackLogin, checkAccountLocked } from '@/hooks/useLoginTracking';
 
@@ -41,7 +42,7 @@ describe('useAuth', () => {
 
     it('should initialize with loading state', async () => {
         const wrapper = ({ children }: { children: React.ReactNode }) => (
-            <AuthProvider>{children}</AuthProvider>
+            <MemoryRouter><AuthProvider>{children}</AuthProvider></MemoryRouter>
         );
 
         const { result } = renderHook(() => useAuth(), { wrapper });
@@ -70,7 +71,7 @@ describe('useAuth', () => {
         });
 
         const wrapper = ({ children }: { children: React.ReactNode }) => (
-            <AuthProvider>{children}</AuthProvider>
+            <MemoryRouter><AuthProvider>{children}</AuthProvider></MemoryRouter>
         );
 
         const { result } = renderHook(() => useAuth(), { wrapper });
@@ -102,7 +103,7 @@ describe('useAuth', () => {
         });
 
         const wrapper = ({ children }: { children: React.ReactNode }) => (
-            <AuthProvider>{children}</AuthProvider>
+            <MemoryRouter><AuthProvider>{children}</AuthProvider></MemoryRouter>
         );
 
         const { result } = renderHook(() => useAuth(), { wrapper });
@@ -126,7 +127,7 @@ describe('useAuth', () => {
         (checkAccountLocked as any).mockResolvedValue(true);
 
         const wrapper = ({ children }: { children: React.ReactNode }) => (
-            <AuthProvider>{children}</AuthProvider>
+            <MemoryRouter><AuthProvider>{children}</AuthProvider></MemoryRouter>
         );
 
         const { result } = renderHook(() => useAuth(), { wrapper });

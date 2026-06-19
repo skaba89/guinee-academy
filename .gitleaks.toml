@@ -1,0 +1,25 @@
+# Gitleaks configuration — extends default rules with allowlist for
+# CI test fixtures that look like secrets but are intentionally inert.
+
+title = "Guinée Academy gitleaks config"
+
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Allow CI test fixtures and documentation placeholders"
+paths = [
+  '''\.github/workflows/.*\.yml''',
+  '''\.env\.example''',
+  '''\.env\.docker\.example''',
+  '''\.env\.production\.template''',
+  '''backend/tests/.*\.py''',
+  '''backend/scripts/.*\.py''',
+]
+regexes = [
+  # CI test placeholder values used in env vars
+  '''test-secret-key-for-ci-min-32-chars''',
+  '''test-bootstrap-secret-key-for-ci-32chars''',
+  # Generic "CHANGE_ME_*" placeholders in example files
+  '''CHANGE_ME_[a-z_]+''',
+]
