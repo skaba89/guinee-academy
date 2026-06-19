@@ -9,6 +9,7 @@ import math
 
 from app.core.database import get_db
 from app.core.security import get_current_user, require_permission
+from app.core.serialization import to_iso as _to_iso
 from app.utils.audit import log_audit
 
 logger = logging.getLogger(__name__)
@@ -65,12 +66,12 @@ def _row_to_dict(r) -> dict:
         "invoice_id": str(r.invoice_id) if r.invoice_id else None,
         "installment_number": r.installment_number,
         "amount": float(r.amount or 0),
-        "due_date": r.due_date.isoformat() if r.due_date else None,
-        "paid_date": r.paid_date.isoformat() if r.paid_date else None,
+        "due_date": _to_iso(r.due_date),
+        "paid_date": _to_iso(r.paid_date),
         "status": r.status,
         "notes": r.notes,
-        "created_at": r.created_at.isoformat() if r.created_at else None,
-        "updated_at": r.updated_at.isoformat() if r.updated_at else None,
+        "created_at": _to_iso(r.created_at),
+        "updated_at": _to_iso(r.updated_at),
     }
 
 

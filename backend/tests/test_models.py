@@ -589,16 +589,17 @@ class TestGUIDType:
     """Tests for the platform-independent GUID type."""
 
     def test_guid_stores_uuid_as_hex_in_sqlite(self, db_session, tenant_a):
-        """GUID column stores UUID as 32-char hex string in SQLite."""
+        """GUID column stores UUID as a 36-char hyphenated string in SQLite."""
         # The tenant_a fixture already has a UUID id; verify it's stored properly
         result = db_session.execute(
             __import__("sqlalchemy").text("SELECT id FROM tenants WHERE slug = :slug"),
             {"slug": tenant_a.slug},
         ).fetchone()
 
-        # In SQLite, the GUID is stored as a 32-char hex string
+        # In SQLite, the GUID is stored as a 36-char hyphenated UUID string
+        # (matches the CHAR(36) impl in app.models.base.GUID)
         stored_id = result[0]
-        assert len(stored_id) == 32  # hex representation without hyphens
+        assert len(stored_id) == 36  # standard UUID form with hyphens
 
     def test_guid_roundtrip(self, db_session, tenant_a):
         """UUID value survives a write-read roundtrip through GUID type."""
@@ -613,7 +614,8 @@ class TestGUIDType:
 
         test_uuid = uuid.UUID("12345678-1234-5678-1234-567812345678")
         result = guid.process_bind_param(test_uuid, dialect_mock)
-        assert result == "12345678123456781234567812345678"
+        # SQLite stores UUIDs as 36-char hyphenated strings
+        assert result == "12345678-1234-5678-1234-567812345678"
 
     def test_guid_accepts_uuid_string(self, db_engine):
         """GUID process_bind_param handles UUID strings."""
@@ -621,7 +623,8 @@ class TestGUIDType:
         dialect_mock = type("Dialect", (), {"name": "sqlite"})()
 
         result = guid.process_bind_param("12345678-1234-5678-1234-567812345678", dialect_mock)
-        assert result == "12345678123456781234567812345678"
+        # SQLite stores UUIDs as 36-char hyphenated strings
+        assert result == "12345678-1234-5678-1234-567812345678"
 
     def test_guid_accepts_none(self):
         """GUID process_bind_param returns None for None input."""
@@ -666,13 +669,14 @@ class TestGUIDType:
         assert isinstance(guid.impl, CHAR)
 
     def test_guid_sqlite_dialect_uses_char32(self):
-        """GUID uses CHAR(32) type when dialect is sqlite."""
+        """GUID uses CHAR(36) type when dialect is sqlite."""
         from sqlalchemy import CHAR
         guid = GUID()
 
-        # Verify the default impl is CHAR(32) for SQLite-like databases
+        # Verify the default impl is CHAR(36) for SQLite-like databases
+        # (matches the impl = CHAR(36) in app.models.base.GUID)
         assert isinstance(guid.impl, CHAR)
-        assert guid.impl.length == 32
+        assert guid.impl.length == 36
 
 
 # ─── TimestampMixin Tests ───────────────────────────────────────────────────

@@ -13,6 +13,7 @@ from slowapi.util import get_remote_address
 
 from app.core.database import get_db
 from app.core.security import get_current_user, require_permission
+from app.core.serialization import to_iso as _to_iso
 from app.utils.audit import log_audit
 
 limiter = Limiter(key_func=get_remote_address)
@@ -70,7 +71,7 @@ class InvoiceReminderRequest(BaseModel):
 
 # ─── Payment endpoints ────────────────────────────────────────────────────────
 
-@router.get("/payments/")
+@router.get("/")
 def list_payments(
     db: Session = Depends(get_db),
     current_user: dict = Depends(require_permission("payments:read")),
@@ -109,7 +110,7 @@ def list_payments(
     for r in rows:
         items.append({
             "id": str(r.id), "amount": float(r.amount or 0),
-            "payment_date": r.payment_date.isoformat() if r.payment_date else None,
+            "payment_date": _to_iso(r.payment_date),
             "payment_method": r.payment_method, "reference": r.reference,
             "notes": r.notes, "status": r.status, "invoice_id": str(r.invoice_id) if r.invoice_id else None,
             "invoices": {"invoice_number": r.invoice_number} if r.invoice_number else None,
@@ -121,6 +122,56 @@ def list_payments(
 
     return {"items": items, "total": int(total or 0), "page": page, "page_size": page_size,
             "pages": math.ceil(float(total or 0) / page_size) if total and total > 0 else 1}
+
+
+@router.get("/stats/")
+def payment_stats(
+    db: Session = Depends(get_db),
+    current_user: dict = Depends(require_permission("payments:read")),
+):
+    """Aggregate payment statistics for the current tenant."""
+    tenant_id = _get_tenant_id(current_user)
+
+    row = db.execute(text("""
+        SELECT
+            COUNT(*) AS total_payments,
+            COALESCE(SUM(amount), 0) AS total_amount,
+            COUNT(CASE WHEN status = 'COMPLETED' THEN 1 END) AS completed,
+            COUNT(CASE WHEN status = 'PENDING' THEN 1 END) AS pending,
+            COUNT(CASE WHEN status = 'FAILED' THEN 1 END) AS failed
+        FROM payments
+        WHERE tenant_id = :tid
+    """), {"tid": tenant_id}).fetchone()
+
+    inv = db.execute(text("""
+        SELECT
+            COUNT(*) AS total_invoices,
+            COALESCE(SUM(total_amount), 0) AS total_invoiced,
+            COALESCE(SUM(paid_amount), 0) AS total_collected,
+            COUNT(CASE WHEN status = 'UNPAID' THEN 1 END) AS unpaid,
+            COUNT(CASE WHEN status = 'PARTIALLY_PAID' THEN 1 END) AS partial,
+            COUNT(CASE WHEN status = 'PAID' THEN 1 END) AS paid
+        FROM invoices
+        WHERE tenant_id = :tid
+    """), {"tid": tenant_id}).fetchone()
+
+    return {
+        "payments": {
+            "total": int(row.total_payments or 0),
+            "total_amount": float(row.total_amount or 0),
+            "completed": int(row.completed or 0),
+            "pending": int(row.pending or 0),
+            "failed": int(row.failed or 0),
+        },
+        "invoices": {
+            "total": int(inv.total_invoices or 0),
+            "total_invoiced": float(inv.total_invoiced or 0),
+            "total_collected": float(inv.total_collected or 0),
+            "unpaid": int(inv.unpaid or 0),
+            "partial": int(inv.partial or 0),
+            "paid": int(inv.paid or 0),
+        },
+    }
 
 
 @router.post("/register/", status_code=status.HTTP_201_CREATED)
@@ -303,11 +354,11 @@ def list_invoices(
         items.append({
             "id": str(r.id), "invoice_number": r.invoice_number,
             "total_amount": float(r.total_amount or 0), "paid_amount": float(r.paid_amount or 0),
-            "status": r.status, "due_date": r.due_date.isoformat() if r.due_date else None,
-            "issue_date": r.issue_date.isoformat() if r.issue_date else None,
+            "status": r.status, "due_date": _to_iso(r.due_date),
+            "issue_date": _to_iso(r.issue_date),
             "notes": r.notes, "items": r.items,
             "has_payment_plan": r.has_payment_plan, "installments_count": r.installments_count,
-            "created_at": r.created_at.isoformat() if r.created_at else None,
+            "created_at": _to_iso(r.created_at),
             "student_id": str(r.student_id) if r.student_id else None,
             "students": {
                 "first_name": r.first_name, "last_name": r.last_name,
@@ -587,7 +638,7 @@ def list_fees(
         """), {"tenant_id": tenant_id}).fetchall()
         items = [{"id": str(r.id), "name": r.name, "description": r.description,
                   "amount": float(r.amount or 0),
-                  "created_at": r.created_at.isoformat() if r.created_at else None} for r in rows]
+                  "created_at": _to_iso(r.created_at)} for r in rows]
         return {"items": items, "total": len(items)}
     except Exception as e:
         logger.error("list_fees failed: %s", e, exc_info=True)

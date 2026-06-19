@@ -47,10 +47,9 @@ export function UserCreateDialog() {
 
     const generatePassword = () => {
         const chars = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789";
-        let password = "";
-        for (let i = 0; i < 10; i++) {
-            password += chars.charAt(Math.floor(Math.random() * chars.length));
-        }
+        const array = new Uint32Array(10);
+        crypto.getRandomValues(array);
+        const password = Array.from(array).map(x => chars[x % chars.length]).join('');
         setFormData({ ...formData, password });
     };
 

@@ -13,19 +13,23 @@ class TestAnalyticsAuth:
         assert resp.status_code in (401, 403)
 
     def test_overview_requires_auth(self):
-        resp = client.get("/api/v1/analytics/overview/")
+        # Overview was renamed to dashboard-kpis — keep the auth-guard test against the new path.
+        resp = client.get("/api/v1/analytics/dashboard-kpis/")
         assert resp.status_code in (401, 403)
 
     def test_students_stats_requires_auth(self):
-        resp = client.get("/api/v1/analytics/students/")
+        # Students-at-risk is the closest analytics endpoint for student stats.
+        resp = client.get("/api/v1/analytics/students-at-risk/")
         assert resp.status_code in (401, 403)
 
     def test_attendance_stats_requires_auth(self):
-        resp = client.get("/api/v1/analytics/attendance/")
+        # Attendance-trend is the closest analytics endpoint for attendance stats.
+        resp = client.get("/api/v1/analytics/attendance-trend/")
         assert resp.status_code in (401, 403)
 
     def test_export_csv_requires_auth(self):
-        resp = client.get("/api/v1/analytics/export/students/")
+        # Ministry-export CSV is the closest export endpoint.
+        resp = client.get("/api/v1/analytics/ministry-export/csv/")
         assert resp.status_code in (401, 403)
 
 
@@ -35,8 +39,11 @@ class TestMetricsEndpoint:
     def test_metrics_blocked_without_secret(self, monkeypatch):
         """When DEBUG=false and no secret provided, must return 403."""
         import os
+        from app.core.config import settings
         monkeypatch.setenv("DEBUG", "false")
         monkeypatch.delenv("METRICS_SECRET", raising=False)
+        # settings.DEBUG is read at startup; patch it directly so the endpoint sees the new value.
+        monkeypatch.setattr(settings, "DEBUG", False)
         resp = client.get("/metrics/")
         # Either 403 (disabled) or 401/403 (auth required)
         assert resp.status_code in (401, 403)

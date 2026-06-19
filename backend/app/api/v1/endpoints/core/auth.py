@@ -1095,9 +1095,9 @@ def bootstrap_admin(
                 db.execute(
                     sqlalchemy.text(
                         "INSERT INTO user_roles (id, user_id, role, tenant_id, created_at, updated_at) "
-                        "VALUES (:id, :uid, 'SUPER_ADMIN', NULL, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP) ON CONFLICT DO NOTHING"
+                        "VALUES (:id, :uid, 'SUPER_ADMIN', NULL, :now, :now) ON CONFLICT DO NOTHING"
                     ),
-                    {"id": str(_uuid.uuid4()), "uid": admin_id}
+                    {"id": str(_uuid.uuid4()), "uid": admin_id, "now": datetime.utcnow()}
                 )
                 db.commit()
                 steps.append("added SUPER_ADMIN role")
@@ -1107,10 +1107,10 @@ def bootstrap_admin(
             db.execute(
                 sqlalchemy.text(
                     "INSERT INTO users (id, email, username, password_hash, first_name, last_name, "
-                    "is_active, is_superuser, tenant_id, mfa_enabled, must_change_password, created_at, updated_at, is_verified) "
-                    "VALUES (:id, :email, :username, :pw, 'Super', 'Admin', TRUE, TRUE, NULL, FALSE, FALSE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, FALSE)"
+                    "is_active, is_superuser, tenant_id, created_at, updated_at, is_verified, mfa_enabled) "
+                    "VALUES (:id, :email, :username, :pw, 'Super', 'Admin', TRUE, TRUE, NULL, :now, :now, FALSE, FALSE)"
                 ),
-                {"id": admin_id, "email": admin_email, "username": "admin", "pw": hashed_pw}
+                {"id": admin_id, "email": admin_email, "username": "admin", "pw": hashed_pw, "now": datetime.utcnow()}
             )
             db.commit()
             steps.append(f"created admin {admin_email} with id {admin_id}")
@@ -1119,9 +1119,9 @@ def bootstrap_admin(
             db.execute(
                 sqlalchemy.text(
                     "INSERT INTO user_roles (id, user_id, role, tenant_id, created_at, updated_at) "
-                    "VALUES (:id, :uid, 'SUPER_ADMIN', NULL, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP) ON CONFLICT DO NOTHING"
+                    "VALUES (:id, :uid, 'SUPER_ADMIN', NULL, :now, :now) ON CONFLICT DO NOTHING"
                 ),
-                {"id": str(_uuid.uuid4()), "uid": admin_id}
+                {"id": str(_uuid.uuid4()), "uid": admin_id, "now": datetime.utcnow()}
             )
             db.commit()
             steps.append("created SUPER_ADMIN role")

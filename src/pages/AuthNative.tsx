@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
@@ -42,10 +42,14 @@ const AuthNative = () => {
   const { signIn, isLoading } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+
+  // Read optional tenant slug from query params (e.g. ?tenant=myschool)
+  const tenantSlug = searchParams.get("tenant") || undefined;
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -60,7 +64,7 @@ const AuthNative = () => {
 
     setSubmitting(true);
     try {
-      const { error, profileData } = await signIn(email, password);
+      const { error, profileData } = await signIn(email, password, tenantSlug);
       if (error) {
         const msg = error.message || "Identifiants incorrects";
         let description = msg;
@@ -313,7 +317,7 @@ const AuthNative = () => {
               Accueil
             </a>
             <Link
-              to="/inscription"
+              to="/register"
               className="flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl text-xs font-medium text-white transition-all duration-200 hover:opacity-90 shadow-sm bg-gradient-to-r from-indigo-600 to-indigo-700"
             >
               <ArrowRight className="w-3.5 h-3.5" />

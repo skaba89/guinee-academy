@@ -1,6 +1,12 @@
 import logging
 import os
 from contextlib import asynccontextmanager
+
+# NOTE: The bcrypt 5.x / passlib 1.7.4 compatibility shim that used to live
+# here has been removed. We now use bcrypt directly (via app.core.security's
+# _BcryptContext) instead of passlib's CryptContext, eliminating the need for
+# any version-introspection workaround.
+
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
@@ -727,8 +733,8 @@ async def lifespan(app: FastAPI):
                     logger.info("Super admin has NULL password_hash, resetting...")
                 elif admin_password and len(admin_password) >= 8:
                     # Verify current hash matches ADMIN_DEFAULT_PASSWORD
-                    from passlib.context import CryptContext
-                    pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+                    # (uses our bcrypt-based pwd_context — no passlib dependency)
+                    from app.core.security import pwd_context
                     if not pwd_context.verify(admin_password, existing.password_hash):
                         needs_update = True
                         logger.info("Super admin password differs from ADMIN_DEFAULT_PASSWORD, updating...")

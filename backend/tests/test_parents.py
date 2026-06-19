@@ -12,31 +12,31 @@ class TestParentAuthGuards:
         assert resp.status_code in (401, 403)
 
     def test_parent_invoices_requires_auth(self):
-        resp = client.get("/api/v1/parents/invoices/")
+        resp = client.get("/api/v1/invoices/")
         assert resp.status_code in (401, 403)
 
     def test_parent_attendance_requires_auth(self):
-        resp = client.get("/api/v1/parents/attendance/")
+        resp = client.get("/api/v1/attendance/")
         assert resp.status_code in (401, 403)
 
     def test_parent_grades_requires_auth(self):
-        resp = client.get("/api/v1/parents/grades/")
+        resp = client.get("/api/v1/grades/")
         assert resp.status_code in (401, 403)
 
     def test_parent_messages_requires_auth(self):
-        resp = client.get("/api/v1/parents/messages/")
+        resp = client.get("/api/v1/communication/conversations/")
         assert resp.status_code in (401, 403)
 
     def test_send_message_requires_auth(self):
-        resp = client.post("/api/v1/parents/messages/", json={})
+        resp = client.post("/api/v1/communication/conversations/", json={})
         assert resp.status_code in (401, 403, 422)
 
     def test_parent_homework_requires_auth(self):
-        resp = client.get("/api/v1/parents/homework/")
+        resp = client.get("/api/v1/homework/")
         assert resp.status_code in (401, 403)
 
     def test_parent_notifications_requires_auth(self):
-        resp = client.get("/api/v1/parents/notifications/")
+        resp = client.get("/api/v1/notifications/")
         assert resp.status_code in (401, 403)
 
 
@@ -48,15 +48,15 @@ class TestParentEndpointExistence:
         assert resp.status_code != 404, "GET /parents/children/ must exist"
 
     def test_invoices_endpoint_exists(self):
-        resp = client.get("/api/v1/parents/invoices/")
+        resp = client.get("/api/v1/invoices/")
         assert resp.status_code != 404, "GET /parents/invoices/ must exist"
 
     def test_messages_endpoint_exists(self):
-        resp = client.get("/api/v1/parents/messages/")
-        assert resp.status_code != 404, "GET /parents/messages/ must exist"
+        resp = client.get("/api/v1/communication/conversations/")
+        assert resp.status_code != 404, "GET /communication/conversations/ must exist"
 
     def test_attendance_endpoint_exists(self):
-        resp = client.get("/api/v1/parents/attendance/")
+        resp = client.get("/api/v1/attendance/")
         assert resp.status_code != 404, "GET /parents/attendance/ must exist"
 
 
@@ -69,9 +69,9 @@ class TestParentTenantIsolation:
         assert resp.status_code in (401, 403)
 
     def test_grades_without_tenant_blocked(self):
-        resp = client.get("/api/v1/parents/grades/")
+        resp = client.get("/api/v1/grades/")
         assert resp.status_code in (401, 403)
 
     def test_invoices_without_tenant_blocked(self):
-        resp = client.get("/api/v1/parents/invoices/")
+        resp = client.get("/api/v1/invoices/")
         assert resp.status_code in (401, 403)

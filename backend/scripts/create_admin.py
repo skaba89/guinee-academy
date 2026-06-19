@@ -24,7 +24,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from sqlalchemy import create_engine, text
 from sqlalchemy.orm import sessionmaker
-from passlib.context import CryptContext
+import bcrypt
 
 # ---------------------------------------------------------------------------
 # Database connection
@@ -55,7 +55,19 @@ if _IS_SQLITE:
 engine = create_engine(DATABASE_URL, connect_args=connect_args)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+def _hash_password(plain: str) -> str:
+    """Return a bcrypt hash compatible with app/core/security.py._BcryptContext."""
+    return bcrypt.hashpw(plain.encode("utf-8"), bcrypt.gensalt()).decode("utf-8")
+
+
+def _verify_password(plain: str, hashed: str | None) -> bool:
+    """Verify a bcrypt hash; returns False on malformed input."""
+    if not hashed:
+        return False
+    try:
+        return bcrypt.checkpw(plain.encode("utf-8"), hashed.encode("utf-8"))
+    except (ValueError, TypeError):
+        return False
 
 ADMIN_EMAIL = "admin@guinee-academy.local"
 ADMIN_PASSWORD = os.environ.get("ADMIN_PASSWORD")
@@ -94,7 +106,7 @@ def main():
         # 2. Create the SUPER_ADMIN user (NO tenant — platform level)
         # ------------------------------------------------------------------
         admin_id = str(uuid.uuid4())
-        password_hash = pwd_context.hash(ADMIN_PASSWORD)
+        password_hash = _hash_password(ADMIN_PASSWORD)
 
         if _IS_SQLITE:
             db.execute(

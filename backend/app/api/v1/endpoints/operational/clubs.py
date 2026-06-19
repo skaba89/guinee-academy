@@ -52,9 +52,9 @@ def list_clubs(db: Session = Depends(get_db), current_user: dict = Depends(requi
     if not tenant_id:
         return []
     rows = db.execute(text("""
-        SELECT c.*, p.first_name as advisor_first_name, p.last_name as advisor_last_name
+        SELECT c.*, u.first_name as advisor_first_name, u.last_name as advisor_last_name
         FROM clubs c
-        LEFT JOIN profiles p ON p.id = c.advisor_id
+        LEFT JOIN users u ON u.id = c.advisor_id
         WHERE c.tenant_id = :tid
         ORDER BY c.name
     """), {"tid": tenant_id}).fetchall()

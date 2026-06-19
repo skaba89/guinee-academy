@@ -19,6 +19,7 @@ logger = logging.getLogger(__name__)
 
 from app.core.database import get_db
 from app.core.security import get_current_user, require_permission
+from app.core.serialization import to_iso as _to_iso
 
 
 # ─── 3. Enrollments at root (/enrollments/) ───────────────────────────────────
@@ -132,11 +133,11 @@ def list_invoices_alias(
             "id": str(r.id), "invoice_number": r.invoice_number,
             "total_amount": float(r.total_amount or 0), "paid_amount": float(r.paid_amount or 0),
             "status": r.status,
-            "due_date": r.due_date.isoformat() if r.due_date else None,
-            "issue_date": r.issue_date.isoformat() if r.issue_date else None,
+            "due_date": _to_iso(r.due_date),
+            "issue_date": _to_iso(r.issue_date),
             "notes": r.notes, "items": r.items,
             "has_payment_plan": r.has_payment_plan, "installments_count": r.installments_count,
-            "created_at": r.created_at.isoformat() if r.created_at else None,
+            "created_at": _to_iso(r.created_at),
             "student_id": str(r.student_id) if r.student_id else None,
             "students": {
                 "first_name": r.first_name, "last_name": r.last_name,
@@ -936,20 +937,47 @@ def list_all_parents(
     params: dict = {"tenant_id": tenant_id}
     extra = ""
     if search:
-        extra = " AND (p.first_name ILIKE :search OR p.last_name ILIKE :search OR p.email ILIKE :search)"
+        like_op = "LIKE" if settings.is_sqlite else "ILIKE"
+        extra = f" AND (p.first_name {like_op} :search OR p.last_name {like_op} :search OR p.email {like_op} :search)"
         params["search"] = f"%{search}%"
-    rows = db.execute(text(f"""
-        SELECT p.*,
-               COALESCE(
-                   ARRAY_AGG(DISTINCT ps.student_id) FILTER (WHERE ps.student_id IS NOT NULL),
-                   ARRAY[]::uuid[]
-               ) AS student_ids
-        FROM parents p
-        LEFT JOIN parent_students ps ON ps.parent_id = p.id AND ps.tenant_id = p.tenant_id
-        WHERE p.tenant_id = :tenant_id {extra}
-        GROUP BY p.id
-        ORDER BY p.last_name, p.first_name
-    """), params).mappings().all()
+
+    if settings.is_sqlite:
+        # SQLite: GROUP_CONCAT subquery (no ARRAY_AGG/FILTER/ARRAY[]::uuid[])
+        sql = f"""
+            SELECT p.*,
+                   COALESCE(
+                       (SELECT GROUP_CONCAT(ps2.student_id, ',')
+                        FROM parent_students ps2
+                        WHERE ps2.parent_id = p.id AND ps2.tenant_id = p.tenant_id),
+                       ''
+                   ) AS student_ids
+            FROM parents p
+            WHERE p.tenant_id = :tenant_id {extra}
+            ORDER BY p.last_name, p.first_name
+        """
+    else:
+        # PostgreSQL: ARRAY_AGG + FILTER + ARRAY[]::uuid[]
+        sql = f"""
+            SELECT p.*,
+                   COALESCE(
+                       ARRAY_AGG(DISTINCT ps.student_id) FILTER (WHERE ps.student_id IS NOT NULL),
+                       ARRAY[]::uuid[]
+                   ) AS student_ids
+            FROM parents p
+            LEFT JOIN parent_students ps ON ps.parent_id = p.id AND ps.tenant_id = p.tenant_id
+            WHERE p.tenant_id = :tenant_id {extra}
+            GROUP BY p.id
+            ORDER BY p.last_name, p.first_name
+        """
+    rows = db.execute(text(sql), params).mappings().all()
+
+    # Normalize: PostgreSQL returns list, SQLite returns comma-separated string
+    # RowMapping is immutable, so convert to dict first
+    if settings.is_sqlite:
+        rows = [dict(r) for r in rows]
+        for r in rows:
+            if isinstance(r.get("student_ids"), str):
+                r["student_ids"] = [s for s in r["student_ids"].split(",") if s] if r["student_ids"] else []
     return rows
 
 

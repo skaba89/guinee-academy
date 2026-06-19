@@ -8,6 +8,20 @@ import userEvent from "@testing-library/user-event";
 import { GradeCard } from "@/features/grades/components/GradeCard";
 import type { Grade } from "@/features/grades/types/grades";
 
+// ── Mock TenantContext so useTenant / useTerminology / useStudentLabel
+// don't blow up with "useTenant must be used within a TenantProvider".
+vi.mock("@/contexts/TenantContext", () => ({
+  useTenant: () => ({
+    currentTenant: null,
+    tenant: { type: "high_school" } as any,
+    allTenants: [],
+    setCurrentTenant: () => {},
+    switchTenant: async () => {},
+    isLoading: false,
+    fetchTenantBySlug: async () => null,
+  }),
+}));
+
 describe("GradeCard Component", () => {
   const mockGrade: Grade = {
     id: "grade-1",
@@ -82,12 +96,16 @@ describe("GradeCard Component", () => {
     const user = userEvent.setup();
     const onDelete = vi.fn();
 
-    render(
+    const { container } = render(
       <GradeCard grade={mockGrade} onDelete={onDelete} />
     );
 
-    const deleteButton = screen.getByRole("button", { name: /Trash/ });
-    await user.click(deleteButton);
+    // The delete button has no accessible name (just a Trash2 SVG icon),
+    // so we target it via its red-coloured class which is unique to the
+    // delete action.
+    const deleteButton = container.querySelector("button.text-red-600") as HTMLButtonElement;
+    expect(deleteButton).toBeTruthy();
+    await user.click(deleteButton!);
 
     expect(onDelete).toHaveBeenCalledWith(mockGrade.id);
   });

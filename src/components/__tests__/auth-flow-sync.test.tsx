@@ -43,10 +43,37 @@ vi.mock("@/components/ui/button", () => ({
   ),
 }));
 
-vi.mock("lucide-react", () => ({
-  GraduationCap: () => <span>GraduationCap</span>,
-  Shield: () => <span>Shield</span>,
-}));
+vi.mock("lucide-react", () => {
+  // Stub every lucide icon used by Auth/AuthNative as a tiny span so the
+  // component tree renders without trying to import the real SVG icons.
+  const stub = (name: string) => () => <span data-testid={`icon-${name}`} />;
+  return new Proxy(
+    {
+      GraduationCap: stub("GraduationCap"),
+      Shield: stub("Shield"),
+      Users: stub("Users"),
+      BookOpen: stub("BookOpen"),
+      Lock: stub("Lock"),
+      Mail: stub("Mail"),
+      Eye: stub("Eye"),
+      EyeOff: stub("EyeOff"),
+      Loader2: stub("Loader2"),
+      LogIn: stub("LogIn"),
+      AlertCircle: stub("AlertCircle"),
+      CheckCircle: stub("CheckCircle"),
+      ArrowRight: stub("ArrowRight"),
+    },
+    {
+      get: (target, prop: string) => {
+        if (prop in target) {
+          return (target as any)[prop];
+        }
+        // Any other icon requested: return a generic stub.
+        return stub(prop);
+      },
+    }
+  );
+});
 
 vi.mock("@/stores", () => ({
   useAppStore: () => ({

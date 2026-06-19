@@ -52,6 +52,15 @@ def get_test_client():
     app.router.lifespan_context = _noop_lifespan
     client = TestClient(app, raise_server_exceptions=False)
     client.__enter__()
+    # Ensure essential tables exist in test.db so login flow can query them.
+    # (Lifespan is mocked, so the normal table-creation step is skipped.)
+    try:
+        from app.models.base import Base
+        from app.core.database import engine
+        Base.metadata.create_all(bind=engine, checkfirst=True)
+    except Exception as e:
+        # Don't fail tests if table creation fails — some tests don't need DB.
+        print(f"[conftest] Warning: could not create tables in test DB: {e}")
     return client
 
 

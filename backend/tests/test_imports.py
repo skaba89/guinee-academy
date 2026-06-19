@@ -125,6 +125,10 @@ class TestRegistrationGenerator:
 
     def test_skips_existing(self):
         from app.api.v1.endpoints.core.imports import _generate_registration
-        existing = {"ETU000001", "ETU000002"}
+        # _generate_registration mutates the `existing` set (adds the generated
+        # number to it before returning). Capture the original set so the
+        # assertion actually checks that the new number was not pre-existing.
+        original = {"ETU000001", "ETU000002"}
+        existing = set(original)
         num = _generate_registration("t", existing)
-        assert num not in existing
+        assert num not in original, f"Generated {num} collided with existing set"

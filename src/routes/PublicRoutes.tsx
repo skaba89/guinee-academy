@@ -83,6 +83,7 @@ export const PublicRoutes = () => {
 
             {/* Self-service school registration */}
             <Route path="/inscription" element={<Register />} />
+            <Route path="/register" element={<Register />} />
 
             {/* Bootstrap — initial super admin setup */}
             <Route path="/bootstrap" element={<Bootstrap />} />

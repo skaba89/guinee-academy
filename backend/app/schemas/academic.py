@@ -1,5 +1,5 @@
 from typing import Optional, List
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, field_validator
 from uuid import UUID
 from datetime import date, datetime
 
@@ -112,12 +112,23 @@ class Level(LevelBase):
 class SubjectBase(BaseModel):
     name: str
     code: Optional[str] = None
-    coefficient: float = 1.0
-    ects: float = 0
-    cm_hours: int = 0
-    td_hours: int = 0
-    tp_hours: int = 0
+    coefficient: Optional[float] = 1.0
+    ects: Optional[float] = 0
+    cm_hours: Optional[int] = 0
+    td_hours: Optional[int] = 0
+    tp_hours: Optional[int] = 0
     description: Optional[str] = None
+
+    @field_validator('coefficient', 'ects', 'cm_hours', 'td_hours', 'tp_hours', mode='before')
+    @classmethod
+    def _none_to_default(cls, v):
+        """Treat NULL DB values as the schema default (0 / 1.0)."""
+        return 0 if v is None else v
+
+    @field_validator('coefficient', mode='after')
+    @classmethod
+    def _coerce_coefficient(cls, v):
+        return 1.0 if (v is None or v == 0) else v
 
 class SubjectCreate(SubjectBase):
     department_ids: Optional[List[UUID]] = None

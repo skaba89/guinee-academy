@@ -335,73 +335,36 @@ class TestJWTVerification:
 class TestPasswordHashing:
     """Tests for password hashing and verification.
 
-    Note: passlib 1.7.4 is incompatible with bcrypt>=4.1 (the version
-    check fails and password hashing raises ValueError). These tests
-    verify the underlying bcrypt behavior directly when passlib is
-    unavailable, and test the app's wrapper functions when passlib
-    is compatible.
+    The app uses a custom _BcryptContext wrapper around bcrypt directly
+    (see app/core/security.py). These tests exercise the app's public
+    hashing API end-to-end.
     """
-
-    @pytest.fixture(autouse=True)
-    def _check_passlib_compat(self):
-        """Skip tests using passlib if bcrypt>=4.1 incompatibility exists."""
-        try:
-            from passlib.context import CryptContext
-            ctx = CryptContext(schemes=["bcrypt"], deprecated="auto")
-            ctx.hash("test")
-            self._passlib_ok = True
-        except (ValueError, AttributeError):
-            self._passlib_ok = False
 
     def test_hash_and_verify_correct_password(self):
         """verify_password returns True for correct password."""
-        import bcrypt
-        if self._passlib_ok:
-            from app.core.security import get_password_hash, verify_password
-            password = "SecP@ss1"
-            hashed = get_password_hash(password)
-            assert verify_password(password, hashed) is True
-        else:
-            # Test direct bcrypt behavior
-            password = b"SecP@ss1"
-            hashed = bcrypt.hashpw(password, bcrypt.gensalt())
-            assert bcrypt.checkpw(password, hashed) is True
+        from app.core.security import get_password_hash, verify_password
+        password = "SecP@ss1"
+        hashed = get_password_hash(password)
+        assert verify_password(password, hashed) is True
 
     def test_hash_and_verify_wrong_password(self):
         """verify_password returns False for incorrect password."""
-        import bcrypt
-        if self._passlib_ok:
-            from app.core.security import get_password_hash, verify_password
-            hashed = get_password_hash("correct_pw")
-            assert verify_password("wrong_pass", hashed) is False
-        else:
-            password = b"correct_pw"
-            hashed = bcrypt.hashpw(password, bcrypt.gensalt())
-            assert bcrypt.checkpw(b"wrong_pass", hashed) is False
+        from app.core.security import get_password_hash, verify_password
+        hashed = get_password_hash("correct_pw")
+        assert verify_password("wrong_pass", hashed) is False
 
     def test_hash_is_different_from_plain(self):
         """Hashed password is not the same as the plain text."""
-        import bcrypt
-        if self._passlib_ok:
-            from app.core.security import get_password_hash
-            password = "plainpw123"
-            hashed = get_password_hash(password)
-            assert hashed != password
-        else:
-            password = b"plainpw123"
-            hashed = bcrypt.hashpw(password, bcrypt.gensalt())
-            assert hashed.decode() != "plainpw123"
+        from app.core.security import get_password_hash
+        password = "plainpw123"
+        hashed = get_password_hash(password)
+        assert hashed != password
 
     def test_hash_is_bcrypt_format(self):
         """Hashed password follows bcrypt format ($2b$...)."""
-        import bcrypt
-        if self._passlib_ok:
-            from app.core.security import get_password_hash
-            hashed = get_password_hash("test_pw")
-            assert hashed.startswith("$2b$")
-        else:
-            hashed = bcrypt.hashpw(b"test_pw", bcrypt.gensalt())
-            assert hashed.decode().startswith("$2b$")
+        from app.core.security import get_password_hash
+        hashed = get_password_hash("test_pw")
+        assert hashed.startswith("$2b$")
 
     def test_verify_password_with_none_hash(self):
         """verify_password returns False when hashed_password is None."""
@@ -416,29 +379,17 @@ class TestPasswordHashing:
 
     def test_different_passwords_produce_different_hashes(self):
         """Two different passwords should produce different hashes."""
-        import bcrypt
-        if self._passlib_ok:
-            from app.core.security import get_password_hash
-            hash1 = get_password_hash("pw_one")
-            hash2 = get_password_hash("pw_two")
-            assert hash1 != hash2
-        else:
-            hash1 = bcrypt.hashpw(b"pw_one", bcrypt.gensalt())
-            hash2 = bcrypt.hashpw(b"pw_two", bcrypt.gensalt())
-            assert hash1 != hash2
+        from app.core.security import get_password_hash
+        hash1 = get_password_hash("pw_one")
+        hash2 = get_password_hash("pw_two")
+        assert hash1 != hash2
 
     def test_same_password_produces_different_hashes(self):
         """Same password produces different hashes (bcrypt salting)."""
-        import bcrypt
-        if self._passlib_ok:
-            from app.core.security import get_password_hash
-            hash1 = get_password_hash("same_pw")
-            hash2 = get_password_hash("same_pw")
-            assert hash1 != hash2
-        else:
-            hash1 = bcrypt.hashpw(b"same_pw", bcrypt.gensalt())
-            hash2 = bcrypt.hashpw(b"same_pw", bcrypt.gensalt())
-            assert hash1 != hash2
+        from app.core.security import get_password_hash
+        hash1 = get_password_hash("same_pw")
+        hash2 = get_password_hash("same_pw")
+        assert hash1 != hash2
 
     @pytest.mark.slow
     def test_password_hashing_timing(self):
@@ -481,15 +432,14 @@ class TestPasswordHashing:
         assert bcrypt.checkpw(password, hashed) is True
 
     def test_password_over_72_bytes_behavior(self):
-        """Passwords longer than 72 bytes: bcrypt<4.1 truncates silently (no error).
+        """Passwords longer than 72 bytes: bcrypt silently truncates at 72 bytes.
 
-        SECURITY NOTE: Our app uses bcrypt<4.1 via passlib which silently truncates
-        passwords at 72 bytes. The test_password_hashing_timing test already verifies
-        that our app-level hashing works correctly for all password lengths.
-        For stricter handling, consider pre-hashing with SHA-256 before bcrypt.
+        SECURITY NOTE: Our app's _BcryptContext wraps bcrypt directly, which
+        silently truncates passwords at 72 bytes. For stricter handling,
+        consider pre-hashing with SHA-256 before bcrypt.
         """
         import bcrypt
-        # bcrypt 4.0.x silently truncates at 72 bytes — no ValueError
+        # bcrypt 4.x silently truncates at 72 bytes — no ValueError
         result = bcrypt.hashpw(b"A" * 73, bcrypt.gensalt())
         assert result is not None  # Truncation happens, but no error raised
 

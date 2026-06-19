@@ -46,9 +46,9 @@ def list_surveys(db: Session = Depends(get_db), current_user: dict = Depends(req
     if not tenant_id:
         return []
     rows = db.execute(text("""
-        SELECT s.*, p.first_name, p.last_name
+        SELECT s.*, u.first_name, u.last_name
         FROM surveys s
-        LEFT JOIN profiles p ON p.id = s.created_by
+        LEFT JOIN users u ON u.id = s.created_by
         WHERE s.tenant_id = :tid
         ORDER BY s.created_at DESC
     """), {"tid": tenant_id}).mappings().all()

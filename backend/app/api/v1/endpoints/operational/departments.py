@@ -9,9 +9,25 @@ import datetime
 
 from app.core.database import get_db
 from app.core.security import get_current_user, require_permission
+from app.core.config import settings
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
+
+
+def _any_in(column, param_name, values):
+    # Generate database-agnostic SQL for matching a column against a list.
+    # Returns (sql_fragment, params_dict).
+    # PostgreSQL: column = ANY(:param_name) with list param
+    # SQLite: column IN (:param_0, :param_1, ...) with individual params
+    if not values:
+        return "1=0", {}
+    if settings.is_sqlite:
+        placeholders = ", ".join([":" + param_name + "_" + str(i) for i in range(len(values))])
+        params = {param_name + "_" + str(i): v for i, v in enumerate(values)}
+        return column + " IN (" + placeholders + ")", params
+    else:
+        return column + " = ANY(:" + param_name + ")", {param_name: values}
 
 
 # ─── Schemas ──────────────────────────────────────────────────────────────────
@@ -33,22 +49,19 @@ class ExamCreate(BaseModel):
 # ─── Helper: resolve department for current user ──────────────────────────────
 
 def _get_user_department(db: Session, user_id: str, tenant_id: str) -> Optional[dict]:
-    """Find the department for the current user (head or member)."""
+    """Find the department for the current user (head only — no separate members table).
+
+    NOTE: The schema does not declare a `department_members` table; users are
+    linked to a department only via `departments.head_id`. We intentionally do
+    NOT query `department_members` here — doing so raised
+    `sqlite3.OperationalError: no such table: department_members` on SQLite.
+    """
     row = db.execute(text("""
         SELECT d.id, d.name, d.code, d.description
         FROM departments d
         WHERE d.tenant_id = :tenant_id AND d.head_id = :user_id
         LIMIT 1
     """), {"tenant_id": tenant_id, "user_id": user_id}).mappings().first()
-
-    if not row:
-        row = db.execute(text("""
-            SELECT d.id, d.name, d.code, d.description
-            FROM department_members dm
-            JOIN departments d ON d.id = dm.department_id
-            WHERE dm.tenant_id = :tenant_id AND dm.user_id = :user_id
-            LIMIT 1
-        """), {"tenant_id": tenant_id, "user_id": user_id}).mappings().first()
 
     return dict(row) if row else None
 
@@ -125,41 +138,44 @@ def department_dashboard(
         recent_activities = []
 
         if class_ids:
-            params_cls = {"tenant_id": tenant_id, "class_ids": class_ids}
+            cid_sql, cid_params = _any_in("e.class_id", "dcids", class_ids)
+            tid_sql, tid_params = _any_in("ta.class_id", "tcids", class_ids)
+            aid_sql, aid_params = _any_in("class_id", "acids", class_ids)
 
             # Students
-            stats["totalStudents"] = db.execute(text("""
+            stats["totalStudents"] = db.execute(text(f"""
                 SELECT COUNT(DISTINCT e.student_id) FROM enrollments e
-                WHERE e.class_id = ANY(:class_ids) AND e.status = 'active'
-            """), params_cls).scalar() or 0
+                WHERE {cid_sql} AND e.status = 'active'
+            """), {**cid_params}).scalar() or 0
 
             # Teachers
-            stats["totalTeachers"] = db.execute(text("""
+            stats["totalTeachers"] = db.execute(text(f"""
                 SELECT COUNT(DISTINCT ta.teacher_id) FROM teacher_assignments ta
-                WHERE ta.class_id = ANY(:class_ids) AND ta.tenant_id = :tenant_id
-            """), params_cls).scalar() or 0
+                WHERE {tid_sql} AND ta.tenant_id = :tenant_id
+            """), {**tid_params, "tenant_id": tenant_id}).scalar() or 0
 
             # Subjects
-            stats["totalSubjects"] = db.execute(text("""
+            stats["totalSubjects"] = db.execute(text(f"""
                 SELECT COUNT(DISTINCT ta.subject_id) FROM teacher_assignments ta
-                WHERE ta.class_id = ANY(:class_ids) AND ta.tenant_id = :tenant_id
-            """), params_cls).scalar() or 0
+                WHERE {tid_sql} AND ta.tenant_id = :tenant_id
+            """), {**tid_params, "tenant_id": tenant_id}).scalar() or 0
 
             # Attendance (last 30 days)
             thirty_ago = (datetime.date.today() - datetime.timedelta(days=30)).isoformat()
-            att = db.execute(text("""
+            att = db.execute(text(f"""
                 SELECT status FROM attendance
-                WHERE class_id = ANY(:class_ids) AND date >= :since
-            """), {"class_ids": class_ids, "since": thirty_ago}).fetchall()
+                WHERE {aid_sql} AND date >= :since
+            """), {**aid_params, "since": thirty_ago}).fetchall()
             total_att = len(att)
             present = sum(1 for a in att if a.status == "PRESENT")
             stats["attendanceRate"] = round((present / total_att) * 100) if total_att else 0
 
             # Upcoming exams
+            today_str = datetime.date.today().isoformat()
             stats["upcomingExams"] = db.execute(text(f"""
                 SELECT COUNT(*) FROM exams
-                WHERE department_id = :dept_id AND exam_date >= CURRENT_DATE AND status = 'scheduled'
-            """), {"dept_id": department_id}).scalar() or 0
+                WHERE department_id = :dept_id AND exam_date >= :today AND status = 'scheduled'
+            """), {"dept_id": department_id, "today": today_str}).scalar() or 0
 
             # Recent grades (last 5)
             grades = db.execute(text(f"""
@@ -262,13 +278,15 @@ def department_students(
             return {"students": [], "classrooms": []}
 
         # Classrooms list for filter dropdown
-        classrooms = db.execute(text("""
+        cr_sql, cr_params = _any_in("id", "crids", class_ids)
+        classrooms = db.execute(text(f"""
             SELECT id, name FROM classrooms
-            WHERE id = ANY(:ids) ORDER BY name
-        """), {"ids": class_ids}).fetchall()
+            WHERE {cr_sql} ORDER BY name
+        """), cr_params).fetchall()
 
-        filters = "AND e.class_id = ANY(:class_ids)"
-        params: dict = {"tenant_id": tenant_id, "class_ids": class_ids}
+        cid_filter_sql, cid_filter_params = _any_in("e.class_id", "scids", class_ids)
+        filters = f"AND {cid_filter_sql}"
+        params: dict = {"tenant_id": tenant_id, **cid_filter_params}
 
         if classroom_id:
             filters = "AND e.class_id = :classroom_id"
@@ -276,7 +294,7 @@ def department_students(
 
         search_filter = ""
         if search:
-            search_filter = " AND (s.first_name ILIKE :search OR s.last_name ILIKE :search OR s.registration_number ILIKE :search)"
+            search_filter = " AND (LOWER(s.first_name) LIKE LOWER(:search) OR LOWER(s.last_name) LIKE LOWER(:search) OR LOWER(s.registration_number) LIKE LOWER(:search))"
             params["search"] = f"%{search}%"
 
         rows = db.execute(text(f"""
@@ -331,32 +349,52 @@ def department_teachers(
         if not class_ids:
             return {"teachers": [], "department": dept}
 
-        rows = db.execute(text("""
-            SELECT DISTINCT
-                u.id, u.first_name, u.last_name, u.email, u.phone, u.avatar_url,
-                array_agg(DISTINCT sub.name) FILTER (WHERE sub.name IS NOT NULL) AS subjects,
-                array_agg(DISTINCT c.name) FILTER (WHERE c.name IS NOT NULL) AS classrooms,
-                COUNT(DISTINCT ta.id) AS assignment_count
-            FROM teacher_assignments ta
-            JOIN users u ON u.id = ta.teacher_id
-            LEFT JOIN subjects sub ON sub.id = ta.subject_id
-            LEFT JOIN classrooms c ON c.id = ta.class_id
-            WHERE ta.class_id = ANY(:class_ids) AND ta.tenant_id = :tenant_id
-            GROUP BY u.id, u.first_name, u.last_name, u.email, u.phone, u.avatar_url
-            ORDER BY u.last_name
-        """), {"class_ids": class_ids, "tenant_id": tenant_id}).fetchall()
+        class_filter_sql, class_filter_params = _any_in("ta.class_id", "cids", class_ids)
+        if settings.is_sqlite:
+            rows = db.execute(text(f"""
+                SELECT DISTINCT
+                    u.id, u.first_name, u.last_name, u.email, u.phone, u.avatar_url,
+                    (SELECT GROUP_CONCAT(DISTINCT sub2.name, ',') FROM subjects sub2
+                     JOIN teacher_assignments ta2 ON ta2.subject_id = sub2.id
+                     WHERE ta2.teacher_id = u.id AND ta2.tenant_id = :tenant_id) AS subjects,
+                    (SELECT GROUP_CONCAT(DISTINCT c2.name, ',') FROM classrooms c2
+                     WHERE c2.id IN (SELECT ta3.class_id FROM teacher_assignments ta3
+                                     WHERE ta3.teacher_id = u.id AND ta3.tenant_id = :tenant_id)) AS classrooms,
+                    COUNT(DISTINCT ta.id) AS assignment_count
+                FROM teacher_assignments ta
+                JOIN users u ON u.id = ta.teacher_id
+                WHERE {class_filter_sql} AND ta.tenant_id = :tenant_id
+                GROUP BY u.id, u.first_name, u.last_name, u.email, u.phone, u.avatar_url
+                ORDER BY u.last_name
+            """), {**class_filter_params, "tenant_id": tenant_id}).fetchall()
+        else:
+            rows = db.execute(text(f"""
+                SELECT DISTINCT
+                    u.id, u.first_name, u.last_name, u.email, u.phone, u.avatar_url,
+                    array_agg(DISTINCT sub.name) FILTER (WHERE sub.name IS NOT NULL) AS subjects,
+                    array_agg(DISTINCT c.name) FILTER (WHERE c.name IS NOT NULL) AS classrooms,
+                    COUNT(DISTINCT ta.id) AS assignment_count
+                FROM teacher_assignments ta
+                JOIN users u ON u.id = ta.teacher_id
+                LEFT JOIN subjects sub ON sub.id = ta.subject_id
+                LEFT JOIN classrooms c ON c.id = ta.class_id
+                WHERE {class_filter_sql} AND ta.tenant_id = :tenant_id
+                GROUP BY u.id, u.first_name, u.last_name, u.email, u.phone, u.avatar_url
+                ORDER BY u.last_name
+            """), {**class_filter_params, "tenant_id": tenant_id}).fetchall()
 
         # Hours for current month
         start_month = datetime.date.today().replace(day=1).isoformat()
         end_month = (datetime.date.today().replace(day=28) + datetime.timedelta(days=4)).replace(day=1) - datetime.timedelta(days=1)
 
-        hours_rows = db.execute(text("""
+        hours_filter_sql, hours_filter_params = _any_in("class_id", "hcids", class_ids)
+        hours_rows = db.execute(text(f"""
             SELECT teacher_id, SUM(hours_worked) AS total_hours
             FROM teacher_work_hours
-            WHERE class_id = ANY(:class_ids) AND tenant_id = :tenant_id
+            WHERE {hours_filter_sql} AND tenant_id = :tenant_id
             AND work_date BETWEEN :start AND :end
             GROUP BY teacher_id
-        """), {"class_ids": class_ids, "tenant_id": tenant_id,
+        """), {**hours_filter_params, "tenant_id": tenant_id,
                "start": start_month, "end": end_month.isoformat()}).fetchall()
 
         hours_map = {str(h.teacher_id): float(h.total_hours or 0) for h in hours_rows}
@@ -366,8 +404,8 @@ def department_teachers(
             "teachers": [{
                 "id": str(r.id), "first_name": r.first_name, "last_name": r.last_name,
                 "email": r.email, "phone": r.phone, "avatar_url": r.avatar_url,
-                "subjects": list(r.subjects or []),
-                "classrooms_names": list(r.classrooms or []),
+                "subjects": [x for x in (r.subjects.split(",") if isinstance(r.subjects, str) else (r.subjects or [])) if x],
+                "classrooms_names": [x for x in (r.classrooms.split(",") if isinstance(r.classrooms, str) else (r.classrooms or [])) if x],
                 "assignment_count": r.assignment_count,
                 "hours_this_month": hours_map.get(str(r.id), 0.0),
             } for r in rows]
@@ -415,9 +453,10 @@ def department_attendance(
             next_month = (today.replace(day=28) + datetime.timedelta(days=4))
             end = next_month.replace(day=1) - datetime.timedelta(days=1)
 
-        classrooms = db.execute(text("""
-            SELECT id, name FROM classrooms WHERE id = ANY(:ids) ORDER BY name
-        """), {"ids": class_ids}).fetchall()
+        cr_sql2, cr_params2 = _any_in("id", "atcrids", class_ids)
+        classrooms = db.execute(text(f"""
+            SELECT id, name FROM classrooms WHERE {cr_sql2} ORDER BY name
+        """), cr_params2).fetchall()
 
         params: dict = {
             "tenant_id": tenant_id, "start": start.isoformat(), "end": end.isoformat()
@@ -427,8 +466,9 @@ def department_attendance(
             class_filter = "AND a.class_id = :classroom_id"
             params["classroom_id"] = classroom_id
         else:
-            class_filter = "AND a.class_id = ANY(:class_ids)"
-            params["class_ids"] = class_ids
+            ac_sql, ac_params = _any_in("a.class_id", "atcids", class_ids)
+            class_filter = f"AND {ac_sql}"
+            params.update(ac_params)
 
         rows = db.execute(text(f"""
             SELECT a.id, a.date, a.status, a.notes,
@@ -511,10 +551,11 @@ def department_exams(
             ORDER BY e.exam_date ASC
         """), {"tenant_id": tenant_id, "dept_id": dept["id"]}).fetchall()
 
-        classrooms = db.execute(text("""
+        cr_sql3, cr_params3 = _any_in("c.id", "excrids", class_ids)
+        classrooms = db.execute(text(f"""
             SELECT c.id, c.name FROM classrooms c
-            WHERE c.id = ANY(:ids) ORDER BY c.name
-        """), {"ids": class_ids}).fetchall() if class_ids else []
+            WHERE {cr_sql3} ORDER BY c.name
+        """), cr_params3).fetchall() if class_ids else []
 
         subjects = db.execute(text("""
             SELECT id, name FROM subjects WHERE tenant_id = :tenant_id ORDER BY name
@@ -700,7 +741,8 @@ def department_schedule(
         if not class_ids:
             return {"department": dept, "schedule": []}
 
-        rows = db.execute(text("""
+        sc_sql, sc_params = _any_in("s.class_id", "schcids", class_ids)
+        rows = db.execute(text(f"""
             SELECT s.id, s.day_of_week, s.start_time, s.end_time,
                    sub.name AS subject_name,
                    u.first_name AS teacher_first, u.last_name AS teacher_last,
@@ -709,9 +751,9 @@ def department_schedule(
             LEFT JOIN subjects sub ON sub.id = s.subject_id
             LEFT JOIN users u ON u.id = s.teacher_id
             LEFT JOIN classrooms c ON c.id = s.class_id
-            WHERE s.class_id = ANY(:class_ids) AND s.tenant_id = :tenant_id
+            WHERE {sc_sql} AND s.tenant_id = :tenant_id
             ORDER BY s.day_of_week, s.start_time
-        """), {"class_ids": class_ids, "tenant_id": tenant_id}).fetchall()
+        """), {**sc_params, "tenant_id": tenant_id}).fetchall()
 
         return {
             "department": dept,
@@ -756,8 +798,9 @@ def department_grades_report(
         if not class_ids:
             return {"department": dept, "grades": []}
 
-        params: dict = {"tenant_id": tenant_id, "class_ids": class_ids}
-        filters = "AND e.class_id = ANY(:class_ids)"
+        gr_sql, gr_params = _any_in("e.class_id", "grcids", class_ids)
+        params: dict = {"tenant_id": tenant_id, **gr_params}
+        filters = f"AND {gr_sql}"
 
         if classroom_id:
             filters = "AND e.class_id = :classroom_id"
@@ -782,7 +825,7 @@ def department_grades_report(
             LEFT JOIN assessments a ON a.id = g.assessment_id {term_filter}
             WHERE e.tenant_id = :tenant_id {filters}
             GROUP BY s.id, s.first_name, s.last_name, s.registration_number, c.name
-            ORDER BY avg_score DESC NULLS LAST
+            ORDER BY CASE WHEN avg_score IS NULL THEN 1 ELSE 0 END, avg_score DESC
         """), params).fetchall()
 
         return {

@@ -52,7 +52,9 @@ def test_root_returns_200():
 
 
 def test_root_has_message():
-    """L'endpoint racine doit retourner un message."""
+    """L'endpoint racine doit retourner un message d'identification du service."""
     response = client.get("/")
     data = response.json()
-    assert "message" in data
+    # The root payload uses "service" as the identifier key (not "message").
+    assert "service" in data
+    assert "Guinée Academy" in data["service"]

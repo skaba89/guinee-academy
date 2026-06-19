@@ -38,12 +38,31 @@ global.IntersectionObserver = class IntersectionObserver {
   unobserve() {}
 } as any;
 
-// Mock localStorage
+// Mock localStorage — backed by an in-memory Map so getItem/setItem/removeItem
+// behave like the real Web Storage API (getItem returns null for missing keys,
+// setItem persists across calls, removeItem deletes the key).
+const _lsStore = new Map<string, string>();
+
 const localStorageMock = {
-  getItem: vi.fn(),
-  setItem: vi.fn(),
-  removeItem: vi.fn(),
-  clear: vi.fn(),
+  getItem: vi.fn((key: string): string | null => {
+    return _lsStore.has(key) ? _lsStore.get(key)! : null;
+  }),
+  setItem: vi.fn((key: string, value: string): void => {
+    _lsStore.set(key, String(value));
+  }),
+  removeItem: vi.fn((key: string): void => {
+    _lsStore.delete(key);
+  }),
+  clear: vi.fn((): void => {
+    _lsStore.clear();
+  }),
+  key: vi.fn((index: number): string | null => {
+    const keys = Array.from(_lsStore.keys());
+    return index >= 0 && index < keys.length ? keys[index] : null;
+  }),
+  get length(): number {
+    return _lsStore.size;
+  },
 };
 
 Object.defineProperty(window, "localStorage", {

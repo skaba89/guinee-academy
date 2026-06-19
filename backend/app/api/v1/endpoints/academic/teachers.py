@@ -73,7 +73,7 @@ def list_teachers(
                s.name as subject_name
         FROM teacher_assignments ta
         JOIN users u ON u.id = ta.teacher_id
-        LEFT JOIN classrooms c ON c.id = ta.class_id
+        LEFT JOIN classes c ON c.id = ta.class_id
         LEFT JOIN subjects s ON s.id = ta.subject_id
         WHERE {where_sql}
         ORDER BY u.last_name, u.first_name
@@ -222,7 +222,7 @@ def get_teacher_dashboard(
                c.id as class_id, c.name as class_name,
                s.id as subject_id, s.name as subject_name
         FROM teacher_assignments ta
-        LEFT JOIN classrooms c ON ta.class_id = c.id
+        LEFT JOIN classes c ON ta.class_id = c.id
         LEFT JOIN subjects s ON ta.subject_id = s.id
         WHERE ta.teacher_id = :teacher_id AND ta.tenant_id = :tenant_id
     """), {"teacher_id": teacher_id, "tenant_id": tenant_id}).mappings().all()]
@@ -244,7 +244,7 @@ def get_teacher_dashboard(
                c.id as class_id, c.name as class_name
         FROM schedule sh
         LEFT JOIN subjects s ON sh.subject_id = s.id
-        LEFT JOIN classrooms c ON sh.class_id = c.id
+        LEFT JOIN classes c ON sh.class_id = c.id
         WHERE sh.teacher_id = :teacher_id AND sh.tenant_id = :tenant_id
         ORDER BY sh.day_of_week, sh.start_time
     """), {"teacher_id": teacher_id, "tenant_id": tenant_id}).mappings().all()]

@@ -11,6 +11,7 @@ from sqlalchemy import func, case, and_, text
 
 from app.core.database import get_db
 from app.core.security import get_current_user, require_permission
+from app.core.config import settings
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
@@ -117,9 +118,17 @@ def get_revenue_trend(
     try:
         start_date = (datetime.now(timezone.utc) - timedelta(days=months * 30)).strftime("%Y-%m-%d")
 
-        sql = text("""
+        # SQLite has no TO_CHAR; use strftime() which returns 'YYYY-MM-DD'.
+        # We truncate to 'YYYY-MM' via substr() so the GROUP BY month works
+        # the same way as PostgreSQL's TO_CHAR(created_at, 'YYYY-MM').
+        if settings.is_sqlite:
+            period_expr = "substr(strftime('%Y-%m-%d', created_at), 1, 7)"
+        else:
+            period_expr = "TO_CHAR(created_at, 'YYYY-MM')"
+
+        sql = text(f"""
             SELECT
-                TO_CHAR(created_at, 'YYYY-MM') AS period,
+                {period_expr} AS period,
                 COALESCE(SUM(total_amount), 0) AS revenue,
                 COALESCE(SUM(CASE WHEN status = 'PAID' THEN total_amount ELSE 0 END), 0) AS paid,
                 COALESCE(SUM(CASE WHEN status <> 'PAID' THEN total_amount ELSE 0 END), 0) AS pending
@@ -252,7 +261,7 @@ def get_academic_stats(
                     "name": r.subject_name, # Alias
                     "success_rate": round((r.passing / r.total * 100) if r.total else 0.0, 2),
                     "rate": round((r.passing / r.total * 100) if r.total else 0.0, 2), # Alias
-                    "average_grade": round(float(r.average_grade or 0.0), 2),
+                    "average_grade": round(float(r.avg_grade or 0.0), 2),
                 }
                 for r in subject_rows
             ],
@@ -500,9 +509,16 @@ def get_attendance_trend(
             
         start_date = (datetime.now(timezone.utc) - timedelta(days=days)).strftime("%Y-%m-%d")
 
-        sql = text("""
-            SELECT 
-                TO_CHAR(date, 'YYYY-MM-DD') AS day,
+        # SQLite has no TO_CHAR; strftime('%Y-%m-%d', date) returns the same
+        # 'YYYY-MM-DD' format that PostgreSQL's TO_CHAR(date, 'YYYY-MM-DD') does.
+        if settings.is_sqlite:
+            day_expr = "strftime('%Y-%m-%d', date)"
+        else:
+            day_expr = "TO_CHAR(date, 'YYYY-MM-DD')"
+
+        sql = text(f"""
+            SELECT
+                {day_expr} AS day,
                 COUNT(*) AS total,
                 SUM(CASE WHEN status = 'PRESENT' THEN 1 ELSE 0 END) AS present,
                 SUM(CASE WHEN status = 'ABSENT' THEN 1 ELSE 0 END) AS absent
@@ -594,13 +610,22 @@ def get_dashboard_kpis(
         collection_rate = (collected_revenue / total_revenue * 100) if total_revenue > 0 else 0.0
 
         # 3. Attendance Rate (Last 30 days)
-        att_sql = text("""
-            SELECT
-                COUNT(*) AS total,
-                SUM(CASE WHEN status = 'PRESENT' THEN 1 ELSE 0 END) AS present
-            FROM attendance
-            WHERE tenant_id = :tenant_id AND date >= CURRENT_DATE - INTERVAL '30 days'
-        """)
+        if settings.is_sqlite:
+            att_sql = text("""
+                SELECT
+                    COUNT(*) AS total,
+                    SUM(CASE WHEN status = 'PRESENT' THEN 1 ELSE 0 END) AS present
+                FROM attendance
+                WHERE tenant_id = :tenant_id AND date >= date('now', '-30 days')
+            """)
+        else:
+            att_sql = text("""
+                SELECT
+                    COUNT(*) AS total,
+                    SUM(CASE WHEN status = 'PRESENT' THEN 1 ELSE 0 END) AS present
+                FROM attendance
+                WHERE tenant_id = :tenant_id AND date >= CURRENT_DATE - INTERVAL '30 days'
+            """)
         att = db.execute(att_sql, {"tenant_id": tenant_id}).fetchone()
         attendance_rate = (att.present / att.total * 100) if (att and att.total) else 0.0
 

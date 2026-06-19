@@ -36,8 +36,8 @@ class TestStudentEndpointsSecurity:
         assert resp.status_code == 401
 
     def test_update_student_without_auth_returns_401(self):
-        """PATCH /students/{id} sans auth → 401."""
-        resp = client.patch(
+        """PUT /students/{id} sans auth → 401."""
+        resp = client.put(
             f"/api/v1/students/{uuid.uuid4()}",
             json={"first_name": "Jean-Pierre"},
         )

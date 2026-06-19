@@ -115,7 +115,10 @@ export function PendingUsersList() {
             return;
         }
 
-        const generatedPassword = Math.random().toString(36).slice(-8) + Math.random().toString(36).slice(-2).toUpperCase();
+        const pwdChars = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789";
+        const pwdArray = new Uint32Array(10);
+        crypto.getRandomValues(pwdArray);
+        const generatedPassword = Array.from(pwdArray).map(x => pwdChars[x % pwdChars.length]).join('');
 
         convertMutation.mutate({
             user: {

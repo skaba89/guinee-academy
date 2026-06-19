@@ -32,7 +32,11 @@ describe("Vitest Setup", () => {
   });
 
   it("should have localStorage mock", () => {
+    // Reset the call history on getItem so the assertion is deterministic.
+    (localStorage.getItem as any).mockClear();
     localStorage.setItem("test", "value");
+    const retrieved = localStorage.getItem("test");
     expect(localStorage.getItem).toHaveBeenCalled();
+    expect(retrieved).toBe("value");
   });
 });

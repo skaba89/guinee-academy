@@ -68,15 +68,18 @@ export function CreateUserDialog({
 
     setIsLoading(true);
     try {
-      // Generate temporary password
-      const tempPassword = Math.random().toString(36).slice(-12);
+      // Generate temporary password using cryptographically secure random values
+      const pwdChars = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789";
+      const pwdArray = new Uint32Array(12);
+      crypto.getRandomValues(pwdArray);
+      const tempPassword = Array.from(pwdArray).map(x => pwdChars[x % pwdChars.length]).join('');
 
       await apiClient.post('/users/', {
         email: formData.email,
         password: tempPassword,
         first_name: formData.firstName,
         last_name: formData.lastName,
-        role: formData.role,
+        roles: [formData.role],
         tenant_id: tenantId,
       });
 

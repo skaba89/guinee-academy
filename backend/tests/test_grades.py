@@ -8,43 +8,43 @@ class TestGradesAuthGuards:
     """All grading endpoints must require authentication."""
 
     def test_grades_list_requires_auth(self):
-        resp = client.get("/api/v1/academic/grades/")
+        resp = client.get("/api/v1/grades/")
         assert resp.status_code in (401, 403)
 
     def test_grade_create_requires_auth(self):
-        resp = client.post("/api/v1/academic/grades/", json={})
+        resp = client.post("/api/v1/grades/", json={})
         assert resp.status_code in (401, 403, 422)
 
     def test_grade_detail_requires_auth(self):
-        resp = client.get("/api/v1/academic/grades/nonexistent-id/")
+        resp = client.get("/api/v1/grades/nonexistent-id/")
         assert resp.status_code in (401, 403, 404)
 
     def test_assessments_list_requires_auth(self):
-        resp = client.get("/api/v1/academic/assessments/")
+        resp = client.get("/api/v1/assessments/")
         assert resp.status_code in (401, 403)
 
     def test_assessment_create_requires_auth(self):
-        resp = client.post("/api/v1/academic/assessments/", json={})
+        resp = client.post("/api/v1/assessments/", json={})
         assert resp.status_code in (401, 403, 422)
 
     def test_subjects_list_requires_auth(self):
-        resp = client.get("/api/v1/academic/subjects/")
+        resp = client.get("/api/v1/subjects/")
         assert resp.status_code in (401, 403)
 
     def test_subject_create_requires_auth(self):
-        resp = client.post("/api/v1/academic/subjects/", json={})
+        resp = client.post("/api/v1/subjects/", json={})
         assert resp.status_code in (401, 403, 422)
 
     def test_terms_list_requires_auth(self):
-        resp = client.get("/api/v1/academic/terms/")
+        resp = client.get("/api/v1/terms/")
         assert resp.status_code in (401, 403)
 
     def test_term_create_requires_auth(self):
-        resp = client.post("/api/v1/academic/terms/", json={})
+        resp = client.post("/api/v1/terms/", json={})
         assert resp.status_code in (401, 403, 422)
 
     def test_grade_stats_requires_auth(self):
-        resp = client.get("/api/v1/academic/grades/stats/")
+        resp = client.get("/api/v1/grades/stats/")
         assert resp.status_code in (401, 403, 404)
 
 
@@ -52,39 +52,39 @@ class TestGradesEndpointExistence:
     """Academic endpoints must be registered in the router."""
 
     def test_grades_endpoint_exists(self):
-        resp = client.get("/api/v1/academic/grades/")
-        assert resp.status_code != 404, "GET /academic/grades/ must exist"
+        resp = client.get("/api/v1/grades/")
+        assert resp.status_code != 404, "GET /api/v1/grades/ must exist"
 
     def test_assessments_endpoint_exists(self):
-        resp = client.get("/api/v1/academic/assessments/")
-        assert resp.status_code != 404, "GET /academic/assessments/ must exist"
+        resp = client.get("/api/v1/assessments/")
+        assert resp.status_code != 404, "GET /api/v1/assessments/ must exist"
 
     def test_subjects_endpoint_exists(self):
-        resp = client.get("/api/v1/academic/subjects/")
-        assert resp.status_code != 404, "GET /academic/subjects/ must exist"
+        resp = client.get("/api/v1/subjects/")
+        assert resp.status_code != 404, "GET /api/v1/subjects/ must exist"
 
     def test_terms_endpoint_exists(self):
-        resp = client.get("/api/v1/academic/terms/")
-        assert resp.status_code != 404, "GET /academic/terms/ must exist"
+        resp = client.get("/api/v1/terms/")
+        assert resp.status_code != 404, "GET /api/v1/terms/ must exist"
 
 
 class TestGradesTenantIsolation:
     """Requêtes sans contexte tenant bloquées."""
 
     def test_grades_without_tenant_blocked(self):
-        resp = client.get("/api/v1/academic/grades/")
+        resp = client.get("/api/v1/grades/")
         assert resp.status_code in (401, 403)
 
     def test_assessments_without_tenant_blocked(self):
-        resp = client.get("/api/v1/academic/assessments/")
+        resp = client.get("/api/v1/assessments/")
         assert resp.status_code in (401, 403)
 
     def test_subjects_without_tenant_blocked(self):
-        resp = client.get("/api/v1/academic/subjects/")
+        resp = client.get("/api/v1/subjects/")
         assert resp.status_code in (401, 403)
 
     def test_terms_without_tenant_blocked(self):
-        resp = client.get("/api/v1/academic/terms/")
+        resp = client.get("/api/v1/terms/")
         assert resp.status_code in (401, 403)
 
 
@@ -92,17 +92,17 @@ class TestGradesInputValidation:
     """Payloads invalides doivent retourner 422 (si authentifié) ou 401/403."""
 
     def test_grade_create_empty_body(self):
-        resp = client.post("/api/v1/academic/grades/", json={})
+        resp = client.post("/api/v1/grades/", json={})
         assert resp.status_code in (401, 403, 422)
 
     def test_assessment_create_empty_body(self):
-        resp = client.post("/api/v1/academic/assessments/", json={})
+        resp = client.post("/api/v1/assessments/", json={})
         assert resp.status_code in (401, 403, 422)
 
     def test_subject_create_empty_body(self):
-        resp = client.post("/api/v1/academic/subjects/", json={})
+        resp = client.post("/api/v1/subjects/", json={})
         assert resp.status_code in (401, 403, 422)
 
     def test_term_create_empty_body(self):
-        resp = client.post("/api/v1/academic/terms/", json={})
+        resp = client.post("/api/v1/terms/", json={})
         assert resp.status_code in (401, 403, 422)

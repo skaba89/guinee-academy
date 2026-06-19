@@ -13,13 +13,87 @@ and managed via Alembic migrations. This module exists as a transitional
 step to keep main.py clean while preserving existing behavior.
 """
 import logging
+import re
 from sqlalchemy import text
+from app.core.config import settings
 
 logger = logging.getLogger(__name__)
 
 
+def _to_sqlite_ddl(stmt: str) -> str:
+    """Convert a PostgreSQL DDL statement to SQLite-compatible syntax.
+
+    Handles the most common PostgreSQL-only constructs used in this file:
+    - UUID → TEXT
+    - TIMESTAMPTZ / TIMESTAMP → TEXT
+    - JSONB / JSON → TEXT
+    - BOOLEAN → INTEGER
+    - SERIAL / BIGSERIAL → INTEGER (with AUTOINCREMENT handled separately)
+    - now() → CURRENT_TIMESTAMP
+    - REFERENCES ... ON DELETE CASCADE → kept (SQLite parses but enforces only if PRAGMA)
+    - DO $$ ... $$ → skip (returned as empty string; caller should skip empties)
+    """
+    s = stmt
+
+    # Skip PostgreSQL DO $$ ... $$ anonymous blocks entirely on SQLite
+    if s.strip().upper().startswith("DO $$"):
+        return ""
+
+    # Type conversions (case-insensitive, whole-word)
+    s = re.sub(r"\bUUID\b", "TEXT", s, flags=re.IGNORECASE)
+    s = re.sub(r"\bTIMESTAMPTZ\b", "TEXT", s, flags=re.IGNORECASE)
+    s = re.sub(r"\bTIMESTAMP\b(?!\s*\()", "TEXT", s, flags=re.IGNORECASE)
+    s = re.sub(r"\bJSONB\b", "TEXT", s, flags=re.IGNORECASE)
+    s = re.sub(r"\bJSON\b(?!\s*\()", "TEXT", s, flags=re.IGNORECASE)
+    s = re.sub(r"\bBOOLEAN\b", "INTEGER", s, flags=re.IGNORECASE)
+    s = re.sub(r"\bBIGSERIAL\b", "INTEGER", s, flags=re.IGNORECASE)
+    s = re.sub(r"\bSERIAL\b", "INTEGER", s, flags=re.IGNORECASE)
+    s = re.sub(r"\bSMALLINT\b", "INTEGER", s, flags=re.IGNORECASE)
+    s = re.sub(r"\bBIGINT\b", "INTEGER", s, flags=re.IGNORECASE)
+
+    # Function conversions
+    s = re.sub(r"\bnow\(\s*\)", "CURRENT_TIMESTAMP", s, flags=re.IGNORECASE)
+    s = re.sub(r"\bCURRENT_TIMESTAMP\b(?!\s*\()", "CURRENT_TIMESTAMP", s, flags=re.IGNORECASE)
+    # gen_random_uuid() in DEFAULT clause: SQLite DEFAULT only accepts constants
+    # and a few built-in functions, not arbitrary expressions. Drop the DEFAULT
+    # entirely; the application is responsible for providing UUIDs (which it
+    # already does via str(uuid.uuid4()) in the endpoint code).
+    s = re.sub(
+        r"\sDEFAULT\s+gen_random_uuid\(\)",
+        "",
+        s,
+        flags=re.IGNORECASE,
+    )
+    # Standalone gen_random_uuid() (e.g. in INSERT VALUES) — leave as-is, will
+    # be handled by the endpoint code (Task 7-g replaced these with Python
+    # uuid.uuid4() calls).
+    s = re.sub(r"\bgen_random_uuid\(\s*\)", "lower(hex(randomblob(16)))", s, flags=re.IGNORECASE)
+
+    # Remove ::type casts (PostgreSQL-specific)
+    s = re.sub(r"::\w+(\[\])?", "", s)
+
+    return s
+
+
 # fmt: off
 _DDL = [
+    # ── Parents (referenced by parents.py endpoint but had no DDL) ─────────
+    """CREATE TABLE IF NOT EXISTS parents (
+        id UUID PRIMARY KEY,
+        tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+        user_id UUID REFERENCES users(id) ON DELETE SET NULL,
+        first_name VARCHAR(100) NOT NULL,
+        last_name VARCHAR(100) NOT NULL,
+        email VARCHAR(255),
+        phone VARCHAR(50),
+        occupation VARCHAR(255),
+        address TEXT,
+        created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+        updated_at TIMESTAMPTZ
+    )""",
+    """CREATE INDEX IF NOT EXISTS ix_parents_tenant_id ON parents(tenant_id)""",
+    """CREATE INDEX IF NOT EXISTS ix_parents_user_id ON parents(user_id)""",
+
     # ── Library ──────────────────────────────────────────────────────────
     """CREATE TABLE IF NOT EXISTS library_categories (
         id UUID PRIMARY KEY,
@@ -525,15 +599,17 @@ _DDL = [
     """CREATE TABLE IF NOT EXISTS teacher_assignments (
         id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
         tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
-        user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        teacher_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
         subject_id UUID REFERENCES subjects(id) ON DELETE SET NULL,
+        class_id UUID REFERENCES classes(id) ON DELETE SET NULL,
         classroom_id UUID REFERENCES classes(id) ON DELETE SET NULL,
         academic_year_id UUID REFERENCES academic_years(id) ON DELETE SET NULL,
         created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
         updated_at TIMESTAMPTZ
     )""",
     """CREATE INDEX IF NOT EXISTS ix_teacher_assignments_tenant_id ON teacher_assignments(tenant_id)""",
-    """CREATE INDEX IF NOT EXISTS ix_teacher_assignments_user_id ON teacher_assignments(user_id)""",
+    """CREATE INDEX IF NOT EXISTS ix_teacher_assignments_teacher_id ON teacher_assignments(teacher_id)""",
+    """CREATE INDEX IF NOT EXISTS ix_teacher_assignments_user_id ON teacher_assignments(teacher_id)""",
 
     # ── Homework ──────────────────────────────────────────────────────────
     """CREATE TABLE IF NOT EXISTS homework (
@@ -573,15 +649,25 @@ _DDL = [
         tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
         student_id UUID REFERENCES students(id) ON DELETE SET NULL,
         reported_by UUID REFERENCES users(id) ON DELETE SET NULL,
+        resolved_by UUID REFERENCES users(id) ON DELETE SET NULL,
+        assigned_to UUID REFERENCES users(id) ON DELETE SET NULL,
         incident_type VARCHAR(100),
+        title VARCHAR(255),
         description TEXT,
+        notes TEXT,
+        resolution TEXT,
         severity VARCHAR(50) DEFAULT 'LOW',
         status VARCHAR(50) DEFAULT 'OPEN',
+        location VARCHAR(255),
+        occurred_at TIMESTAMPTZ,
         incident_date DATE,
+        resolved_at TIMESTAMPTZ,
         created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
         updated_at TIMESTAMPTZ
     )""",
     """CREATE INDEX IF NOT EXISTS ix_incidents_tenant_id ON incidents(tenant_id)""",
+    """CREATE INDEX IF NOT EXISTS ix_incidents_student_id ON incidents(student_id)""",
+    """CREATE INDEX IF NOT EXISTS ix_incidents_status ON incidents(status)""",
 
     # ── Audit Logs — add missing columns (severity, user_agent) ──────────
     """ALTER TABLE audit_logs ADD COLUMN IF NOT EXISTS severity VARCHAR(20) DEFAULT 'INFO'""",
@@ -942,9 +1028,17 @@ def ensure_operational_tables(engine) -> None:
     Each statement runs in its own transaction so a single failure
     (e.g. table already exists with a different schema) does not
     block subsequent statements.
+
+    On SQLite, each statement is converted to SQLite-compatible syntax
+    via _to_sqlite_ddl() before execution.
     """
+    is_sqlite = settings.is_sqlite
     with engine.connect() as conn:
         for stmt in _DDL:
+            if is_sqlite:
+                stmt = _to_sqlite_ddl(stmt)
+                if not stmt.strip():
+                    continue  # skipped PostgreSQL-only construct (e.g. DO $$)
             try:
                 conn.execute(text(stmt))
                 conn.commit()

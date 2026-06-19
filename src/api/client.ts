@@ -160,7 +160,10 @@ apiClient.interceptors.response.use(
             {
               headers: {
                 Authorization: `Bearer ${localStorage.getItem(TOKEN_STORAGE_KEY) || sessionStorage.getItem(TOKEN_STORAGE_KEY)}`,
-                'X-Tenant-ID': localStorage.getItem('last_tenant_id') || '',
+                // SECURITY: Do NOT send X-Tenant-ID on auth endpoints.
+                // The refresh endpoint is auth-related and should not be
+                // scoped to a tenant. Sending a stale tenant ID can cause
+                // the refresh to fail with a 400/401.
               },
             }
           ).then((r) => r.data?.access_token).finally(() => { refreshPromise = null; });

@@ -37,6 +37,13 @@ vi.mock("@/components/ui/skeleton", () => ({
   Skeleton: ({ className }: { className?: string }) => <div data-testid="skeleton" className={className} />,
 }));
 
+// TenantRoute depends on usePublicTenant (which calls useQuery internally).
+// We mock the hook directly to avoid needing a QueryClientProvider.
+const mockUsePublicTenant = vi.fn();
+vi.mock("@/hooks/usePublicTenant", () => ({
+  usePublicTenant: (slug: string | undefined) => mockUsePublicTenant(slug),
+}));
+
 describe("getRedirectPathForRoles", () => {
   it("returns tenant-aware admin path for admin roles", () => {
     expect(getRedirectPathForRoles(["TENANT_ADMIN"], "lasource")).toBe("/lasource/admin");
@@ -119,7 +126,7 @@ describe("ProtectedRoute", () => {
     );
 
     await waitFor(() => {
-      expect(mockNavigate).toHaveBeenCalledWith("/auth", {
+      expect(mockNavigate).toHaveBeenCalledWith("/lasource/auth", {
         state: { from: "/lasource/admin?tab=overview" },
         replace: true,
       });
@@ -159,16 +166,27 @@ describe("ProtectedRoute", () => {
 describe("TenantRoute", () => {
   beforeEach(() => {
     mockNavigate.mockReset();
+    mockUsePublicTenant.mockReset();
+    // Default: no public tenant, not loading, no error.
+    mockUsePublicTenant.mockReturnValue({
+      data: undefined,
+      isLoading: false,
+      isError: false,
+    });
   });
 
-  it("fetches tenant by slug when tenant is not loaded", () => {
+  it("renders a loading state when tenant is not loaded and publicTenant is missing", async () => {
+    // No tenant in context, no publicTenant from the (mocked) usePublicTenant
+    // hook, no error. TenantRoute should fall through to the "still syncing"
+    // skeleton rather than redirecting or rendering children.
     mockUseTenant.mockReturnValue({
       tenant: null,
       fetchTenantBySlug: mockFetchTenantBySlug,
+      setCurrentTenant: vi.fn(),
       isLoading: false,
     });
 
-    render(
+    const { container } = render(
       <MemoryRouter initialEntries={["/isc-paris/admin"]}>
         <Routes>
           <Route
@@ -183,17 +201,20 @@ describe("TenantRoute", () => {
       </MemoryRouter>,
     );
 
-    expect(mockFetchTenantBySlug).toHaveBeenCalledWith("isc-paris");
+    // Component should render the loading/skeleton UI and NOT the children.
+    expect(container.querySelector("[data-testid='skeleton']")).toBeTruthy();
+    expect(container.textContent).not.toContain("Tenant content");
   });
 
   it("renders children when the tenant slug matches", () => {
     mockUseTenant.mockReturnValue({
       tenant: { id: "tenant-2", slug: "isc-paris" },
       fetchTenantBySlug: mockFetchTenantBySlug,
+      setCurrentTenant: vi.fn(),
       isLoading: false,
     });
 
-    render(
+    const { container } = render(
       <MemoryRouter initialEntries={["/isc-paris/admin"]}>
         <Routes>
           <Route
@@ -209,5 +230,7 @@ describe("TenantRoute", () => {
     );
 
     expect(screen.getByText("Tenant content")).toBeInTheDocument();
+    // Sanity check: no skeleton shown when children render.
+    expect(container.querySelector("[data-testid='skeleton']")).toBeNull();
   });
 });

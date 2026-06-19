@@ -2,11 +2,11 @@ import logging
 from datetime import datetime, timedelta, timezone
 from uuid import UUID
 
+import bcrypt
 from fastapi import Depends, HTTPException, Request, status
 from fastapi.security import OAuth2PasswordBearer
 import jwt
 from jwt.exceptions import InvalidTokenError as JWTError
-from passlib.context import CryptContext
 from sqlalchemy import text
 
 from app.core.config import settings
@@ -15,12 +15,46 @@ logger = logging.getLogger(__name__)
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl=f"{settings.API_V1_STR}/auth/login/")
 
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+
+class _BcryptContext:
+    """Drop-in replacement for passlib's CryptContext(schemes=["bcrypt"]).
+
+    Why this exists:
+    - passlib 1.7.4 is the final release (project unmaintained since 2020).
+    - passlib 1.7.4 cannot introspect bcrypt >= 4.1 (missing __about__ attr),
+      requiring a fragile shim. Removing passlib eliminates the shim and the
+      hidden dependency on an abandoned library.
+    - bcrypt is actively maintained and provides everything we need.
+    """
+
+    _SCHEMES = ("bcrypt",)
+
+    def hash(self, secret: str) -> str:
+        """Return a bcrypt hash of *secret* (utf-8 encoded, gensalt default 12 rounds)."""
+        return bcrypt.hashpw(secret.encode("utf-8"), bcrypt.gensalt()).decode("utf-8")
+
+    def verify(self, secret: str, hashed: str | None) -> bool:
+        """Return True if *secret* matches the bcrypt *hashed* value."""
+        if not hashed:
+            return False
+        try:
+            return bcrypt.checkpw(secret.encode("utf-8"), hashed.encode("utf-8"))
+        except (ValueError, TypeError):
+            return False
+
+    def schemes(self) -> list[str]:
+        """Return the list of supported schemes (for backward-compat with tests)."""
+        return list(self._SCHEMES)
+
+
+pwd_context = _BcryptContext()
+
 
 def verify_password(plain_password: str, hashed_password: str | None) -> bool:
     if not hashed_password:
         return False
     return pwd_context.verify(plain_password, hashed_password)
+
 
 def get_password_hash(password: str) -> str:
     return pwd_context.hash(password)

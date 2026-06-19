@@ -420,6 +420,7 @@ const TenantAuthPage = () => {
                   type="button"
                   className="text-xs font-medium hover:underline transition-colors"
                   style={{ color: pColor }}
+                  onClick={() => alert("Fonctionnalité à venir")}
                 >
                   Mot de passe oublié ?
                 </button>

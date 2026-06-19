@@ -5,15 +5,15 @@ client = get_test_client()
 
 SCHOOL_LIFE_ENDPOINTS = [
     "/api/v1/school-life/appointment-slots/",
-    "/api/v1/school-life/check-in-sessions/",
-    "/api/v1/school-life/career-events/",
-    "/api/v1/school-life/badges/",
-    "/api/v1/school-life/homework/",
+    "/api/v1/student-check-ins/",
+    "/api/v1/school-life/events/",
+    "/api/v1/student-badges/",
+    "/api/v1/homework/",
 ]
 
 POST_ENDPOINTS = [
     "/api/v1/school-life/appointment-slots/",
-    "/api/v1/school-life/check-in-sessions/",
+    "/api/v1/student-check-ins/",
 ]
 
 
@@ -25,19 +25,19 @@ class TestSchoolLifeAuthGuards:
         assert resp.status_code in (401, 403), f"Expected 401/403, got {resp.status_code}"
 
     def test_check_in_sessions_requires_auth(self):
-        resp = client.get("/api/v1/school-life/check-in-sessions/")
+        resp = client.get("/api/v1/student-check-ins/")
         assert resp.status_code in (401, 403)
 
     def test_career_events_requires_auth(self):
-        resp = client.get("/api/v1/school-life/career-events/")
+        resp = client.get("/api/v1/school-life/events/")
         assert resp.status_code in (401, 403)
 
     def test_badges_requires_auth(self):
-        resp = client.get("/api/v1/school-life/badges/")
+        resp = client.get("/api/v1/student-badges/")
         assert resp.status_code in (401, 403)
 
     def test_homework_requires_auth(self):
-        resp = client.get("/api/v1/school-life/homework/")
+        resp = client.get("/api/v1/homework/")
         assert resp.status_code in (401, 403)
 
     def test_report_card_v2_requires_auth(self):
@@ -49,7 +49,7 @@ class TestSchoolLifeAuthGuards:
         assert resp.status_code in (401, 403, 422)
 
     def test_career_event_registrations_requires_auth(self):
-        resp = client.get("/api/v1/school-life/career-event-registrations/")
+        resp = client.get("/api/v1/school-life/event-registrations/")
         assert resp.status_code in (401, 403)
 
 
@@ -61,17 +61,17 @@ class TestSchoolLifeEndpointExistence:
         assert resp.status_code != 404
 
     def test_check_in_sessions_endpoint_exists(self):
-        resp = client.get("/api/v1/school-life/check-in-sessions/")
+        resp = client.get("/api/v1/student-check-ins/")
         assert resp.status_code != 404
 
     def test_badges_endpoint_exists(self):
-        resp = client.get("/api/v1/school-life/badges/")
+        resp = client.get("/api/v1/student-badges/")
         assert resp.status_code != 404
 
     def test_homework_endpoint_exists(self):
-        resp = client.get("/api/v1/school-life/homework/")
+        resp = client.get("/api/v1/homework/")
         assert resp.status_code != 404
 
     def test_career_events_endpoint_exists(self):
-        resp = client.get("/api/v1/school-life/career-events/")
+        resp = client.get("/api/v1/school-life/events/")
         assert resp.status_code != 404

@@ -449,11 +449,10 @@ def check_bcrypt(env_path: Path, database_url: Optional[str], admin_info: Option
 
     try:
         from sqlalchemy import create_engine, text
-        from passlib.context import CryptContext
+        import bcrypt
 
         sync_url = normalize_sync_url(database_url)
         engine = create_engine(sync_url, pool_pre_ping=True)
-        pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
         with engine.connect() as conn:
             row = conn.execute(
@@ -467,7 +466,10 @@ def check_bcrypt(env_path: Path, database_url: Optional[str], admin_info: Option
                 return
 
             stored_hash = row[0]
-            match = pwd_context.verify(test_password, stored_hash)
+            try:
+                match = bcrypt.checkpw(test_password.encode("utf-8"), stored_hash.encode("utf-8"))
+            except (ValueError, TypeError):
+                match = False
             engine.dispose()
 
             if match:
@@ -478,7 +480,7 @@ def check_bcrypt(env_path: Path, database_url: Optional[str], admin_info: Option
                 _remediate("Run: cd backend && python -m scripts.create_admin  (it will skip if already exists, so reset manually)")
 
     except ImportError:
-        _warn("passlib not available — skipping bcrypt verification")
+        _warn("bcrypt not available — skipping bcrypt verification")
     except Exception as exc:
         _fail(f"bcrypt verification error: {exc}")
 
