@@ -118,8 +118,11 @@ def list_admissions(
         where += " AND a.level_id = :level_id"
         params["level_id"] = level_id
     if search:
-        where += """ AND (a.student_first_name ILIKE :search OR a.student_last_name ILIKE :search
-                   OR a.parent_email ILIKE :search OR a.parent_phone ILIKE :search)"""
+        # Use LOWER() + LIKE for SQLite/PostgreSQL parity (ILIKE is PG-only).
+        where += """ AND (LOWER(a.student_first_name) LIKE LOWER(:search)
+                   OR LOWER(a.student_last_name) LIKE LOWER(:search)
+                   OR LOWER(a.parent_email) LIKE LOWER(:search)
+                   OR LOWER(a.parent_phone) LIKE LOWER(:search))"""
         params["search"] = f"%{search}%"
 
     # Separate COUNT query for accurate total
@@ -257,7 +260,9 @@ def transition_status(
     if new_status in ("ACCEPTED", "REJECTED", "UNDER_REVIEW"):
         now = datetime.utcnow()
         extra = ", reviewed_at = :now, reviewed_by = :reviewer"
-        extra_params["reviewer"] = current_user.get("id")
+        # Coerce UUID → str: SQLite's sqlite3 driver cannot bind native uuid.UUID objects.
+        reviewer_id = current_user.get("id")
+        extra_params["reviewer"] = str(reviewer_id) if reviewer_id is not None else None
         extra_params["now"] = now
     if "now" not in extra_params:
         extra_params["now"] = datetime.utcnow()
@@ -343,7 +348,7 @@ def convert_to_student(
         SET status = 'CONVERTED_TO_STUDENT', converted_student_id = :student_id,
             reviewed_by = :reviewer, reviewed_at = :now, updated_at = :now
         WHERE id = :id AND tenant_id = :tenant_id
-    """), {"student_id": student_id, "reviewer": current_user.get("id"),
+    """), {"student_id": student_id, "reviewer": str(current_user.get("id")) if current_user.get("id") is not None else None,
            "id": admission_id, "tenant_id": tenant_id, "now": now_conv})
 
     log_audit(db, user_id=current_user.get("id"), tenant_id=tenant_id,
@@ -402,10 +407,18 @@ def delete_admission(
         WHERE id = :id AND tenant_id = :tenant_id AND status = 'DRAFT'
         RETURNING id
     """), {"id": admission_id, "tenant_id": tenant_id})
-    if not result.rowcount:
+    # NOTE: don't use result.rowcount — SQLite DELETE...RETURNING returns
+    # the deleted rows but reports rowcount=0 (known SQLAlchemy/SQLite quirk).
+    # Fetch the returned row instead.
+    deleted = result.fetchone()
+    if not deleted:
         raise HTTPException(status_code=400,
             detail="Application not found or not in DRAFT status")
     db.commit()
+
+
+# ─── POST /public/apply ───────────────────────────────────────────────────────
+
 @router.post("/public/apply/", status_code=201)
 def public_apply(
     payload: dict,

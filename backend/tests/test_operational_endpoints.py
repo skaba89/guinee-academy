@@ -29,12 +29,15 @@ TENANT_ID = uuid.uuid4()
 
 
 def _fake_user_dict():
+    # Each call generates a fresh UUID and an email derived from it, so
+    # repeated test runs don't collide on users.email UNIQUE constraint.
+    _id = uuid.uuid4()
     return {
-        "id": uuid.uuid4(),
-        "email": "ops.admin@lycee-alpha.gn",
+        "id": _id,
+        "email": f"ops.admin.{_id.hex[:8]}@lycee-alpha.gn",
         "first_name": "Ops",
         "last_name": "Admin",
-        "username": "ops.admin",
+        "username": f"ops.admin.{_id.hex[:8]}",
         "roles": ["TENANT_ADMIN"],
         # SQLite raw SQL doesn't support UUID objects — pass as string
         "tenant_id": str(TENANT_ID),
@@ -87,17 +90,26 @@ def _forum_payload():
 @pytest.fixture(scope="class")
 def ops_session():
     """
-    Authenticated TestClient with a real tenant row in the test DB.
+    Authenticated TestClient with a real tenant AND user row in the test DB.
     Bypasses get_current_user via FastAPI dependency_overrides.
+
+    Why we also insert a User row matching fake_user.id:
+    Several endpoints (e.g. admissions transition_status) write
+    `reviewed_by = current_user.id` into a column with FK → users.id.
+    SQLite enforces FKs when `PRAGMA foreign_keys=ON`, so without a real
+    User row the UPDATE fails with IntegrityError. Creating the User row
+    mirrors production (current_user always maps to a real DB row).
     """
     from app.core.security import get_current_user
     from app.core.database import engine, SessionLocal
     from app.main import app
     from app.models.base import Base
     from app.models.tenant import Tenant
+    from app.models.user import User
 
     Base.metadata.create_all(bind=engine, checkfirst=True)
 
+    fake_user = _fake_user_dict()
     db = SessionLocal()
     try:
         existing = db.query(Tenant).filter(Tenant.id == TENANT_ID).first()
@@ -117,10 +129,25 @@ def ops_session():
             )
             db.add(tenant)
             db.commit()
+
+        # Insert a real User row matching fake_user.id so FK constraints on
+        # reviewed_by / created_by / etc. are satisfied.
+        existing_user = db.query(User).filter(User.id == str(fake_user["id"])).first()
+        if not existing_user:
+            db.add(User(
+                id=str(fake_user["id"]),
+                tenant_id=str(TENANT_ID),
+                email=fake_user["email"],
+                username=fake_user["email"],  # User.username is NOT NULL
+                first_name=fake_user["first_name"],
+                last_name=fake_user["last_name"],
+                is_active=True,
+                password_hash="$2b$12$invalidhashfortestonlyxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+            ))
+            db.commit()
     finally:
         db.close()
 
-    fake_user = _fake_user_dict()
     original_overrides = dict(app.dependency_overrides)
     app.dependency_overrides[get_current_user] = lambda: fake_user
 
@@ -302,7 +329,9 @@ class TestAdmissionWorkflow:
         # 2. LIST — should contain at least the created admission
         resp = ops_session.get("/api/v1/admissions/")
         assert resp.status_code == 200
-        items = resp.json()
+        body = resp.json()
+        # Endpoint returns {"items": [...], "total": N} (paginated dict).
+        items = body["items"] if isinstance(body, dict) else body
         assert any(a["id"] == admission_id for a in items)
 
         # 3. DETAIL
@@ -334,13 +363,22 @@ class TestAdmissionWorkflow:
         assert resp.status_code == 200
         assert resp.json()["status"] == "ACCEPTED"
 
-        # 7. DELETE
+        # 7. DELETE on an ACCEPTED admission is rejected by policy
+        #    (only DRAFT admissions are deletable). Validate the policy here.
         resp = ops_session.delete(f"/api/v1/admissions/{admission_id}/")
-        assert resp.status_code == 204
+        assert resp.status_code == 400, \
+            "DELETE on non-DRAFT admission should be rejected with 400"
 
-        # 8. DETAIL after delete → 404
-        resp = ops_session.get(f"/api/v1/admissions/{admission_id}/")
-        assert resp.status_code == 404
+        # 8. DELETE on a fresh DRAFT admission succeeds with 204
+        draft_resp = ops_session.post("/api/v1/admissions/", json=_admission_payload())
+        if draft_resp.status_code in (200, 201):
+            draft_id = draft_resp.json()["id"]
+            resp = ops_session.delete(f"/api/v1/admissions/{draft_id}/")
+            assert resp.status_code == 204
+
+            # DETAIL after delete → 404
+            resp = ops_session.get(f"/api/v1/admissions/{draft_id}/")
+            assert resp.status_code == 404
 
     def test_invalid_status_transition_rejected(self, ops_session):
         """DRAFT → ACCEPTED should be rejected (must go through SUBMITTED → UNDER_REVIEW)."""
