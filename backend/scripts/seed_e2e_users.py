@@ -161,9 +161,9 @@ def _upsert_user(db, user_def: dict, tenant_id: str, pw_hash: str) -> str:
                 UPDATE users
                 SET password_hash = :pw,
                     tenant_id = :tid,
-                    is_active = 1,
-                    is_verified = 1,
-                    must_change_password = 0,
+                    is_active = true,
+                    is_verified = true,
+                    must_change_password = false,
                     updated_at = :now
                 WHERE id = :uid
                 """
@@ -182,8 +182,8 @@ def _upsert_user(db, user_def: dict, tenant_id: str, pw_hash: str) -> str:
                      is_verified, mfa_enabled, must_change_password)
                 VALUES
                     (:id, :email, :username, :pw, :fn, :ln,
-                     1, 0, :tid, :now, :now,
-                     1, 0, 0)
+                     true, false, :tid, :now, :now,
+                     true, false, false)
                 """
             ),
             {
