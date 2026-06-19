@@ -316,6 +316,20 @@ jobs:
           docker compose -f docker-compose.yml up -d postgres redis
           sleep 5
 
+      - name: Wait for PostgreSQL to be ready
+        run: |
+          for i in $(seq 1 30); do
+            if docker compose -f docker-compose.yml exec -T postgres pg_isready -U schoolflow -d schoolflow_test > /dev/null 2>&1; then
+              echo "PostgreSQL is ready"
+              exit 0
+            fi
+            echo "Waiting for PostgreSQL... ($i/30)"
+            sleep 2
+          done
+          echo "PostgreSQL did not become ready in 60s"
+          docker compose -f docker-compose.yml logs postgres
+          exit 1
+
       - name: Setup Python 3.11
         uses: actions/setup-python@v5
         with:
@@ -326,10 +340,33 @@ jobs:
       - name: Install backend dependencies
         run: pip install -r backend/requirements.txt
 
-      - name: Start backend
+      - name: Run Alembic migrations (pre-migrate for visibility)
+        # Run migrations BEFORE starting uvicorn so that any migration error
+        # is visible directly in CI logs (instead of being hidden inside the
+        # detached uvicorn process). `alembic upgrade head` is idempotent,
+        # so the lifespan event will re-run it as a fast no-op.
         run: |
-          cd backend && uvicorn app.main:app --host 0.0.0.0 --port 8000 &
+          cd backend && python -m alembic upgrade head
+        env:
+          DATABASE_URL: postgresql://schoolflow:testpassword@localhost:5432/schoolflow_test
+          SECRET_KEY: test-secret-key-for-ci-min-32-chars
+          BOOTSTRAP_SECRET: test-bootstrap-secret-key-for-ci-32chars
+          DEBUG: "true"
+
+      - name: Start backend
+        # Start uvicorn in background with logs captured to /tmp/backend.log
+        # so we can inspect them if the API fails to come up.
+        run: |
+          cd backend && nohup uvicorn app.main:app --host 0.0.0.0 --port 8000 > /tmp/backend.log 2>&1 &
+          echo "Backend PID: $!"
           sleep 10
+          # Quick smoke check — if uvicorn has already crashed, fail fast.
+          if ! kill -0 $! 2>/dev/null; then
+            echo "❌ Backend process died during startup. Logs:"
+            cat /tmp/backend.log
+            exit 1
+          fi
+          echo "Backend process is alive after 10s. Continuing..."
         env:
           DATABASE_URL: postgresql://schoolflow:testpassword@localhost:5432/schoolflow_test
           SECRET_KEY: test-secret-key-for-ci-min-32-chars
@@ -357,6 +394,27 @@ jobs:
         with:
           name: playwright-report
           path: playwright-report/
+          retention-days: 7
+
+      - name: Debug — backend logs (on failure)
+        if: failure()
+        run: |
+          echo "=== Backend logs (last 200 lines) ==="
+          tail -n 200 /tmp/backend.log 2>/dev/null || echo "(no backend.log found)"
+          echo ""
+          echo "=== Docker compose status ==="
+          docker compose -f docker-compose.yml ps 2>/dev/null || true
+          echo ""
+          echo "=== curl http://localhost:8000/api/v1/health/ ==="
+          curl -sS --max-time 5 http://localhost:8000/api/v1/health/ 2>&1 || echo "(curl failed)"
+
+      - name: Upload backend logs (on failure)
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-logs
+          path: /tmp/backend.log
+          if-no-files-found: warn
           retention-days: 7
 
       - name: Stop services
