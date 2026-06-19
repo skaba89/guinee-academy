@@ -1,8 +1,9 @@
 """Tests pour l'endpoint d'import CSV d'étudiants."""
-import io
 import csv
-import pytest
+import io
+
 from conftest import get_test_client
+
 
 client = get_test_client()
 
@@ -65,7 +66,7 @@ class TestCsvParsing:
     def test_parses_comma_delimiter(self):
         from app.api.v1.endpoints.core.imports import _parse_csv_bytes
         csv_bytes = _make_csv([VALID_ROW], delimiter=",")
-        headers, rows = _parse_csv_bytes(csv_bytes)
+        _headers, rows = _parse_csv_bytes(csv_bytes)
         assert len(rows) == 1
 
     def test_parses_utf8_bom(self):
@@ -78,12 +79,13 @@ class TestCsvParsing:
     def test_parses_latin1_fallback(self):
         from app.api.v1.endpoints.core.imports import _parse_csv_bytes
         latin1_csv = "prenom;nom\nMamadou;Diall\xe9\n".encode("latin-1")
-        headers, rows = _parse_csv_bytes(latin1_csv)
+        _headers, rows = _parse_csv_bytes(latin1_csv)
         assert len(rows) == 1
 
     def test_invalid_encoding_raises_http_exception(self):
-        from app.api.v1.endpoints.core.imports import _parse_csv_bytes
         from fastapi import HTTPException
+
+        from app.api.v1.endpoints.core.imports import _parse_csv_bytes
         # Bytes that are neither UTF-8 nor Latin-1
         garbage = b"\x80\x81\x82\x83\x00\xff\xfe\xfd"
         try:
@@ -96,7 +98,7 @@ class TestCsvParsing:
     def test_empty_csv_returns_empty_rows(self):
         from app.api.v1.endpoints.core.imports import _parse_csv_bytes
         empty = b"prenom;nom\n"
-        headers, rows = _parse_csv_bytes(empty)
+        _headers, rows = _parse_csv_bytes(empty)
         assert rows == []
 
     def test_multiple_rows(self):

@@ -12,9 +12,9 @@ Tenant leak in student dashboard).
 """
 import os
 import uuid
-from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
+
 
 # Set test environment BEFORE any app imports
 os.environ["DEBUG"] = "True"
@@ -129,8 +129,9 @@ class TestParentsRiskScoreIDORPrevention:
     def test_risk_scores_endpoint_uses_require_permission(self):
         """Verify the parents endpoint module uses require_permission."""
         try:
-            from app.api.v1.endpoints.operational import parents
             import inspect
+
+            from app.api.v1.endpoints.operational import parents
             source = inspect.getsource(parents)
             assert 'require_permission' in source, "parents module must use require_permission"
             assert 'parents:read' in source, "parents module must enforce parents:read permission"
@@ -161,7 +162,7 @@ class TestStudentDashboardTenantLeak:
 
     def test_dashboard_returns_empty_for_unknown_tenant(self):
         """Dashboard for a non-existent tenant should return empty data, not error."""
-        unknown_tenant_id = str(uuid.uuid4())
+        str(uuid.uuid4())
 
         # Expected behavior: return empty stats, not cross-tenant data
         expected_response = {

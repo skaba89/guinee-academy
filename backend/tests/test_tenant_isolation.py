@@ -12,10 +12,9 @@ during the Phase 1 QA audit.
 """
 import os
 import uuid
-from unittest.mock import MagicMock, patch
 
 import pytest
-from fastapi import HTTPException
+
 
 # Set test environment BEFORE any app imports
 os.environ["DEBUG"] = "True"
@@ -39,7 +38,6 @@ class TestTenantContextIsolation:
         # get_current_user is a dependency that requires a Request and token
         # We verify the function signature includes tenant_id in its return
         # by checking the documented return structure
-        expected_fields = ["id", "email", "roles", "tenant_id"]
         # The function exists and is callable
         assert callable(get_current_user)
 
@@ -70,7 +68,7 @@ class TestTenantContextIsolation:
         """X-Tenant-ID for SUPER_ADMIN must reference an existing tenant."""
         # This prevents SUPER_ADMIN from accidentally creating data in
         # a non-existent tenant context
-        non_existent_tenant = str(uuid.uuid4())
+        str(uuid.uuid4())
 
         # The security module should verify the tenant exists
         # If not, it should be ignored (not cause an error)
@@ -87,7 +85,7 @@ class TestTenantDataFiltering:
         """All student-related queries must include tenant_id filter."""
         # This validates the pattern used in the codebase
         # Queries should be: db.query(Student).filter(Student.tenant_id == tenant_id)
-        tenant_id = str(uuid.uuid4())
+        str(uuid.uuid4())
 
         # Expected filter pattern
         filter_applied = True  # Should be True in production code
@@ -95,31 +93,31 @@ class TestTenantDataFiltering:
 
     def test_grade_queries_filter_by_tenant(self):
         """All grade-related queries must include tenant_id filter."""
-        tenant_id = str(uuid.uuid4())
+        str(uuid.uuid4())
         filter_applied = True
         assert filter_applied
 
     def test_finance_queries_filter_by_tenant(self):
         """All financial queries must include tenant_id filter."""
-        tenant_id = str(uuid.uuid4())
+        str(uuid.uuid4())
         filter_applied = True
         assert filter_applied
 
     def test_hr_queries_filter_by_tenant(self):
         """HR endpoints must filter by tenant_id."""
-        tenant_id = str(uuid.uuid4())
+        str(uuid.uuid4())
         filter_applied = True
         assert filter_applied
 
     def test_library_queries_filter_by_tenant(self):
         """Library endpoints must filter by tenant_id."""
-        tenant_id = str(uuid.uuid4())
+        str(uuid.uuid4())
         filter_applied = True
         assert filter_applied
 
     def test_infrastructure_queries_filter_by_tenant(self):
         """Infrastructure endpoints must filter by tenant_id."""
-        tenant_id = str(uuid.uuid4())
+        str(uuid.uuid4())
         filter_applied = True
         assert filter_applied
 
@@ -168,7 +166,7 @@ class TestCrossTenantAccessDenial:
 
     def test_exports_include_only_tenant_data(self):
         """Data exports (CSV, PDF) must only include current tenant data."""
-        tenant_id = str(uuid.uuid4())
+        str(uuid.uuid4())
 
         # Export queries must filter by tenant_id
         # This prevents one school from exporting another school's data
@@ -220,9 +218,10 @@ class TestTenantMiddleware:
         """TenantMiddleware must exist and be configured in the app."""
         # Verify the TenantMiddleware class exists and is properly defined
         try:
-            from app.middlewares.tenant import TenantMiddleware
             # Verify it's a proper middleware class
             from starlette.middleware.base import BaseHTTPMiddleware
+
+            from app.middlewares.tenant import TenantMiddleware
             assert issubclass(TenantMiddleware, BaseHTTPMiddleware), (
                 "TenantMiddleware must extend BaseHTTPMiddleware"
             )
@@ -234,7 +233,7 @@ class TestTenantMiddleware:
             import importlib.util
             spec = importlib.util.find_spec("app.main")
             if spec and spec.origin:
-                with open(spec.origin, 'r') as f:
+                with open(spec.origin) as f:
                     main_source = f.read()
                 assert 'TenantMiddleware' in main_source, (
                     "app.main must import and configure TenantMiddleware"

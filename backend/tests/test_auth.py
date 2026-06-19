@@ -1,5 +1,4 @@
 """Tests des endpoints d'authentification."""
-import pytest
 from conftest import get_test_client
 
 

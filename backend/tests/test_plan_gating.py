@@ -11,12 +11,11 @@ These tests validate the subscription plan gating security identified
 during the QA audit.
 """
 import os
-import uuid
-from datetime import datetime, timedelta, timezone
-from unittest.mock import MagicMock, patch
+from datetime import UTC, datetime, timedelta
 
 import pytest
 from fastapi import HTTPException
+
 
 # Set test environment BEFORE any app imports
 os.environ.setdefault("DEBUG", "True")
@@ -130,7 +129,6 @@ class TestRequirePlanFailOpen:
 
     def test_fail_open_does_not_catch_http_exception(self):
         """HTTPException (402) must NOT be caught by fail-open handler."""
-        from app.core.security import require_plan
 
         # The implementation re-raises HTTPException
         # Only generic exceptions trigger fail-open
@@ -166,20 +164,20 @@ class TestTrialExpiry:
     def test_active_trial_allows_access(self):
         """An active trial should allow access to the subscribed plan's features."""
         # trial_ends_at is in the future
-        future_date = datetime.now(timezone.utc) + timedelta(days=14)
-        assert future_date > datetime.now(timezone.utc)
+        future_date = datetime.now(UTC) + timedelta(days=14)
+        assert future_date > datetime.now(UTC)
 
     def test_expired_trial_blocks_access(self):
         """An expired trial should block access to premium features."""
         # trial_ends_at is in the past
-        past_date = datetime.now(timezone.utc) - timedelta(days=1)
-        assert past_date < datetime.now(timezone.utc)
+        past_date = datetime.now(UTC) - timedelta(days=1)
+        assert past_date < datetime.now(UTC)
 
     def test_trial_expiry_check_uses_utc(self):
         """Trial expiry comparison must use UTC timestamps."""
         # Timezone-naive comparison can be off by hours depending on
         # the server's local timezone
-        now_utc = datetime.now(timezone.utc).replace(tzinfo=None)
+        now_utc = datetime.now(UTC).replace(tzinfo=None)
         assert now_utc is not None
 
     def test_null_trial_ends_at_treated_as_no_trial(self):

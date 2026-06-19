@@ -10,13 +10,11 @@ Deux axes :
 2. CRUD fonctionnel : avec auth mockée + DB SQLite, vérifier les opérations de base
 """
 import uuid
-from datetime import date
-from unittest.mock import patch
 
 import pytest
-from fastapi.testclient import TestClient
 
 from conftest import get_test_client
+
 
 client = get_test_client()
 
@@ -100,8 +98,8 @@ def ops_session():
     User row the UPDATE fails with IntegrityError. Creating the User row
     mirrors production (current_user always maps to a real DB row).
     """
+    from app.core.database import SessionLocal, engine
     from app.core.security import get_current_user
-    from app.core.database import engine, SessionLocal
     from app.main import app
     from app.models.base import Base
     from app.models.tenant import Tenant

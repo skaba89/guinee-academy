@@ -1,6 +1,7 @@
 """Tests du health check endpoint."""
 from conftest import get_test_client
 
+
 client = get_test_client()
 
 

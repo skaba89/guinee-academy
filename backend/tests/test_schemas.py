@@ -10,6 +10,8 @@ Covers:
 These are pure unit tests — no database or HTTP client needed.
 """
 import os
+
+
 # Set test environment BEFORE any app imports to prevent DB connection errors
 os.environ.setdefault("DEBUG", "True")
 os.environ.setdefault("SECRET_KEY", "test-secret-key-for-testing-only-32chars")
@@ -33,8 +35,8 @@ class TestStudentCreateSchema:
 
     def test_valid_student_create(self):
         """StudentCreate accepts all required fields with valid data."""
-        from app.schemas.student import StudentCreate
         from app.models.student import Gender
+        from app.schemas.student import StudentCreate
 
         data = StudentCreate(
             registration_number="REG-001",
@@ -50,8 +52,8 @@ class TestStudentCreateSchema:
 
     def test_student_create_requires_registration_number(self):
         """StudentCreate fails without registration_number."""
-        from app.schemas.student import StudentCreate
         from app.models.student import Gender
+        from app.schemas.student import StudentCreate
 
         with pytest.raises(ValidationError) as exc_info:
             StudentCreate(
@@ -66,8 +68,8 @@ class TestStudentCreateSchema:
 
     def test_student_create_requires_first_name(self):
         """StudentCreate fails without first_name."""
-        from app.schemas.student import StudentCreate
         from app.models.student import Gender
+        from app.schemas.student import StudentCreate
 
         with pytest.raises(ValidationError) as exc_info:
             StudentCreate(
@@ -82,8 +84,8 @@ class TestStudentCreateSchema:
 
     def test_student_create_requires_last_name(self):
         """StudentCreate fails without last_name."""
-        from app.schemas.student import StudentCreate
         from app.models.student import Gender
+        from app.schemas.student import StudentCreate
 
         with pytest.raises(ValidationError) as exc_info:
             StudentCreate(
@@ -98,8 +100,8 @@ class TestStudentCreateSchema:
 
     def test_student_create_requires_date_of_birth(self):
         """StudentCreate fails without date_of_birth."""
-        from app.schemas.student import StudentCreate
         from app.models.student import Gender
+        from app.schemas.student import StudentCreate
 
         with pytest.raises(ValidationError) as exc_info:
             StudentCreate(
@@ -129,8 +131,8 @@ class TestStudentCreateSchema:
 
     def test_student_create_first_name_min_length(self):
         """StudentCreate rejects empty first_name (min_length=1)."""
-        from app.schemas.student import StudentCreate
         from app.models.student import Gender
+        from app.schemas.student import StudentCreate
 
         with pytest.raises(ValidationError) as exc_info:
             StudentCreate(
@@ -146,8 +148,8 @@ class TestStudentCreateSchema:
 
     def test_student_create_last_name_min_length(self):
         """StudentCreate rejects empty last_name (min_length=1)."""
-        from app.schemas.student import StudentCreate
         from app.models.student import Gender
+        from app.schemas.student import StudentCreate
 
         with pytest.raises(ValidationError) as exc_info:
             StudentCreate(
@@ -163,8 +165,8 @@ class TestStudentCreateSchema:
 
     def test_student_create_registration_number_min_length(self):
         """StudentCreate rejects empty registration_number (min_length=1)."""
-        from app.schemas.student import StudentCreate
         from app.models.student import Gender
+        from app.schemas.student import StudentCreate
 
         with pytest.raises(ValidationError) as exc_info:
             StudentCreate(
@@ -180,8 +182,8 @@ class TestStudentCreateSchema:
 
     def test_student_create_valid_email(self):
         """StudentCreate accepts valid email addresses."""
-        from app.schemas.student import StudentCreate
         from app.models.student import Gender
+        from app.schemas.student import StudentCreate
 
         data = StudentCreate(
             registration_number="REG-001",
@@ -195,8 +197,8 @@ class TestStudentCreateSchema:
 
     def test_student_create_invalid_email(self):
         """StudentCreate rejects invalid email addresses."""
-        from app.schemas.student import StudentCreate
         from app.models.student import Gender
+        from app.schemas.student import StudentCreate
 
         with pytest.raises(ValidationError) as exc_info:
             StudentCreate(
@@ -213,8 +215,8 @@ class TestStudentCreateSchema:
 
     def test_student_create_email_optional(self):
         """StudentCreate allows email to be omitted."""
-        from app.schemas.student import StudentCreate
         from app.models.student import Gender
+        from app.schemas.student import StudentCreate
 
         data = StudentCreate(
             registration_number="REG-001",
@@ -227,8 +229,8 @@ class TestStudentCreateSchema:
 
     def test_student_create_parent_email_validation(self):
         """StudentCreate validates parent_email as proper email."""
-        from app.schemas.student import StudentCreate
         from app.models.student import Gender
+        from app.schemas.student import StudentCreate
 
         with pytest.raises(ValidationError) as exc_info:
             StudentCreate(
@@ -245,8 +247,8 @@ class TestStudentCreateSchema:
 
     def test_student_create_max_length_first_name(self):
         """StudentCreate rejects first_name longer than 100 characters."""
-        from app.schemas.student import StudentCreate
         from app.models.student import Gender
+        from app.schemas.student import StudentCreate
 
         with pytest.raises(ValidationError) as exc_info:
             StudentCreate(
@@ -262,8 +264,8 @@ class TestStudentCreateSchema:
 
     def test_student_create_max_length_registration_number(self):
         """StudentCreate rejects registration_number longer than 50 characters."""
-        from app.schemas.student import StudentCreate
         from app.models.student import Gender
+        from app.schemas.student import StudentCreate
 
         with pytest.raises(ValidationError) as exc_info:
             StudentCreate(
@@ -279,8 +281,8 @@ class TestStudentCreateSchema:
 
     def test_student_create_all_optional_fields(self):
         """StudentCreate accepts all optional fields at once."""
-        from app.schemas.student import StudentCreate
         from app.models.student import Gender
+        from app.schemas.student import StudentCreate
 
         data = StudentCreate(
             registration_number="REG-FULL",
@@ -330,8 +332,8 @@ class TestStudentUpdateSchema:
 
     def test_student_update_multiple_fields(self):
         """StudentUpdate accepts multiple fields at once."""
-        from app.schemas.student import StudentUpdate
         from app.models.student import StudentStatus
+        from app.schemas.student import StudentUpdate
 
         data = StudentUpdate(
             first_name="Updated",
@@ -374,8 +376,8 @@ class TestStudentUpdateSchema:
 
     def test_student_update_status_enum(self):
         """StudentUpdate accepts valid status enum values."""
-        from app.schemas.student import StudentUpdate
         from app.models.student import StudentStatus
+        from app.schemas.student import StudentUpdate
 
         for status in StudentStatus:
             data = StudentUpdate(status=status)
@@ -390,8 +392,8 @@ class TestPaymentCreateSchema:
 
     def test_valid_payment_create(self):
         """PaymentCreate accepts all required fields with valid data."""
-        from app.schemas.payment import PaymentCreate
         from app.models.payment import PaymentMethod
+        from app.schemas.payment import PaymentCreate
 
         data = PaymentCreate(
             student_id=uuid.uuid4(),
@@ -405,8 +407,8 @@ class TestPaymentCreateSchema:
 
     def test_payment_create_requires_student_id(self):
         """PaymentCreate fails without student_id."""
-        from app.schemas.payment import PaymentCreate
         from app.models.payment import PaymentMethod
+        from app.schemas.payment import PaymentCreate
 
         with pytest.raises(ValidationError) as exc_info:
             PaymentCreate(
@@ -420,8 +422,8 @@ class TestPaymentCreateSchema:
 
     def test_payment_create_requires_amount(self):
         """PaymentCreate fails without amount."""
-        from app.schemas.payment import PaymentCreate
         from app.models.payment import PaymentMethod
+        from app.schemas.payment import PaymentCreate
 
         with pytest.raises(ValidationError) as exc_info:
             PaymentCreate(
@@ -449,8 +451,8 @@ class TestPaymentCreateSchema:
 
     def test_payment_create_amount_must_be_positive(self):
         """PaymentCreate rejects zero or negative amounts (gt=0)."""
-        from app.schemas.payment import PaymentCreate
         from app.models.payment import PaymentMethod
+        from app.schemas.payment import PaymentCreate
 
         with pytest.raises(ValidationError) as exc_info:
             PaymentCreate(
@@ -465,8 +467,8 @@ class TestPaymentCreateSchema:
 
     def test_payment_create_negative_amount_rejected(self):
         """PaymentCreate rejects negative amounts."""
-        from app.schemas.payment import PaymentCreate
         from app.models.payment import PaymentMethod
+        from app.schemas.payment import PaymentCreate
 
         with pytest.raises(ValidationError) as exc_info:
             PaymentCreate(
@@ -481,8 +483,8 @@ class TestPaymentCreateSchema:
 
     def test_payment_create_default_currency(self):
         """PaymentCreate defaults currency to GNF."""
-        from app.schemas.payment import PaymentCreate
         from app.models.payment import PaymentMethod
+        from app.schemas.payment import PaymentCreate
 
         data = PaymentCreate(
             student_id=uuid.uuid4(),
@@ -494,8 +496,8 @@ class TestPaymentCreateSchema:
 
     def test_payment_create_currency_max_length(self):
         """PaymentCreate rejects currency longer than 3 characters."""
-        from app.schemas.payment import PaymentCreate
         from app.models.payment import PaymentMethod
+        from app.schemas.payment import PaymentCreate
 
         with pytest.raises(ValidationError) as exc_info:
             PaymentCreate(
@@ -511,8 +513,8 @@ class TestPaymentCreateSchema:
 
     def test_payment_create_optional_fields(self):
         """PaymentCreate accepts optional invoice_id and transaction_id."""
-        from app.schemas.payment import PaymentCreate
         from app.models.payment import PaymentMethod
+        from app.schemas.payment import PaymentCreate
 
         inv_id = uuid.uuid4()
         data = PaymentCreate(
@@ -530,8 +532,8 @@ class TestPaymentCreateSchema:
 
     def test_payment_create_invalid_student_id_format(self):
         """PaymentCreate rejects invalid UUID for student_id."""
-        from app.schemas.payment import PaymentCreate
         from app.models.payment import PaymentMethod
+        from app.schemas.payment import PaymentCreate
 
         with pytest.raises(ValidationError) as exc_info:
             PaymentCreate(

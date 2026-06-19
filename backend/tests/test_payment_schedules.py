@@ -1,7 +1,10 @@
 """Tests pour les endpoints échéanciers de paiement — auth guards, schémas, isolation tenant."""
 import uuid
+
 import pytest
+
 from conftest import get_test_client
+
 
 client = get_test_client()
 
@@ -62,15 +65,17 @@ class TestScheduleTenantIsolation:
     """_get_tenant_id bloque les requêtes sans contexte tenant."""
 
     def test_get_tenant_id_raises_on_none(self):
-        from app.api.v1.endpoints.finance.payment_schedules import _get_tenant_id
         from fastapi import HTTPException
+
+        from app.api.v1.endpoints.finance.payment_schedules import _get_tenant_id
         with pytest.raises(HTTPException) as exc:
             _get_tenant_id({"tenant_id": None})
         assert exc.value.status_code == 400
 
     def test_get_tenant_id_raises_on_missing_key(self):
-        from app.api.v1.endpoints.finance.payment_schedules import _get_tenant_id
         from fastapi import HTTPException
+
+        from app.api.v1.endpoints.finance.payment_schedules import _get_tenant_id
         with pytest.raises(HTTPException) as exc:
             _get_tenant_id({})
         assert exc.value.status_code == 400
@@ -99,8 +104,9 @@ class TestScheduleSchemas:
         assert sched.status == "PENDING"
 
     def test_create_schema_rejects_negative_amount(self):
-        from app.api.v1.endpoints.finance.payment_schedules import PaymentScheduleCreate
         from pydantic import ValidationError
+
+        from app.api.v1.endpoints.finance.payment_schedules import PaymentScheduleCreate
         with pytest.raises(ValidationError):
             PaymentScheduleCreate(
                 invoice_id=str(uuid.uuid4()),
@@ -110,8 +116,9 @@ class TestScheduleSchemas:
             )
 
     def test_create_schema_rejects_above_cap(self):
-        from app.api.v1.endpoints.finance.payment_schedules import PaymentScheduleCreate
         from pydantic import ValidationError
+
+        from app.api.v1.endpoints.finance.payment_schedules import PaymentScheduleCreate
         with pytest.raises(ValidationError):
             PaymentScheduleCreate(
                 invoice_id=str(uuid.uuid4()),
@@ -150,8 +157,9 @@ class TestScheduleSchemas:
         assert upd.amount is None
 
     def test_update_schema_rejects_negative_amount(self):
-        from app.api.v1.endpoints.finance.payment_schedules import PaymentScheduleUpdate
         from pydantic import ValidationError
+
+        from app.api.v1.endpoints.finance.payment_schedules import PaymentScheduleUpdate
         with pytest.raises(ValidationError):
             PaymentScheduleUpdate(amount=-1.0)
 
@@ -169,8 +177,9 @@ class TestScheduleRowToDict:
     """_row_to_dict doit produire un dict JSON-compatible."""
 
     def test_row_to_dict_handles_none_dates(self):
-        from app.api.v1.endpoints.finance.payment_schedules import _row_to_dict
         from types import SimpleNamespace
+
+        from app.api.v1.endpoints.finance.payment_schedules import _row_to_dict
         row = SimpleNamespace(
             id=uuid.uuid4(),
             tenant_id=uuid.uuid4(),
@@ -191,8 +200,9 @@ class TestScheduleRowToDict:
         assert isinstance(result["id"], str)
 
     def test_row_to_dict_serializes_uuid_as_string(self):
-        from app.api.v1.endpoints.finance.payment_schedules import _row_to_dict
         from types import SimpleNamespace
+
+        from app.api.v1.endpoints.finance.payment_schedules import _row_to_dict
         tid = uuid.uuid4()
         row = SimpleNamespace(
             id=tid,

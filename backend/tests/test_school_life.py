@@ -1,6 +1,7 @@
 """Tests for school_life operational endpoints — auth guards + shape checks."""
 from conftest import get_test_client
 
+
 client = get_test_client()
 
 SCHOOL_LIFE_ENDPOINTS = [

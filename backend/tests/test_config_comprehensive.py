@@ -11,6 +11,8 @@ Covers:
 These are pure unit tests — no database needed.
 """
 import os
+
+
 # Set test environment BEFORE any app imports to prevent DB connection errors
 os.environ.setdefault("DEBUG", "True")
 os.environ.setdefault("SECRET_KEY", "test-secret-key-for-testing-only-32chars")
@@ -19,7 +21,7 @@ os.environ.setdefault("DATABASE_URL_SYNC", "sqlite:///./test.db")
 os.environ.setdefault("DATABASE_URL_ASYNC", "sqlite+aiosqlite:///./test.db")
 os.environ.setdefault("REDIS_URL", "redis://localhost:6379/0")
 
-from unittest.mock import patch, MagicMock
+from unittest.mock import MagicMock, patch
 
 import pytest
 
@@ -369,7 +371,7 @@ class TestSettingsSecretKeyValidation:
         key = "a" * 32
         with patch.dict(os.environ, {"DEBUG": "True", "SECRET_KEY": key, "ENVIRONMENT": ""}):
             settings = Settings()
-            assert settings.SECRET_KEY == key
+            assert key == settings.SECRET_KEY
 
     def test_prod_mode_rejects_short_key(self):
         """In production, a SECRET_KEY shorter than 32 chars causes os._exit(1)."""
@@ -380,11 +382,10 @@ class TestSettingsSecretKeyValidation:
             "DEBUG": "False",
             "SECRET_KEY": "too-short",
             "ENVIRONMENT": "production",
-        }):
-            with patch("os._exit", mock_exit):
-                with pytest.raises(SystemExit):
-                    Settings()
-                mock_exit.assert_called_once_with(1)
+        }), patch("os._exit", mock_exit):
+            with pytest.raises(SystemExit):
+                Settings()
+            mock_exit.assert_called_once_with(1)
 
     def test_prod_mode_rejects_empty_key(self):
         """In production, an empty SECRET_KEY causes os._exit(1)."""
@@ -395,11 +396,10 @@ class TestSettingsSecretKeyValidation:
             "DEBUG": "False",
             "SECRET_KEY": "",
             "ENVIRONMENT": "production",
-        }):
-            with patch("os._exit", mock_exit):
-                with pytest.raises(SystemExit):
-                    Settings()
-                mock_exit.assert_called_once_with(1)
+        }), patch("os._exit", mock_exit):
+            with pytest.raises(SystemExit):
+                Settings()
+            mock_exit.assert_called_once_with(1)
 
     def test_staging_rejects_short_key(self):
         """In staging environment, a short SECRET_KEY causes os._exit(1)."""
@@ -425,11 +425,10 @@ class TestSettingsSecretKeyValidation:
             "DEBUG": "False",
             "SECRET_KEY": "short",
             "ENVIRONMENT": "",
-        }):
-            with patch("os._exit", mock_exit):
-                with pytest.raises(SystemExit):
-                    Settings()
-                mock_exit.assert_called_once_with(1)
+        }), patch("os._exit", mock_exit):
+            with pytest.raises(SystemExit):
+                Settings()
+            mock_exit.assert_called_once_with(1)
 
     def test_prod_mode_accepts_long_key(self):
         """In production, a SECRET_KEY with >=32 chars is accepted."""
@@ -442,7 +441,7 @@ class TestSettingsSecretKeyValidation:
             "ENVIRONMENT": "production",
         }):
             settings = Settings()
-            assert settings.SECRET_KEY == key
+            assert key == settings.SECRET_KEY
 
 
 # ─── Pool Size Parsing Tests ────────────────────────────────────────────────
@@ -472,8 +471,9 @@ class TestPoolSizeParsing:
         Pydantic raises ValidationError when the validator returns None.
         This is the actual behavior — the test verifies it raises properly.
         """
-        from app.core.config import Settings
         from pydantic import ValidationError
+
+        from app.core.config import Settings
 
         with patch.dict(os.environ, {
             "DEBUG": "True",
@@ -492,31 +492,31 @@ class TestPoolSizeParsing:
         The validator returns None for invalid strings, and since the field
         is typed as int, Pydantic raises ValidationError.
         """
-        from app.core.config import Settings
         from pydantic import ValidationError
+
+        from app.core.config import Settings
 
         with patch.dict(os.environ, {
             "DEBUG": "True",
             "SECRET_KEY": "a" * 32,
             "DATABASE_POOL_SIZE": "not-a-number",
             "DATABASE_MAX_OVERFLOW": "also-not-a-number",
-        }):
-            with pytest.raises(ValidationError):
-                Settings()
+        }), pytest.raises(ValidationError):
+            Settings()
 
     def test_whitespace_string_falls_back_to_default(self):
         """Whitespace-only string for pool size triggers ValidationError."""
-        from app.core.config import Settings
         from pydantic import ValidationError
+
+        from app.core.config import Settings
 
         with patch.dict(os.environ, {
             "DEBUG": "True",
             "SECRET_KEY": "a" * 32,
             "DATABASE_POOL_SIZE": "   ",
             "DATABASE_MAX_OVERFLOW": "   ",
-        }):
-            with pytest.raises(ValidationError):
-                Settings()
+        }), pytest.raises(ValidationError):
+            Settings()
 
     def test_zero_value_accepted(self):
         """Zero is a valid integer value (not treated as empty)."""
@@ -660,29 +660,29 @@ class TestGroqMaxTokensParsing:
 
     def test_empty_string_falls_back(self):
         """Empty string for GROQ_MAX_TOKENS triggers ValidationError."""
-        from app.core.config import Settings
         from pydantic import ValidationError
+
+        from app.core.config import Settings
 
         with patch.dict(os.environ, {
             "DEBUG": "True",
             "SECRET_KEY": "a" * 32,
             "GROQ_MAX_TOKENS": "",
-        }):
-            with pytest.raises(ValidationError):
-                Settings()
+        }), pytest.raises(ValidationError):
+            Settings()
 
     def test_invalid_string_falls_back(self):
         """Invalid string for GROQ_MAX_TOKENS triggers ValidationError."""
-        from app.core.config import Settings
         from pydantic import ValidationError
+
+        from app.core.config import Settings
 
         with patch.dict(os.environ, {
             "DEBUG": "True",
             "SECRET_KEY": "a" * 32,
             "GROQ_MAX_TOKENS": "not-a-number",
-        }):
-            with pytest.raises(ValidationError):
-                Settings()
+        }), pytest.raises(ValidationError):
+            Settings()
 
 
 # ─── get_secret Function Tests ──────────────────────────────────────────────
@@ -712,27 +712,25 @@ class TestGetSecret:
         """get_secret reads from /run/secrets/ when file exists."""
         from app.core.config import get_secret
 
-        with patch("os.path.exists", return_value=True):
-            with patch("builtins.open", MagicMock()):
-                m = MagicMock()
-                m.__enter__ = MagicMock(return_value=MagicMock(read=MagicMock(return_value="secret_from_file\n")))
-                m.__exit__ = MagicMock(return_value=False)
-                with patch("builtins.open", return_value=m):
-                    result = get_secret("MY_SECRET", "default")
-                    assert result == "secret_from_file"
+        with patch("os.path.exists", return_value=True), patch("builtins.open", MagicMock()):
+            m = MagicMock()
+            m.__enter__ = MagicMock(return_value=MagicMock(read=MagicMock(return_value="secret_from_file\n")))
+            m.__exit__ = MagicMock(return_value=False)
+            with patch("builtins.open", return_value=m):
+                result = get_secret("MY_SECRET", "default")
+                assert result == "secret_from_file"
 
     def test_docker_secrets_takes_priority_over_env(self):
         """Docker secrets file takes priority over environment variable."""
         from app.core.config import get_secret
 
-        with patch.dict(os.environ, {"MY_SECRET": "env_value"}):
-            with patch("os.path.exists", return_value=True):
-                m = MagicMock()
-                m.__enter__ = MagicMock(return_value=MagicMock(read=MagicMock(return_value="file_value\n")))
-                m.__exit__ = MagicMock(return_value=False)
-                with patch("builtins.open", return_value=m):
-                    result = get_secret("MY_SECRET", "default")
-                    assert result == "file_value"
+        with patch.dict(os.environ, {"MY_SECRET": "env_value"}), patch("os.path.exists", return_value=True):
+            m = MagicMock()
+            m.__enter__ = MagicMock(return_value=MagicMock(read=MagicMock(return_value="file_value\n")))
+            m.__exit__ = MagicMock(return_value=False)
+            with patch("builtins.open", return_value=m):
+                result = get_secret("MY_SECRET", "default")
+                assert result == "file_value"
 
 
 # ─── URL Normalization in Settings Validator Tests ──────────────────────────

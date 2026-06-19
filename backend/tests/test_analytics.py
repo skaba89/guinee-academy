@@ -1,6 +1,6 @@
 """Tests for analytics and settings endpoints — auth guards + response shape."""
-import pytest
 from conftest import get_test_client
+
 
 client = get_test_client()
 
@@ -38,7 +38,6 @@ class TestMetricsEndpoint:
 
     def test_metrics_blocked_without_secret(self, monkeypatch):
         """When DEBUG=false and no secret provided, must return 403."""
-        import os
         from app.core.config import settings
         monkeypatch.setenv("DEBUG", "false")
         monkeypatch.delenv("METRICS_SECRET", raising=False)
@@ -50,7 +49,6 @@ class TestMetricsEndpoint:
 
     def test_metrics_reachable_in_debug(self, monkeypatch):
         """In DEBUG mode, metrics are accessible without authentication."""
-        import os
         monkeypatch.setenv("DEBUG", "true")
         resp = client.get("/metrics/")
         # Should not be 404; content-type text/plain for Prometheus

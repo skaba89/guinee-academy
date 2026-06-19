@@ -11,9 +11,10 @@ Phase 1 of the QA audit (Critical: Library & Inventory race conditions).
 """
 import os
 import uuid
-from unittest.mock import MagicMock, patch
+from datetime import UTC
 
 import pytest
+
 
 # Set test environment BEFORE any app imports
 os.environ["DEBUG"] = "True"
@@ -53,9 +54,9 @@ class TestLibraryRaceConditionPrevention:
     def test_concurrent_borrow_second_fails(self):
         """If two users try to borrow the same copy, the second must fail."""
         # Simulate the race condition scenario
-        book_copy_id = str(uuid.uuid4())
+        str(uuid.uuid4())
         user_a = str(uuid.uuid4())
-        user_b = str(uuid.uuid4())
+        str(uuid.uuid4())
 
         # First borrow succeeds
         first_borrow_result = {"success": True, "borrowed_by": user_a}
@@ -268,9 +269,9 @@ class TestOptimisticLockingPattern:
 
     def test_updated_at_timestamp_check(self):
         """Alternative pattern: check updated_at hasn't changed."""
-        from datetime import datetime, timezone
+        from datetime import datetime
 
-        current_updated_at = datetime.now(timezone.utc)
+        current_updated_at = datetime.now(UTC)
         client_updated_at = current_updated_at  # Same timestamp
 
         # If someone else modified the record, current_updated_at would differ

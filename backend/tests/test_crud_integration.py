@@ -12,6 +12,8 @@ These are true integration tests — they hit a real (in-memory) database
 with real SQLAlchemy models and CRUD functions.
 """
 import os
+
+
 # Set test environment BEFORE any app imports to prevent DB connection errors
 os.environ.setdefault("DEBUG", "True")
 os.environ.setdefault("SECRET_KEY", "test-secret-key-for-testing-only-32chars")
@@ -28,15 +30,12 @@ from sqlalchemy import create_engine, event
 from sqlalchemy.orm import sessionmaker
 
 from app.models.base import Base
+from app.models.payment import PaymentMethod, PaymentStatus
+from app.models.student import Gender, Student, StudentStatus
 from app.models.tenant import Tenant
-from app.models.student import Student, Gender, StudentStatus
-from app.models.grade import Grade
-from app.models.payment import Payment, PaymentStatus, PaymentMethod
-from app.models.user import User
-from app.models.user_role import UserRole
-from app.schemas.student import StudentCreate, StudentUpdate
 from app.schemas.grade import GradeCreate, GradeUpdate
 from app.schemas.payment import PaymentCreate, PaymentUpdate
+from app.schemas.student import StudentCreate, StudentUpdate
 
 
 # ─── Fixtures ────────────────────────────────────────────────────────────────
@@ -313,7 +312,7 @@ class TestStudentCRUD:
             date_of_birth=date(2000, 1, 1),
             gender=Gender.FEMALE,
         )
-        created1 = create_student(db_session, s1, tenant_a.id)
+        create_student(db_session, s1, tenant_a.id)
         created2 = create_student(db_session, s2, tenant_a.id)
 
         # Update second student to GRADUATED
@@ -660,7 +659,7 @@ class TestPaymentCRUD:
             )
             create_payment(db_session, payment_data, tenant_a.id)
 
-        payments, total = get_payments(db_session, tenant_a.id, student_id=s.id)
+        _payments, total = get_payments(db_session, tenant_a.id, student_id=s.id)
         assert total == 3
 
     def test_update_payment(self, db_session, tenant_a):
@@ -899,8 +898,8 @@ class TestCascadeDeletes:
 
     def test_deleting_student_cascades_to_grades(self, db_session, tenant_a):
         """Deleting a student cascades to their grades."""
-        from app.crud.student import create_student, delete_student
         from app.crud.grade import create_grade, get_grades
+        from app.crud.student import delete_student
 
         s = Student(
             id=uuid.uuid4(),
@@ -927,13 +926,13 @@ class TestCascadeDeletes:
         delete_student(db_session, s.id, tenant_a.id)
 
         # Grades should be gone (via cascade)
-        grades, total = get_grades(db_session, tenant_a.id, student_id=s.id)
+        _grades, total = get_grades(db_session, tenant_a.id, student_id=s.id)
         assert total == 0
 
     def test_deleting_student_cascades_to_payments(self, db_session, tenant_a):
         """Deleting a student cascades to their payments."""
-        from app.crud.student import delete_student
         from app.crud.payment import create_payment, get_payments
+        from app.crud.student import delete_student
 
         s = Student(
             id=uuid.uuid4(),
@@ -965,5 +964,5 @@ class TestCascadeDeletes:
         delete_student(db_session, s.id, tenant_a.id)
 
         # Payments should be gone
-        payments, total = get_payments(db_session, tenant_a.id, student_id=s.id)
+        _payments, total = get_payments(db_session, tenant_a.id, student_id=s.id)
         assert total == 0

@@ -11,6 +11,8 @@ Covers:
 Uses an in-memory SQLite database so tests are fast and isolated.
 """
 import os
+
+
 # Set test environment BEFORE any app imports to prevent DB connection errors
 os.environ.setdefault("DEBUG", "True")
 os.environ.setdefault("SECRET_KEY", "test-secret-key-for-testing-only-32chars")
@@ -20,17 +22,17 @@ os.environ.setdefault("DATABASE_URL_ASYNC", "sqlite+aiosqlite:///./test.db")
 os.environ.setdefault("REDIS_URL", "redis://localhost:6379/0")
 
 import uuid
-from datetime import date, datetime, timezone
+from datetime import UTC, date, datetime
 
 import pytest
 from sqlalchemy import create_engine, event
 from sqlalchemy.orm import sessionmaker
 
-from app.models.base import Base, GUID, TimestampMixin, TenantMixin, UUIDMixin
-from app.models.student import Student, Gender, StudentStatus
-from app.models.tenant import Tenant
+from app.models.base import GUID, Base
 from app.models.grade import Grade
-from app.models.payment import Payment, PaymentStatus, PaymentMethod
+from app.models.payment import Payment, PaymentMethod, PaymentStatus
+from app.models.student import Gender, Student, StudentStatus
+from app.models.tenant import Tenant
 from app.models.user import User
 from app.models.user_role import UserRole
 
@@ -728,7 +730,7 @@ class TestTimestampMixin:
         db_session.refresh(t)
 
         # The datetime should be recent (within the last 10 seconds)
-        now = datetime.now(timezone.utc).replace(tzinfo=None)
+        now = datetime.now(UTC).replace(tzinfo=None)
         delta = abs((now - t.created_at).total_seconds())
         assert delta < 10, f"created_at ({t.created_at}) is too far from now ({now})"
 
@@ -744,7 +746,6 @@ class TestTimestampMixin:
         db_session.commit()
         db_session.refresh(t)
 
-        original_updated = t.updated_at
 
         # Force a small delay to ensure different timestamp
         import time

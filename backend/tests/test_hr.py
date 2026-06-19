@@ -12,12 +12,11 @@ Deux axes de tests :
 2. CRUD fonctionnel : avec auth mockée + DB SQLite isolée, vérifier le cycle de vie complet
 """
 import uuid
-from datetime import date
 
 import pytest
-from fastapi.testclient import TestClient
 
 from conftest import get_test_client
+
 
 client = get_test_client()
 
@@ -201,8 +200,8 @@ def hr_session():
     Also ensures a tenant row exists in the test DB so HR CRUD operations
     don't fail on the foreign-key constraint to tenants.id.
     """
+    from app.core.database import SessionLocal, engine
     from app.core.security import get_current_user
-    from app.core.database import engine, SessionLocal
     from app.main import app
     from app.models.base import Base
     from app.models.tenant import Tenant

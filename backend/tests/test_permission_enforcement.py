@@ -12,10 +12,10 @@ of the QA audit (Major: 31 endpoints missing require_permission).
 """
 import os
 import uuid
-from unittest.mock import MagicMock, patch
 
 import pytest
 from fastapi import HTTPException
+
 
 # Set test environment BEFORE any app imports
 os.environ["DEBUG"] = "True"
@@ -37,7 +37,7 @@ class TestRequirePermissionDecorator:
         from app.core.security import require_permission
 
         # Create a mock user without the required permission
-        mock_user = {
+        {
             "id": str(uuid.uuid4()),
             "email": "student@test.com",
             "roles": ["STUDENT"],
@@ -46,7 +46,7 @@ class TestRequirePermissionDecorator:
 
         # STUDENT role does not have "users:write" permission
         with pytest.raises(HTTPException) as exc_info:
-            decorator = require_permission("users:write")
+            require_permission("users:write")
             # The decorator is a dependency, so we need to call it with the mock user
             # In production, FastAPI resolves the dependency chain
             # For this test, we validate the permission matrix directly
@@ -79,7 +79,6 @@ class TestRequirePermissionDecorator:
 
     def test_require_permission_resource_wildcard(self):
         """Resource-level wildcard (e.g., 'users:*') should match specific permissions."""
-        from app.core.security import require_permission
 
         # The decorator supports f"{resource}:*" pattern
         # e.g., if user has "users:*", they should pass "users:read" and "users:write"
@@ -286,7 +285,6 @@ class TestPermissionMatrixConsistency:
             "auth:manage",
         ]
 
-        restricted_roles = {"SUPER_ADMIN", "TENANT_ADMIN"}
         student_perms = set(ROLE_PERMISSIONS.get("STUDENT", []))
         parent_perms = set(ROLE_PERMISSIONS.get("PARENT", []))
 
@@ -321,7 +319,7 @@ class TestEndpointPermissionCoverage:
         import_results = {}
         for package, module in modules:
             try:
-                mod = __import__(f"{package}.{module}", fromlist=[module])
+                __import__(f"{package}.{module}", fromlist=[module])
                 import_results[module] = True
             except ImportError:
                 import_results[module] = False

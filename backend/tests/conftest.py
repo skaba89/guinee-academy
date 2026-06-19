@@ -2,17 +2,19 @@
 Fixtures pytest pour les tests Guinée Academy.
 Utilise une base SQLite en mémoire pour isolation totale.
 """
-import pytest
+import os
+
+# Patcher les dépendances externes avant l'import de l'app
+import sys
 import uuid
 from contextlib import asynccontextmanager
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
+
+import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
-# Patcher les dépendances externes avant l'import de l'app
-import sys
-import os
 
 # Force-set env vars (don't use setdefault — shell env or .env may already
 # contain a DATABASE_URL that is not a valid SQLAlchemy connection string,
@@ -48,15 +50,14 @@ async def _noop_lifespan(app):
 def get_test_client():
     """Create a TestClient with lifespan disabled. Use in integration tests."""
     from app.main import app
-    original = app.router.lifespan_context
     app.router.lifespan_context = _noop_lifespan
     client = TestClient(app, raise_server_exceptions=False)
     client.__enter__()
     # Ensure essential tables exist in test.db so login flow can query them.
     # (Lifespan is mocked, so the normal table-creation step is skipped.)
     try:
-        from app.models.base import Base
         from app.core.database import engine
+        from app.models.base import Base
         Base.metadata.create_all(bind=engine, checkfirst=True)
     except Exception as e:
         # Don't fail tests if table creation fails — some tests don't need DB.

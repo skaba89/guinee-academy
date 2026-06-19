@@ -56,7 +56,7 @@ class TestConfigValidation:
     def test_prod_mode_rejects_empty_secret(self):
         """En mode PRODUCTION, une clé vide doit provoquer os._exit(1)."""
         import os
-        from unittest.mock import patch, MagicMock
+        from unittest.mock import MagicMock, patch
         # The validator calls os._exit(1) for empty SECRET_KEY when DEBUG=False.
         # We mock os._exit to prevent it from killing the test process.
         mock_exit = MagicMock(side_effect=SystemExit(1))

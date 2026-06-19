@@ -1,6 +1,8 @@
 """Tests des endpoints étudiants — isolation multi-tenant."""
 import uuid
+
 from conftest import get_test_client
+
 
 client = get_test_client()
 

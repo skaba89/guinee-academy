@@ -1,6 +1,7 @@
 """Tests for attendance, homework, clubs, and incident endpoints — auth guards + existence."""
 from conftest import get_test_client
 
+
 client = get_test_client()
 
 

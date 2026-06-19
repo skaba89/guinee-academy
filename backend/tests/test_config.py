@@ -1,6 +1,4 @@
 """Tests pour la configuration et les utilitaires core."""
-import os
-import pytest
 
 
 class TestDatabaseUrlNormalization:

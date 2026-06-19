@@ -12,6 +12,8 @@ Covers:
 Uses unittest.mock to patch Redis/DB where needed.
 """
 import os
+
+
 # Set test environment BEFORE any app imports to prevent DB connection errors
 os.environ.setdefault("DEBUG", "True")
 os.environ.setdefault("SECRET_KEY", "test-secret-key-for-testing-only-32chars")
@@ -21,7 +23,7 @@ os.environ.setdefault("DATABASE_URL_ASYNC", "sqlite+aiosqlite:///./test.db")
 os.environ.setdefault("REDIS_URL", "redis://localhost:6379/0")
 
 import time
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import jwt
@@ -45,8 +47,8 @@ class TestJWTCreation:
 
     def test_create_token_contains_issuer_claim(self):
         """Created token includes 'iss': 'guinee-academy' claim."""
-        from app.core.security import create_access_token
         from app.core.config import settings
+        from app.core.security import create_access_token
 
         token = create_access_token(data={"sub": "user-123"})
         payload = jwt.decode(
@@ -61,8 +63,8 @@ class TestJWTCreation:
 
     def test_create_token_contains_audience_claim(self):
         """Created token includes 'aud': 'guinee-academy-api' claim."""
-        from app.core.security import create_access_token
         from app.core.config import settings
+        from app.core.security import create_access_token
 
         token = create_access_token(data={"sub": "user-123"})
         payload = jwt.decode(
@@ -77,8 +79,8 @@ class TestJWTCreation:
 
     def test_create_token_includes_subject(self):
         """Created token preserves the 'sub' claim from input data."""
-        from app.core.security import create_access_token
         from app.core.config import settings
+        from app.core.security import create_access_token
 
         token = create_access_token(data={"sub": "user-456"})
         payload = jwt.decode(
@@ -93,12 +95,12 @@ class TestJWTCreation:
 
     def test_create_token_includes_expiry(self):
         """Created token includes an 'exp' claim."""
-        from app.core.security import create_access_token
         from app.core.config import settings
+        from app.core.security import create_access_token
 
-        before = datetime.now(timezone.utc)
+        before = datetime.now(UTC)
         token = create_access_token(data={"sub": "user-123"})
-        after = datetime.now(timezone.utc)
+        after = datetime.now(UTC)
 
         payload = jwt.decode(
             token,
@@ -108,7 +110,7 @@ class TestJWTCreation:
             audience="guinee-academy-api",
             issuer="guinee-academy",
         )
-        exp = datetime.fromtimestamp(payload["exp"], tz=timezone.utc)
+        exp = datetime.fromtimestamp(payload["exp"], tz=UTC)
 
         # Expiry should be roughly 30 minutes from now (default)
         expected_min = before + timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES) - timedelta(seconds=2)
@@ -117,13 +119,13 @@ class TestJWTCreation:
 
     def test_create_token_custom_expiry(self):
         """create_access_token respects custom expires_delta."""
-        from app.core.security import create_access_token
         from app.core.config import settings
+        from app.core.security import create_access_token
 
         custom_delta = timedelta(minutes=5)
-        before = datetime.now(timezone.utc)
+        before = datetime.now(UTC)
         token = create_access_token(data={"sub": "user-123"}, expires_delta=custom_delta)
-        after = datetime.now(timezone.utc)
+        after = datetime.now(UTC)
 
         payload = jwt.decode(
             token,
@@ -133,7 +135,7 @@ class TestJWTCreation:
             audience="guinee-academy-api",
             issuer="guinee-academy",
         )
-        exp = datetime.fromtimestamp(payload["exp"], tz=timezone.utc)
+        exp = datetime.fromtimestamp(payload["exp"], tz=UTC)
 
         expected_min = before + custom_delta - timedelta(seconds=2)
         expected_max = after + custom_delta + timedelta(seconds=2)
@@ -141,8 +143,8 @@ class TestJWTCreation:
 
     def test_create_token_preserves_custom_claims(self):
         """create_access_token preserves additional claims in data."""
-        from app.core.security import create_access_token
         from app.core.config import settings
+        from app.core.security import create_access_token
 
         token = create_access_token(data={
             "sub": "user-123",
@@ -183,7 +185,6 @@ class TestJWTVerification:
     def test_verify_valid_token(self):
         """verify_token decodes a valid token and returns the payload."""
         from app.core.security import create_access_token, verify_token
-        from app.core.config import settings
 
         token = create_access_token(data={"sub": "user-123"})
         # verify_token expects a string token, not Depends
@@ -210,7 +211,7 @@ class TestJWTVerification:
 
         # Create a token with a different secret
         fake_token = jwt.encode(
-            {"sub": "user-123", "exp": datetime.now(timezone.utc) + timedelta(hours=1),
+            {"sub": "user-123", "exp": datetime.now(UTC) + timedelta(hours=1),
              "iss": "guinee-academy", "aud": "guinee-academy-api"},
             "wrong-secret-key-that-is-different-from-real-one!!",
             algorithm="HS256",
@@ -222,12 +223,12 @@ class TestJWTVerification:
 
     def test_verify_token_missing_issuer_raises_401(self):
         """verify_token raises 401 when issuer claim is missing."""
-        from app.core.security import verify_token
         from app.core.config import settings
+        from app.core.security import verify_token
 
         # Create a token without the 'iss' claim
         token = jwt.encode(
-            {"sub": "user-123", "exp": datetime.now(timezone.utc) + timedelta(hours=1),
+            {"sub": "user-123", "exp": datetime.now(UTC) + timedelta(hours=1),
              "aud": "guinee-academy-api"},
             settings.SECRET_KEY,
             algorithm="HS256",
@@ -239,11 +240,11 @@ class TestJWTVerification:
 
     def test_verify_token_wrong_issuer_raises_401(self):
         """verify_token raises 401 when issuer is not 'guinee-academy'."""
-        from app.core.security import verify_token
         from app.core.config import settings
+        from app.core.security import verify_token
 
         token = jwt.encode(
-            {"sub": "user-123", "exp": datetime.now(timezone.utc) + timedelta(hours=1),
+            {"sub": "user-123", "exp": datetime.now(UTC) + timedelta(hours=1),
              "iss": "evil-attacker", "aud": "guinee-academy-api"},
             settings.SECRET_KEY,
             algorithm="HS256",
@@ -255,11 +256,11 @@ class TestJWTVerification:
 
     def test_verify_token_missing_audience_raises_401(self):
         """verify_token raises 401 when audience claim is missing."""
-        from app.core.security import verify_token
         from app.core.config import settings
+        from app.core.security import verify_token
 
         token = jwt.encode(
-            {"sub": "user-123", "exp": datetime.now(timezone.utc) + timedelta(hours=1),
+            {"sub": "user-123", "exp": datetime.now(UTC) + timedelta(hours=1),
              "iss": "guinee-academy"},
             settings.SECRET_KEY,
             algorithm="HS256",
@@ -271,11 +272,11 @@ class TestJWTVerification:
 
     def test_verify_token_wrong_audience_raises_401(self):
         """verify_token raises 401 when audience is not 'guinee-academy-api'."""
-        from app.core.security import verify_token
         from app.core.config import settings
+        from app.core.security import verify_token
 
         token = jwt.encode(
-            {"sub": "user-123", "exp": datetime.now(timezone.utc) + timedelta(hours=1),
+            {"sub": "user-123", "exp": datetime.now(UTC) + timedelta(hours=1),
              "iss": "guinee-academy", "aud": "wrong-api"},
             settings.SECRET_KEY,
             algorithm="HS256",
@@ -420,7 +421,7 @@ class TestPasswordHashing:
         """Passwords with unicode characters are hashed and verified correctly."""
         import bcrypt
         # Keep under 72 bytes (bcrypt limit enforced in bcrypt>=5.0)
-        password = "P@sswörd".encode("utf-8")
+        password = "P@sswörd".encode()
         hashed = bcrypt.hashpw(password, bcrypt.gensalt())
         assert bcrypt.checkpw(password, hashed) is True
 
@@ -1051,7 +1052,7 @@ class TestTokenVersionValidation:
     @pytest.mark.asyncio
     async def test_redis_error_defaults_to_zero(self):
         """When Redis is unavailable, version defaults to 0 (legacy allowed)."""
-        from app.core.security import validate_token_version, _get_token_version_from_redis
+        from app.core.security import validate_token_version
 
         # _get_token_version_from_redis catches exceptions and returns 0
         with patch("app.core.security._get_token_version_from_redis", new_callable=AsyncMock) as mock_redis:
@@ -1162,7 +1163,6 @@ class TestGetCurrentUser:
             result = MagicMock()
             # Every call to .filter().first() returns the user for the first query,
             # and tenant for subsequent queries
-            first_results = [mock_user, mock_tenant]
             current = call_count[0]
             call_count[0] += 1
 
@@ -1195,4 +1195,3 @@ class TestGetCurrentUser:
 
 
 # Need to import uuid for the get_current_user test
-import uuid

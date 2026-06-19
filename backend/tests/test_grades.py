@@ -1,6 +1,7 @@
 """Tests for academic grading endpoints — auth guards + endpoint existence."""
 from conftest import get_test_client
 
+
 client = get_test_client()
 
 

@@ -10,11 +10,10 @@ Covers:
 These tests validate the security improvements from Phase 2.
 """
 import os
-import uuid
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, patch
 
 import pytest
-from fastapi import HTTPException
+
 
 # Set test environment BEFORE any app imports
 os.environ["DEBUG"] = "True"
@@ -26,6 +25,8 @@ os.environ["REDIS_URL"] = "redis://localhost:6379/0"
 
 # Mock slowapi if not installed (required by auth module at import time)
 import sys as _sys
+
+
 try:
     import slowapi  # noqa: F401
 except ImportError:
@@ -196,9 +197,10 @@ class TestAuthEndpointSecurity:
 
         Fix #3: Tokens without iss/aud could be accepted by other services.
         """
-        from app.core.security import create_access_token
-        from app.core.config import settings
         import jwt
+
+        from app.core.config import settings
+        from app.core.security import create_access_token
 
         token = create_access_token(data={"sub": "user-123"})
         payload = jwt.decode(

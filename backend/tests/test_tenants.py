@@ -1,8 +1,9 @@
 """Tests des endpoints tenants (publics et privés)."""
-import pytest
 import uuid
-from unittest.mock import patch, MagicMock
+from unittest.mock import MagicMock, patch
+
 from conftest import get_test_client
+
 
 SAMPLE_TENANT_ID = str(uuid.uuid4())
 client = get_test_client()
@@ -105,8 +106,9 @@ class TestTenantSchema:
 
     def test_public_card_model(self):
         """TenantPublicCard valide."""
-        from app.schemas.tenants import TenantPublicCard
         import uuid
+
+        from app.schemas.tenants import TenantPublicCard
         card = TenantPublicCard(
             id=uuid.uuid4(),
             name="Test School",

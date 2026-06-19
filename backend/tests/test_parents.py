@@ -1,6 +1,7 @@
 """Tests for parent portal endpoints — auth guards + basic shape validation."""
 from conftest import get_test_client
 
+
 client = get_test_client()
 
 

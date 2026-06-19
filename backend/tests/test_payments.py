@@ -1,7 +1,10 @@
 """Tests pour les endpoints finance (paiements, factures)."""
 import uuid
+
 import pytest
+
 from conftest import get_test_client
+
 
 client = get_test_client()
 
@@ -50,8 +53,9 @@ class TestPaymentSchemas:
         assert pay.method == "CASH"
 
     def test_payment_create_rejects_zero_amount(self):
-        from app.api.v1.endpoints.finance.payments import RegisterPaymentRequest
         from pydantic import ValidationError
+
+        from app.api.v1.endpoints.finance.payments import RegisterPaymentRequest
         with pytest.raises(ValidationError):
             RegisterPaymentRequest(
                 invoice_id=str(uuid.uuid4()),
@@ -60,8 +64,9 @@ class TestPaymentSchemas:
             )
 
     def test_payment_create_rejects_negative_amount(self):
-        from app.api.v1.endpoints.finance.payments import RegisterPaymentRequest
         from pydantic import ValidationError
+
+        from app.api.v1.endpoints.finance.payments import RegisterPaymentRequest
         with pytest.raises(ValidationError):
             RegisterPaymentRequest(
                 invoice_id=str(uuid.uuid4()),
@@ -70,8 +75,9 @@ class TestPaymentSchemas:
             )
 
     def test_payment_create_rejects_huge_amount(self):
-        from app.api.v1.endpoints.finance.payments import RegisterPaymentRequest
         from pydantic import ValidationError
+
+        from app.api.v1.endpoints.finance.payments import RegisterPaymentRequest
         with pytest.raises(ValidationError):
             RegisterPaymentRequest(
                 invoice_id=str(uuid.uuid4()),
@@ -85,7 +91,7 @@ class TestPaymentSchemas:
 
 class TestPaymentSQLInjectionPrevention:
     def test_allowed_order_columns_whitelist(self):
-        from app.api.v1.endpoints.finance.payments import ALLOWED_ORDER_COLUMNS, ALLOWED_SORT_DIRECTIONS
+        from app.api.v1.endpoints.finance.payments import ALLOWED_ORDER_COLUMNS
         # Ensure common SQL injection payloads are NOT in the whitelist
         dangerous = ["1; DROP TABLE payments;", "* FROM payments--", "id OR 1=1"]
         for payload in dangerous:
@@ -93,11 +99,12 @@ class TestPaymentSQLInjectionPrevention:
 
     def test_allowed_sort_directions_only_asc_desc(self):
         from app.api.v1.endpoints.finance.payments import ALLOWED_SORT_DIRECTIONS
-        assert ALLOWED_SORT_DIRECTIONS == {"asc", "desc"}
+        assert {"asc", "desc"} == ALLOWED_SORT_DIRECTIONS
 
     def test_tenant_isolation_helper_raises_without_tenant(self):
-        from app.api.v1.endpoints.finance.payments import _get_tenant_id
         from fastapi import HTTPException
+
+        from app.api.v1.endpoints.finance.payments import _get_tenant_id
         with pytest.raises(HTTPException) as exc_info:
             _get_tenant_id({"tenant_id": None})
         assert exc_info.value.status_code == 400
@@ -124,14 +131,14 @@ class TestPaymentGateways:
         assert result is None
 
     def test_get_gateway_returns_cinetpay_when_configured(self):
-        from app.services.payment_gateways import get_gateway, CinetPayGateway
+        from app.services.payment_gateways import CinetPayGateway, get_gateway
         settings = {"cinetPayApiKey": "test-key", "cinetPaySiteId": "test-site"}
         gw = get_gateway("CINETPAY", settings)
         assert gw is not None
         assert isinstance(gw, CinetPayGateway)
 
     def test_get_gateway_returns_paytech_when_configured(self):
-        from app.services.payment_gateways import get_gateway, PayTechGateway
+        from app.services.payment_gateways import PayTechGateway, get_gateway
         settings = {"paytechApiKey": "test-key", "paytechSecretKey": "test-secret"}
         gw = get_gateway("PAYTECH", settings)
         assert gw is not None

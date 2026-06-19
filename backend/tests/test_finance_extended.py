@@ -1,7 +1,10 @@
 """Tests étendus finance — isolation tenant, idempotence, rate limiting."""
 import uuid
+
 import pytest
+
 from conftest import get_test_client
+
 
 client = get_test_client()
 
@@ -43,16 +46,18 @@ class TestPaymentTenantIsolation:
 
     def test_get_tenant_id_raises_on_none(self):
         """_get_tenant_id lève HTTPException 400 si tenant_id est None."""
-        from app.api.v1.endpoints.finance.payments import _get_tenant_id
         from fastapi import HTTPException
+
+        from app.api.v1.endpoints.finance.payments import _get_tenant_id
         with pytest.raises(HTTPException) as exc:
             _get_tenant_id({"tenant_id": None})
         assert exc.value.status_code == 400
 
     def test_get_tenant_id_raises_on_missing_key(self):
         """_get_tenant_id lève HTTPException 400 si tenant_id absent du dict."""
-        from app.api.v1.endpoints.finance.payments import _get_tenant_id
         from fastapi import HTTPException
+
+        from app.api.v1.endpoints.finance.payments import _get_tenant_id
         with pytest.raises(HTTPException) as exc:
             _get_tenant_id({})
         assert exc.value.status_code == 400
@@ -81,20 +86,23 @@ class TestPaymentIdempotence:
         assert req.reference == "REF-2025-001"
 
     def test_register_payment_schema_rejects_zero(self):
-        from app.api.v1.endpoints.finance.payments import RegisterPaymentRequest
         from pydantic import ValidationError
+
+        from app.api.v1.endpoints.finance.payments import RegisterPaymentRequest
         with pytest.raises(ValidationError):
             RegisterPaymentRequest(invoice_id=str(uuid.uuid4()), amount=0.0, method="CASH")
 
     def test_register_payment_schema_rejects_negative(self):
-        from app.api.v1.endpoints.finance.payments import RegisterPaymentRequest
         from pydantic import ValidationError
+
+        from app.api.v1.endpoints.finance.payments import RegisterPaymentRequest
         with pytest.raises(ValidationError):
             RegisterPaymentRequest(invoice_id=str(uuid.uuid4()), amount=-1.0, method="CASH")
 
     def test_register_payment_schema_rejects_above_cap(self):
-        from app.api.v1.endpoints.finance.payments import RegisterPaymentRequest
         from pydantic import ValidationError
+
+        from app.api.v1.endpoints.finance.payments import RegisterPaymentRequest
         with pytest.raises(ValidationError):
             RegisterPaymentRequest(invoice_id=str(uuid.uuid4()), amount=10_000_001.0, method="CASH")
 
@@ -107,8 +115,9 @@ class TestPaymentIdempotence:
         assert req.amount == 10_000_000.0
 
     def test_fee_create_schema_rejects_zero(self):
-        from app.api.v1.endpoints.finance.payments import FeeCreate
         from pydantic import ValidationError
+
+        from app.api.v1.endpoints.finance.payments import FeeCreate
         with pytest.raises(ValidationError):
             FeeCreate(name="Frais", amount=0.0)
 
@@ -126,7 +135,6 @@ class TestPaymentRateLimitConfig:
 
     def test_register_payment_has_rate_limit_decorator(self):
         """register_payment doit avoir un décorateur de rate limiting."""
-        import inspect
         from app.api.v1.endpoints.finance import payments as pay_module
         func = pay_module.register_payment
         # slowapi decorators wrap the function — verify __wrapped__ or _rate_limit_info

@@ -6,8 +6,9 @@ Covers:
 - Storage endpoint path traversal prevention
 - RBAC permission checks
 """
-import pytest
 from unittest.mock import AsyncMock, patch
+
+import pytest
 
 
 class TestTokenVersionValidation:
@@ -16,8 +17,9 @@ class TestTokenVersionValidation:
     @pytest.mark.asyncio
     async def test_legacy_token_rejected_after_logout_all(self):
         """A token without version (tv=0) must be rejected if logout-all was used."""
-        from app.core.security import validate_token_version
         from fastapi import HTTPException
+
+        from app.core.security import validate_token_version
 
         # Simulate Redis returning version 3 (logout-all used 3 times)
         with patch("app.core.security._get_token_version_from_redis", new_callable=AsyncMock) as mock_redis:
@@ -52,8 +54,9 @@ class TestTokenVersionValidation:
     @pytest.mark.asyncio
     async def test_stale_token_rejected(self):
         """A token with an older version is rejected."""
-        from app.core.security import validate_token_version
         from fastapi import HTTPException
+
+        from app.core.security import validate_token_version
 
         with patch("app.core.security._get_token_version_from_redis", new_callable=AsyncMock) as mock_redis:
             mock_redis.return_value = 5
