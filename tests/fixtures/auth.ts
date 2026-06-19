@@ -34,14 +34,17 @@ export const test = base.extend<AuthFixture>({
   },
 
   loginAs: async ({ page }, use) => {
-    const login = async (email: string, password: string) => {
-      await page.goto('/auth/login');
-      await page.locator('input[name="email"]').fill(email);
-      await page.locator('input[name="password"]').fill(password);
-      await page.locator('button:has-text("Se connecter")').click();
+    // Signature is (page, email, password) to match the AuthFixture type.
+    // `page` from the closure is intentionally ignored so callers can pass
+    // their own page (e.g. in tests with multiple pages).
+    const login = async (targetPage: Page, email: string, password: string) => {
+      await targetPage.goto('/auth/login');
+      await targetPage.locator('input[name="email"]').fill(email);
+      await targetPage.locator('input[name="password"]').fill(password);
+      await targetPage.locator('button:has-text("Se connecter")').click();
       
       // Attendre que la connexion soit complète
-      await page.waitForLoadState('networkidle');
+      await targetPage.waitForLoadState('networkidle');
     };
     
     await use(login);
