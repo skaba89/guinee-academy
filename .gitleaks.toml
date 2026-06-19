@@ -15,6 +15,10 @@ paths = [
   '''\.env\.production\.template''',
   '''backend/tests/.*\.py''',
   '''backend/scripts/.*\.py''',
+  # Documentation files use placeholder secret names in examples
+  '''docs/.*\.md''',
+  '''docs/.*\.rst''',
+  '''README\.md''',
 ]
 regexes = [
   # CI test placeholder values used in env vars
@@ -22,4 +26,8 @@ regexes = [
   '''test-bootstrap-secret-key-for-ci-32chars''',
   # Generic "CHANGE_ME_*" placeholders in example files
   '''CHANGE_ME_[a-z_]+''',
+  # Documentation placeholder values (in PHASE4_SECRETS_CONFIGURATION_GUIDE.md)
+  '''your-.*-secret-key-here''',
+  '''generate-with-openssl-rand-hex-32''',
 ]
+
