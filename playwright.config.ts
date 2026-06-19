@@ -6,8 +6,8 @@ import { defineConfig, devices } from '@playwright/test';
  * Docs: https://playwright.dev/docs/intro
  */
 export default defineConfig({
-  globalSetup: require.resolve('./tests/e2e/global-setup'),
-  globalTeardown: require.resolve('./tests/e2e/global-teardown'),
+  globalSetup: './tests/e2e/global-setup.ts',
+  globalTeardown: './tests/e2e/global-teardown.ts',
   testDir: './tests/e2e',
   /* Exécuter les tests un par un */
   fullyParallel: true,
@@ -52,10 +52,13 @@ export default defineConfig({
     },
   ],
 
-  /* Serveur de développement */
+  /* Serveur de développement.
+   * En CI, le serveur est déjà démarré par le workflow (vite preview
+   * sur le port 3000) — on réutilise l'instance existante au lieu d'en
+   * lancer une nouvelle qui entrerait en conflit de port. */
   webServer: {
     command: 'npm run dev',
     url: 'http://localhost:3000',
-    reuseExistingServer: !process.env.CI,
+    reuseExistingServer: true,
   },
 });
