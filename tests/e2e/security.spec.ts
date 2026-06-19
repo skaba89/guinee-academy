@@ -103,17 +103,17 @@ test.describe('Token Blacklist', () => {
   test('should reject blacklisted token after logout', async ({ page }) => {
     // Login
     await page.goto('/auth/login');
-    await page.fill('input[name="email"]', 'admin@test.local');
-    await page.fill('input[name="password"]', 'Password123!');
-    await page.click('button:has-text("Se connecter")');
+    await page.locator('input[name="email"]').fill('admin@test.local');
+    await page.locator('input[name="password"]').fill('Password123!');
+    await page.locator('button:has-text("Se connecter")').click();
     await page.waitForURL('**/admin/dashboard');
 
     // Get the token
     const token = await page.evaluate(() => localStorage.getItem('token'));
 
     // Logout
-    await page.click('[data-testid="user-menu"]');
-    await page.click('text=Déconnexion');
+    await page.locator('[data-testid="user-menu"]').click();
+    await page.locator('text=Déconnexion').click();
     await page.waitForURL('**/auth/login');
 
     // Try using the old token

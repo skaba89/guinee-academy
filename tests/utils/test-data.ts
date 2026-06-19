@@ -198,19 +198,19 @@ export async function waitForMessage(
  */
 export async function fillStudentForm(page: any, studentData: any) {
   if (studentData.first_name) {
-    await page.fill(SELECTORS.forms.firstName, studentData.first_name);
+    await page.locator(SELECTORS.forms.firstName).fill(studentData.first_name);
   }
   if (studentData.last_name) {
-    await page.fill(SELECTORS.forms.lastName, studentData.last_name);
+    await page.locator(SELECTORS.forms.lastName).fill(studentData.last_name);
   }
   if (studentData.email) {
-    await page.fill(SELECTORS.forms.email, studentData.email);
+    await page.locator(SELECTORS.forms.email).fill(studentData.email);
   }
   if (studentData.date_of_birth) {
-    await page.fill('input[name="date_of_birth"]', studentData.date_of_birth);
+    await page.locator('input[name="date_of_birth"]').fill(studentData.date_of_birth);
   }
   if (studentData.phone) {
-    await page.fill(SELECTORS.forms.phone, studentData.phone);
+    await page.locator(SELECTORS.forms.phone).fill(studentData.phone);
   }
 }
 

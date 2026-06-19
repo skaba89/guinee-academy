@@ -31,19 +31,19 @@ test.describe('Gestion des Élèves', () => {
     await page.goto('/admin/students');
     
     // Cliquer sur "Nouvel Élève" ou "Ajouter"
-    await page.click('button:has-text("Nouvel Élève"), button:has-text("Ajouter")');
-    
+    await page.locator('button:has-text("Nouvel Élève"), button:has-text("Ajouter")').click();
+
     // Remplir le formulaire
     const firstName = `Jean-${Date.now()}`;
     const lastName = 'Dupont';
-    
-    await page.fill('input[name="first_name"]', firstName);
-    await page.fill('input[name="last_name"]', lastName);
-    await page.fill('input[name="email"]', `jean.dupont.${Date.now()}@example.com`);
-    await page.fill('input[name="date_of_birth"]', '2010-05-15');
-    
+
+    await page.locator('input[name="first_name"]').fill(firstName);
+    await page.locator('input[name="last_name"]').fill(lastName);
+    await page.locator('input[name="email"]').fill(`jean.dupont.${Date.now()}@example.com`);
+    await page.locator('input[name="date_of_birth"]').fill('2010-05-15');
+
     // Sélectionner une classe
-    await page.click('select[name="classroom_id"], [data-testid="classroom-select"]');
+    await page.locator('select[name="classroom_id"], [data-testid="classroom-select"]').click();
     const options = page.locator('option, [role="option"]');
     const count = await options.count();
     if (count > 1) {
@@ -51,7 +51,7 @@ test.describe('Gestion des Élèves', () => {
     }
     
     // Soumettre
-    await page.click('button:has-text("Enregistrer"), button:has-text("Créer")');
+    await page.locator('button:has-text("Enregistrer"), button:has-text("Créer")').click();
     
     // Attendre le message de succès
     await expect(page.locator('text=/Élève créé|Élève ajouté|succès/i')).toBeVisible({ timeout: 5000 });
@@ -78,7 +78,7 @@ test.describe('Gestion des Élèves', () => {
     await emailInput.fill(newEmail);
     
     // Soumettre
-    await page.click('button:has-text("Enregistrer"), button:has-text("Mettre à jour")');
+    await page.locator('button:has-text("Enregistrer"), button:has-text("Mettre à jour")').click();
     
     // Attendre le message de succès
     await expect(page.locator('text=/Élève mise à jour|succès/i')).toBeVisible({ timeout: 5000 });
@@ -115,7 +115,7 @@ test.describe('Gestion des Élèves', () => {
     }
     
     // Soumettre
-    await page.click('button:has-text("Enregistrer")');
+    await page.locator('button:has-text("Enregistrer")').click();
     
     // Attendre le succès
     await expect(page.locator('text=/succès|Photo/i')).toBeVisible({ timeout: 5000 });
@@ -158,10 +158,10 @@ test.describe('Gestion des Élèves', () => {
     await page.goto('/admin/students');
     
     // Cliquer sur "Nouvel Élève"
-    await page.click('button:has-text("Nouvel Élève")');
+    await page.locator('button:has-text("Nouvel Élève")').click();
     
     // Essayer de soumettre le formulaire vide
-    await page.click('button:has-text("Enregistrer")');
+    await page.locator('button:has-text("Enregistrer")').click();
     
     // Vérifier les erreurs de validation
     await expect(page.locator('text=/Requis|obligatoire|Veuillez remplir/i')).toBeVisible();

@@ -66,13 +66,13 @@ test.describe('Isolation Multi-Tenant', () => {
     await page.goto('/admin/students');
     
     // Créer un élève avec photo
-    await page.click('button:has-text("Nouvel Élève")');
-    
+    await page.locator('button:has-text("Nouvel Élève")').click();
+
     // Remplir les infos
     const uniqueEmail = `tenant-test-${Date.now()}@example.com`;
-    await page.fill('input[name="first_name"]', 'Test');
-    await page.fill('input[name="last_name"]', 'Upload');
-    await page.fill('input[name="email"]', uniqueEmail);
+    await page.locator('input[name="first_name"]').fill('Test');
+    await page.locator('input[name="last_name"]').fill('Upload');
+    await page.locator('input[name="email"]').fill(uniqueEmail);
     
     // Upload photo
     const photoInput = page.locator('input[type="file"]');
@@ -90,7 +90,7 @@ test.describe('Isolation Multi-Tenant', () => {
     }
     
     // Soumettre
-    await page.click('button:has-text("Enregistrer")');
+    await page.locator('button:has-text("Enregistrer")').click();
     
     // Attendre le succès
     await expect(page.locator('text=/succès|créé/i')).toBeVisible({ timeout: 5000 });

@@ -24,12 +24,12 @@ test.describe('Authentification', () => {
     await page.goto('/auth/login');
     
     // Remplir le formulaire
-    await page.fill('input[name="email"]', 'admin@test.local');
-    await page.fill('input[name="password"]', 'Password123!');
-    
+    await page.locator('input[name="email"]').fill('admin@test.local');
+    await page.locator('input[name="password"]').fill('Password123!');
+
     // Soumettre
-    await page.click('button:has-text("Se connecter")');
-    
+    await page.locator('button:has-text("Se connecter")').click();
+
     // Attendre la redirection
     await page.waitForURL('**/admin/dashboard');
     
@@ -41,9 +41,9 @@ test.describe('Authentification', () => {
     await page.goto('/auth/login');
     
     // Essayer de se connecter avec un mot de passe incorrect
-    await page.fill('input[name="email"]', 'admin@test.local');
-    await page.fill('input[name="password"]', 'WrongPassword123!');
-    await page.click('button:has-text("Se connecter")');
+    await page.locator('input[name="email"]').fill('admin@test.local');
+    await page.locator('input[name="password"]').fill('WrongPassword123!');
+    await page.locator('button:has-text("Se connecter")').click();
     
     // Attendre le message d'erreur
     const errorMsg = page.locator('text=/Identifiants invalides|Email ou mot de passe incorrect/');
@@ -81,9 +81,9 @@ test.describe('Authentification', () => {
     
     // Faire 5 tentatives échouées
     for (let i = 0; i < 5; i++) {
-      await page.fill('input[name="email"]', 'admin@test.local');
-      await page.fill('input[name="password"]', 'WrongPassword123!');
-      await page.click('button:has-text("Se connecter")');
+      await page.locator('input[name="email"]').fill('admin@test.local');
+      await page.locator('input[name="password"]').fill('WrongPassword123!');
+      await page.locator('button:has-text("Se connecter")').click();
       
       // Attendre le message d'erreur
       await page.waitForTimeout(1000);
@@ -98,17 +98,17 @@ test.describe('Authentification', () => {
     await page.goto('/auth/login');
     
     // Cliquer sur le lien d'inscription
-    await page.click('text=Pas encore de compte');
-    
+    await page.locator('text=Pas encore de compte').click();
+
     // Remplir le formulaire d'inscription
     const uniqueEmail = `test-${Date.now()}@example.com`;
-    await page.fill('input[name="email"]', uniqueEmail);
-    await page.fill('input[name="password"]', 'Password123!');
-    await page.fill('input[name="first_name"]', 'Jean');
-    await page.fill('input[name="last_name"]', 'Dupont');
-    
+    await page.locator('input[name="email"]').fill(uniqueEmail);
+    await page.locator('input[name="password"]').fill('Password123!');
+    await page.locator('input[name="first_name"]').fill('Jean');
+    await page.locator('input[name="last_name"]').fill('Dupont');
+
     // Soumettre
-    await page.click('button:has-text("S\'inscrire")');
+    await page.locator('button:has-text("S\'inscrire")').click();
     
     // Attendre la confirmation
     await expect(page.locator('text=/Email de confirmation|Vérifiez votre email/i')).toBeVisible();
@@ -118,11 +118,11 @@ test.describe('Authentification', () => {
     await page.goto('/auth/login');
     
     // Cliquer sur "Mot de passe oublié"
-    await page.click('text=Mot de passe oublié');
-    
+    await page.locator('text=Mot de passe oublié').click();
+
     // Entrer l'email
-    await page.fill('input[name="email"]', 'admin@test.local');
-    await page.click('button:has-text("Réinitialiser")');
+    await page.locator('input[name="email"]').fill('admin@test.local');
+    await page.locator('button:has-text("Réinitialiser")').click();
     
     // Vérifier le message de confirmation
     await expect(page.locator('text=/Email envoyé|Vérifiez votre boîte mail/i')).toBeVisible();

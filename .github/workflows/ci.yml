@@ -353,6 +353,19 @@ jobs:
           BOOTSTRAP_SECRET: test-bootstrap-secret-key-for-ci-32chars
           DEBUG: "true"
 
+      - name: Seed E2E test users
+        # Creates admin@test.local / teacher@test.local / parent@test.local /
+        # student@test.local (password: Password123!) on tenant `lycee-alpha`.
+        # Idempotent — safe to run on every CI run.
+        # Required because Alembic only creates tables, not the test data the
+        # Playwright fixtures (tests/fixtures/auth.ts) expect.
+        run: |
+          cd backend && python scripts/seed_e2e_users.py
+        env:
+          DATABASE_URL: postgresql://schoolflow:testpassword@localhost:5432/schoolflow_test
+          E2E_TEST_PASSWORD: Password123!
+          E2E_TENANT_SLUG: lycee-alpha
+
       - name: Start backend
         # Start uvicorn in background with logs captured to /tmp/backend.log
         # so we can inspect them if the API fails to come up.
@@ -387,19 +400,10 @@ jobs:
           CI: true
 
       - name: Run Playwright tests
-        # Marked continue-on-error because 84/89 tests currently fail due to
-        # two unrelated test-code issues (NOT infrastructure issues):
-        #   1. Playwright v1.57 removed page.fill(sel, val) — tests must be
-        #      migrated to page.locator(sel).fill(val) (45 call sites).
-        #   2. Tests use admin@test.local / teacher@test.local etc. but the
-        #      CI backend only auto-creates admin@guinee-academy.local — a
-        #      seed step is needed for the test users.
-        # Infrastructure is now solid: API returns HTTP 200, frontend
-        # returns HTTP 200, all 89 tests run in <5 min. The failures are
-        # purely test-code issues to be addressed in a dedicated follow-up.
-        # Once tests are fixed, remove continue-on-error to make E2E a
-        # hard gate again.
-        continue-on-error: true
+        # E2E tests now use the modern Playwright v1.57+ API:
+        #   page.locator(sel).fill(val) / page.locator(sel).click()
+        # Test users (admin/teacher/parent/student @test.local) are seeded
+        # by the "Seed E2E test users" step above.
         run: npx playwright test --project=chromium --reporter=html
         env:
           CI: true

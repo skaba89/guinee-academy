@@ -69,9 +69,9 @@ test.describe('Contrôle d\'Accès par Rôle (RBAC)', () => {
   test('Enseignant ne devrait pas voir les notes d\'autres classes', async ({ page }) => {
     // Se connecter comme enseignant
     await page.goto('/auth/login');
-    await page.fill('input[name="email"]', 'teacher@test.local');
-    await page.fill('input[name="password"]', 'Password123!');
-    await page.click('button:has-text("Se connecter")');
+    await page.locator('input[name="email"]').fill('teacher@test.local');
+    await page.locator('input[name="password"]').fill('Password123!');
+    await page.locator('button:has-text("Se connecter")').click();
     
     // Aller aux notes
     await page.goto('/teacher/grades');
@@ -117,9 +117,9 @@ test.describe('Contrôle d\'Accès par Rôle (RBAC)', () => {
     // Mais on peut tester qu'un parent ne peut pas accéder à un autre enfant via URL directe
     
     await page.goto('/auth/login');
-    await page.fill('input[name="email"]', 'parent@test.local');
-    await page.fill('input[name="password"]', 'Password123!');
-    await page.click('button:has-text("Se connecter")');
+    await page.locator('input[name="email"]').fill('parent@test.local');
+    await page.locator('input[name="password"]').fill('Password123!');
+    await page.locator('button:has-text("Se connecter")').click();
     
     // Essayer d'accéder à un ID d'élève au hasard
     await page.goto('/parent/children/00000000-0000-0000-0000-000000000000');

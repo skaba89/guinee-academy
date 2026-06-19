@@ -22,10 +22,10 @@ export const test = base.extend<AuthFixture>({
     await page.goto('/auth/login');
     
     // Utiliser les identifiants de test
-    await page.fill('input[name="email"]', 'admin@test.local');
-    await page.fill('input[name="password"]', 'Password123!');
-    
-    await page.click('button:has-text("Se connecter")');
+    await page.locator('input[name="email"]').fill('admin@test.local');
+    await page.locator('input[name="password"]').fill('Password123!');
+
+    await page.locator('button:has-text("Se connecter")').click();
     
     // Attendre la redirection vers le dashboard
     await page.waitForURL('**/admin/dashboard');
@@ -36,9 +36,9 @@ export const test = base.extend<AuthFixture>({
   loginAs: async ({ page }, use) => {
     const login = async (email: string, password: string) => {
       await page.goto('/auth/login');
-      await page.fill('input[name="email"]', email);
-      await page.fill('input[name="password"]', password);
-      await page.click('button:has-text("Se connecter")');
+      await page.locator('input[name="email"]').fill(email);
+      await page.locator('input[name="password"]').fill(password);
+      await page.locator('button:has-text("Se connecter")').click();
       
       // Attendre que la connexion soit complète
       await page.waitForLoadState('networkidle');
