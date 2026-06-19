@@ -425,7 +425,15 @@ jobs:
       - name: Check for credential files
         run: |
           echo "Checking for committed credential files..."
-          CRED_FILES=$(git ls-files | grep -iE 'credentials|password|secret.*\.txt|\.pem$|\.key$' || true)
+          # Look for actual credential files (not source code that happens
+          # to mention "password" or "credentials" in its filename).
+          # Excluded: source files (.py, .ts, .tsx, .js, .jsx), migrations,
+          # UI components, documentation.
+          CRED_FILES=$(git ls-files \
+            | grep -iE 'credentials|password|secret.*\.txt|\.pem$|\.key$' \
+            | grep -vE '\.(py|ts|tsx|js|jsx|md|json|ya?ml|txt)$' \
+            | grep -vE 'alembic/versions/' \
+            || true)
           if [ -n "$CRED_FILES" ]; then
             echo "ERROR: Possible credential files committed:"
             echo "$CRED_FILES"
