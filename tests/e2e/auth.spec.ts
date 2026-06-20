@@ -30,8 +30,8 @@ test.describe('Authentification', () => {
     // Soumettre
     await page.locator('button:has-text("Se connecter")').click();
 
-    // Attendre la redirection
-    await page.waitForURL('**/admin/dashboard');
+    // Attendre la redirection (URL: /{tenantSlug}/admin)
+    await page.waitForURL(/\/[^/]+\/admin$/);
     
     // Vérifier que nous sommes connectés
     await expect(page.locator('text=Tableau de Bord')).toBeVisible();
@@ -55,7 +55,8 @@ test.describe('Authentification', () => {
 
   test('devrait rediriger vers login si pas authentifié', async ({ page }) => {
     // Essayer d'accéder au dashboard sans être connecté
-    await page.goto('/admin/dashboard');
+    // L'URL réelle du dashboard admin est /{tenantSlug}/admin
+    await page.goto('/lycee-alpha/admin');
     
     // Devrait être redirigé vers login
     await page.waitForURL('**/auth/login');
@@ -132,11 +133,11 @@ test.describe('Authentification', () => {
     // Se connecter comme enseignant
     await loginAs(page, 'teacher@test.local', 'Password123!');
     
-    // Essayer d'accéder au dashboard admin
-    await page.goto('/admin/dashboard');
+    // Essayer d'accéder au dashboard admin (URL: /lycee-alpha/admin)
+    await page.goto('/lycee-alpha/admin');
     
     // Devrait être redirigé vers le tableau de bord enseignant
-    await page.waitForURL('**/teacher/**');
+    await page.waitForURL(/\/[^/]+\/teacher/);
     expect(page.url()).toContain('/teacher/');
   });
 });

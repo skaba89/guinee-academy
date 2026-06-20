@@ -27,8 +27,8 @@ export const test = base.extend<AuthFixture>({
 
     await page.locator('button:has-text("Se connecter")').click();
     
-    // Attendre la redirection vers le dashboard
-    await page.waitForURL('**/admin/dashboard');
+    // Attendre la redirection vers le dashboard admin (URL: /{tenantSlug}/admin)
+    await page.waitForURL(/\/[^/]+\/admin$/);
     
     await use(page);
   },
@@ -53,7 +53,8 @@ export const test = base.extend<AuthFixture>({
   loginAsAdmin: async ({ loginAs }, use) => {
     const loginAdmin = async (page: Page) => {
       await loginAs(page, 'admin@test.local', 'Password123!');
-      await page.waitForURL('**/admin/dashboard');
+      // URL after admin login: /{tenantSlug}/admin
+      await page.waitForURL(/\/[^/]+\/admin$/);
     };
     
     await use(loginAdmin);
@@ -62,7 +63,8 @@ export const test = base.extend<AuthFixture>({
   loginAsTeacher: async ({ loginAs }, use) => {
     const loginTeacher = async (page: Page) => {
       await loginAs(page, 'teacher@test.local', 'Password123!');
-      await page.waitForURL('**/teacher/dashboard');
+      // URL after teacher login: /{tenantSlug}/teacher
+      await page.waitForURL(/\/[^/]+\/teacher$/);
     };
     
     await use(loginTeacher);
@@ -71,7 +73,8 @@ export const test = base.extend<AuthFixture>({
   loginAsParent: async ({ loginAs }, use) => {
     const loginParent = async (page: Page) => {
       await loginAs(page, 'parent@test.local', 'Password123!');
-      await page.waitForURL('**/parent/dashboard');
+      // URL after parent login: /{tenantSlug}/parent
+      await page.waitForURL(/\/[^/]+\/parent$/);
     };
     
     await use(loginParent);
@@ -80,7 +83,8 @@ export const test = base.extend<AuthFixture>({
   loginAsStudent: async ({ loginAs }, use) => {
     const loginStudent = async (page: Page) => {
       await loginAs(page, 'student@test.local', 'Password123!');
-      await page.waitForURL('**/student/dashboard');
+      // URL after student login: /{tenantSlug}/student
+      await page.waitForURL(/\/[^/]+\/student$/);
     };
     
     await use(loginStudent);

@@ -230,6 +230,7 @@ const AuthNative = () => {
               </Label>
               <Input
                 id="email"
+                name="email"
                 type="email"
                 placeholder="admin@guinee-academy.local"
                 value={email}
@@ -256,6 +257,7 @@ const AuthNative = () => {
               <div className="relative">
                 <Input
                   id="password"
+                  name="password"
                   type={showPassword ? "text" : "password"}
                   placeholder="Votre mot de passe"
                   value={password}
