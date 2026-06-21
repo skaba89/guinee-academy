@@ -89,3 +89,30 @@ Stage Summary:
 Commit:
 - 49eb7b3 fix(e2e): align auth selectors & URLs with real router (LOCAL — not pushed; no GitHub credentials available in current env).
 - To push: `git push origin main` once GitHub auth is configured.
+
+---
+Task ID: 4
+Agent: Main Orchestrator
+Task: Apply tenant-slug URL pattern to remaining E2E spec files
+
+Work Log:
+- Verified CI run on 49eb7b3 was fully GREEN (6/6 jobs).
+- Identified 9 spec files still using tenant-less URLs (/admin/..., /teacher/...):
+  rbac.spec.ts, security.spec.ts, finance.spec.ts, attendance.spec.ts,
+  students.spec.ts, tenant-isolation.spec.ts, badges-auth.spec.ts,
+  badges-display.spec.ts, badges-notifications.spec.ts, badges-security.spec.ts
+- Applied systematic fix: replaced all /admin/... → /lycee-alpha/admin/...
+  (and equivalents for /teacher/, /parent/, /student/) using MultiEdit + sed.
+- Also fixed:
+  - security.spec.ts: replaced [data-testid="user-menu"] selector (not implemented
+    in UI) with direct button:has-text("Déconnexion") selector.
+  - security.spec.ts: page2.goto('/admin/dashboard') → '/lycee-alpha/admin'.
+- Verified: ESLint passes (0 errors, only preexisting warnings), Vite build succeeds (16.75s).
+- Committed (2b975ee) and pushed to origin/main.
+- CI run on 2b975ee started (in_progress).
+
+Stage Summary:
+- 10 spec files updated (~70 lines changed).
+- Expected impact: most of the 84 E2E failures should now resolve.
+- Once CI run completes, check the playwright-report artifact to identify
+  any remaining individual test issues (selectors, missing UI elements, etc.).
