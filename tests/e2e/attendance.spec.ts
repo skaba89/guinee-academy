@@ -7,7 +7,7 @@ import { test, expect } from '../fixtures/auth';
 test.describe('Présences en direct', () => {
   test.beforeEach(async ({ loginAsAdmin, page }) => {
     await loginAsAdmin(page);
-    await page.goto('/admin/live-attendance');
+    await page.goto('/lycee-alpha/admin/live-attendance');
     await page.waitForLoadState('networkidle');
   });
 
@@ -61,7 +61,7 @@ test.describe('Présences en direct', () => {
 test.describe('Incidents', () => {
   test.beforeEach(async ({ loginAsAdmin, page }) => {
     await loginAsAdmin(page);
-    await page.goto('/admin/incidents');
+    await page.goto('/lycee-alpha/admin/incidents');
     await page.waitForLoadState('networkidle');
   });
 
@@ -92,7 +92,7 @@ test.describe('Incidents', () => {
     });
 
     await loginAsAdmin(page);
-    await page.goto('/admin/incidents');
+    await page.goto('/lycee-alpha/admin/incidents');
     await page.waitForLoadState('networkidle');
 
     for (const auth of incidentRequests) {
@@ -104,7 +104,7 @@ test.describe('Incidents', () => {
 test.describe('Alertes précoces', () => {
   test('la page early-warnings se charge', async ({ loginAsAdmin, page }) => {
     await loginAsAdmin(page);
-    await page.goto('/admin/early-warnings');
+    await page.goto('/lycee-alpha/admin/early-warnings');
     await page.waitForLoadState('networkidle');
 
     await expect(page.locator('h1, h2').first()).toBeVisible();

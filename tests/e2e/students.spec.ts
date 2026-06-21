@@ -18,7 +18,7 @@ test.describe('Gestion des Élèves', () => {
 
   test('devrait afficher la liste des élèves', async ({ page }) => {
     // Naviguer vers la page des élèves
-    await page.goto('/admin/students');
+    await page.goto('/lycee-alpha/admin/students');
     
     // Vérifier la présence du titre
     await expect(page.locator('h1, h2').filter({ hasText: 'Élèves' })).toBeVisible();
@@ -28,7 +28,7 @@ test.describe('Gestion des Élèves', () => {
   });
 
   test('devrait créer un nouvel élève', async ({ page }) => {
-    await page.goto('/admin/students');
+    await page.goto('/lycee-alpha/admin/students');
     
     // Cliquer sur "Nouvel Élève" ou "Ajouter"
     await page.locator('button:has-text("Nouvel Élève"), button:has-text("Ajouter")').click();
@@ -61,7 +61,7 @@ test.describe('Gestion des Élèves', () => {
   });
 
   test('devrait modifier les infos d\'un élève', async ({ page }) => {
-    await page.goto('/admin/students');
+    await page.goto('/lycee-alpha/admin/students');
     
     // Chercher un élève (le premier de la liste)
     const firstStudent = page.locator('[data-testid="student-row"], table tbody tr').first();
@@ -85,7 +85,7 @@ test.describe('Gestion des Élèves', () => {
   });
 
   test('devrait télécharger une photo d\'élève', async ({ page }) => {
-    await page.goto('/admin/students');
+    await page.goto('/lycee-alpha/admin/students');
     
     // Chercher un élève
     const firstStudent = page.locator('[data-testid="student-row"], table tbody tr').first();
@@ -122,7 +122,7 @@ test.describe('Gestion des Élèves', () => {
   });
 
   test('devrait afficher les détails d\'un élève', async ({ page }) => {
-    await page.goto('/admin/students');
+    await page.goto('/lycee-alpha/admin/students');
     
     // Cliquer sur le nom d'un élève
     const studentName = page.locator('[data-testid="student-name"], table tbody tr td').first();
@@ -136,7 +136,7 @@ test.describe('Gestion des Élèves', () => {
   });
 
   test('devrait supprimer un élève avec confirmation', async ({ page }) => {
-    await page.goto('/admin/students');
+    await page.goto('/lycee-alpha/admin/students');
     
     // Chercher le dernier élève (pour ne pas casser les données de test existantes)
     const students = page.locator('[data-testid="student-row"], table tbody tr');
@@ -155,7 +155,7 @@ test.describe('Gestion des Élèves', () => {
   });
 
   test('devrait valider les champs obligatoires', async ({ page }) => {
-    await page.goto('/admin/students');
+    await page.goto('/lycee-alpha/admin/students');
     
     // Cliquer sur "Nouvel Élève"
     await page.locator('button:has-text("Nouvel Élève")').click();
@@ -168,7 +168,7 @@ test.describe('Gestion des Élèves', () => {
   });
 
   test('devrait filtrer les élèves par classe', async ({ page }) => {
-    await page.goto('/admin/students');
+    await page.goto('/lycee-alpha/admin/students');
     
     // Vérifier la présence d'un filtre
     const classroomFilter = page.locator('select[name="classroom"], [data-testid="filter-classroom"]');
@@ -187,7 +187,7 @@ test.describe('Gestion des Élèves', () => {
   });
 
   test('devrait afficher les notes d\'un élève', async ({ page }) => {
-    await page.goto('/admin/students');
+    await page.goto('/lycee-alpha/admin/students');
     
     // Cliquer sur un élève
     const firstStudent = page.locator('[data-testid="student-row"]').first();

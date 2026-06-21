@@ -7,7 +7,7 @@ import { test, expect } from '../fixtures/auth';
 test.describe('Badges - Affichage & UI', () => {
   test.beforeEach(async ({ loginAsAdmin, page }) => {
     await loginAsAdmin(page);
-    await page.goto('/admin/badges');
+    await page.goto('/lycee-alpha/admin/badges');
     await page.waitForLoadState('networkidle');
   });
 
@@ -35,7 +35,7 @@ test.describe('Badges - Affichage & UI', () => {
   });
 
   test('la page gamification se charge', async ({ page }) => {
-    await page.goto('/admin/gamification');
+    await page.goto('/lycee-alpha/admin/gamification');
     await page.waitForLoadState('networkidle');
 
     const heading = page.locator('h1, h2').first();
@@ -43,7 +43,7 @@ test.describe('Badges - Affichage & UI', () => {
   });
 
   test('la page gamification contient un leaderboard ou tableau', async ({ page }) => {
-    await page.goto('/admin/gamification');
+    await page.goto('/lycee-alpha/admin/gamification');
     await page.waitForLoadState('networkidle');
 
     // soit un tableau, soit un message vide, soit une liste

@@ -16,14 +16,14 @@ test.describe('Contrôle d\'Accès par Rôle (RBAC)', () => {
     await loginAsAdmin(page);
     
     // Vérifier l'accès au dashboard admin
-    await page.goto('/admin/dashboard');
+    await page.goto('/lycee-alpha/admin');
     await expect(page.locator('text=Tableau de Bord Admin')).toBeVisible();
   });
 
   test('Admin devrait pouvoir gérer les utilisateurs', async ({ loginAsAdmin, page }) => {
     await loginAsAdmin(page);
     
-    await page.goto('/admin/users');
+    await page.goto('/lycee-alpha/admin/users');
     
     // Vérifier les boutons d'action admin
     await expect(page.locator('button:has-text("Créer"), button:has-text("Ajouter")')).toBeVisible();
@@ -33,8 +33,8 @@ test.describe('Contrôle d\'Accès par Rôle (RBAC)', () => {
   test('Enseignant devrait voir seulement ses élèves', async ({ loginAsTeacher, page }) => {
     await loginAsTeacher(page);
     
-    // Aller à la page des élèves
-    await page.goto('/teacher/students');
+    // Aller à la page des élèves (URL: /lycee-alpha/teacher/students)
+    await page.goto('/lycee-alpha/teacher/students');
     
     // Devrait voir le filtre "Mes classes"
     await expect(page.locator('text=/Mes classes|Mes élèves/')).toBeVisible();
@@ -45,21 +45,21 @@ test.describe('Contrôle d\'Accès par Rôle (RBAC)', () => {
   test('Enseignant ne devrait pas accéder au dashboard admin', async ({ loginAsTeacher, page }) => {
     await loginAsTeacher(page);
     
-    // Essayer d'accéder au dashboard admin
-    await page.goto('/admin/dashboard');
+    // Essayer d'accéder au dashboard admin (URL: /lycee-alpha/admin)
+    await page.goto('/lycee-alpha/admin');
     
     // Devrait être redirigé
-    await page.waitForURL('**/teacher/**');
+    await page.waitForURL(/\/[^/]+\/teacher/);
     
     // Vérifier qu'on n'est pas sur le dashboard admin
-    expect(page.url()).not.toContain('/admin/dashboard');
+    expect(page.url()).not.toMatch(/\/[^/]+\/admin$/);
   });
 
   test('Enseignant devrait pouvoir entrer les notes de ses élèves', async ({ loginAsTeacher, page }) => {
     await loginAsTeacher(page);
     
-    // Aller à la page des notes
-    await page.goto('/teacher/grades');
+    // Aller à la page des notes (URL: /lycee-alpha/teacher/grades)
+    await page.goto('/lycee-alpha/teacher/grades');
     
     // Vérifier la présence du bouton "Ajouter une note"
     const addGradeBtn = page.locator('button:has-text("Ajouter une note"), button:has-text("Nouvelle note")');
@@ -73,8 +73,8 @@ test.describe('Contrôle d\'Accès par Rôle (RBAC)', () => {
     await page.locator('input[name="password"]').fill('Password123!');
     await page.locator('button:has-text("Se connecter")').click();
     
-    // Aller aux notes
-    await page.goto('/teacher/grades');
+    // Aller aux notes (URL: /lycee-alpha/teacher/grades)
+    await page.goto('/lycee-alpha/teacher/grades');
     
     // Filtrer par classe d'un autre enseignant (si possible)
     // Cette vérification est faite au niveau du backend via RLS
@@ -84,8 +84,8 @@ test.describe('Contrôle d\'Accès par Rôle (RBAC)', () => {
   test('Parent devrait voir ses enfants uniquement', async ({ loginAsParent, page }) => {
     await loginAsParent(page);
     
-    // Aller à la page des enfants/classe
-    await page.goto('/parent/children');
+    // Aller à la page des enfants/classe (URL: /lycee-alpha/parent/children)
+    await page.goto('/lycee-alpha/parent/children');
     
     // Devrait afficher ses enfants
     await expect(page.locator('[data-testid="child-card"], [data-testid="child-item"]')).toBeVisible();
@@ -122,7 +122,7 @@ test.describe('Contrôle d\'Accès par Rôle (RBAC)', () => {
     await page.locator('button:has-text("Se connecter")').click();
     
     // Essayer d'accéder à un ID d'élève au hasard
-    await page.goto('/parent/children/00000000-0000-0000-0000-000000000000');
+    await page.goto('/lycee-alpha/parent/children/00000000-0000-0000-0000-000000000000');
     
     // Devrait être redirigé ou voir une erreur 404/403
     await page.waitForLoadState('networkidle');
@@ -134,8 +134,8 @@ test.describe('Contrôle d\'Accès par Rôle (RBAC)', () => {
   test('Élève devrait voir ses propres informations', async ({ loginAsStudent, page }) => {
     await loginAsStudent(page);
     
-    // Aller au profil
-    await page.goto('/student/profile');
+    // Aller au profil (URL: /lycee-alpha/student/profile)
+    await page.goto('/lycee-alpha/student/profile');
     
     // Vérifier les infos personnelles
     await expect(page.locator('text=/Mes informations|Mon profil/')).toBeVisible();
@@ -144,7 +144,7 @@ test.describe('Contrôle d\'Accès par Rôle (RBAC)', () => {
   test('Élève devrait voir ses notes', async ({ loginAsStudent, page }) => {
     await loginAsStudent(page);
     
-    await page.goto('/student/grades');
+    await page.goto('/lycee-alpha/student/grades');
     
     // Vérifier la présence des notes
     await page.waitForLoadState('networkidle');
@@ -153,17 +153,17 @@ test.describe('Contrôle d\'Accès par Rôle (RBAC)', () => {
   test('Élève ne devrait pas accéder au dashboard admin', async ({ loginAsStudent, page }) => {
     await loginAsStudent(page);
     
-    // Essayer d'accéder au dashboard admin
-    await page.goto('/admin/dashboard');
+    // Essayer d'accéder au dashboard admin (URL: /lycee-alpha/admin)
+    await page.goto('/lycee-alpha/admin');
     
     // Devrait être redirigé
-    await page.waitForURL('**/student/**');
-    expect(page.url()).not.toContain('/admin/dashboard');
+    await page.waitForURL(/\/[^/]+\/student/);
+    expect(page.url()).not.toMatch(/\/[^/]+\/admin$/);
   });
 
   test('Utilisateur non connecté devrait être redirigé vers login', async ({ page }) => {
-    // Essayer d'accéder directement au dashboard
-    await page.goto('/admin/dashboard');
+    // Essayer d'accéder directement au dashboard (URL: /lycee-alpha/admin)
+    await page.goto('/lycee-alpha/admin');
     
     // Devrait être redirigé vers login
     await page.waitForURL('**/auth/login');
@@ -173,7 +173,7 @@ test.describe('Contrôle d\'Accès par Rôle (RBAC)', () => {
   test('Boutons d\'action devraient dépendre du rôle', async ({ loginAsTeacher, page }) => {
     await loginAsTeacher(page);
     
-    await page.goto('/teacher/students');
+    await page.goto('/lycee-alpha/teacher/students');
     
     // Enseignant peut ajouter notes mais pas modifier élèves
     const addNoteBtn = page.locator('button:has-text("Ajouter note")');

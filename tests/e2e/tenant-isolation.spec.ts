@@ -13,8 +13,8 @@ test.describe('Isolation Multi-Tenant', () => {
   test('Admin d\'un établissement devrait voir seulement ses données', async ({ loginAsAdmin, page }) => {
     await loginAsAdmin(page);
     
-    // Aller à la liste des élèves
-    await page.goto('/admin/students');
+    // Aller à la liste des élèves (URL: /lycee-alpha/admin/students)
+    await page.goto('/lycee-alpha/admin/students');
     
     // Les élèves affichés devraient tous être du tenant courant
     await page.waitForLoadState('networkidle');
@@ -28,7 +28,7 @@ test.describe('Isolation Multi-Tenant', () => {
     
     if (await tenantSelect.isVisible()) {
       // Récupérer les élèves avant changement
-      await page.goto('/admin/students');
+      await page.goto('/lycee-alpha/admin/students');
       const initialStudents = await page.locator('[data-testid="student-row"]').count();
       
       // Changer de tenant
@@ -50,7 +50,7 @@ test.describe('Isolation Multi-Tenant', () => {
     // Cette vérification se fait via les Network tabs mais le test E2E
     // vérifie principalement le comportement UI
     
-    await page.goto('/admin/students');
+    await page.goto('/lycee-alpha/admin/students');
     
     // Attendre que les données se chargent
     await page.waitForLoadState('networkidle');
@@ -62,8 +62,8 @@ test.describe('Isolation Multi-Tenant', () => {
   test('Documents uploadés d\'un tenant ne devraient pas être accessibles par un autre', async ({ loginAsAdmin, page }) => {
     await loginAsAdmin(page);
     
-    // Aller à la page d'upload
-    await page.goto('/admin/students');
+    // Aller à la page d'upload (URL: /lycee-alpha/admin/students)
+    await page.goto('/lycee-alpha/admin/students');
     
     // Créer un élève avec photo
     await page.locator('button:has-text("Nouvel Élève")').click();
@@ -114,7 +114,7 @@ test.describe('Isolation Multi-Tenant', () => {
   test('Grades d\'un tenant ne devraient pas être mélangés avec un autre', async ({ loginAsTeacher, page }) => {
     await loginAsTeacher(page);
     
-    await page.goto('/teacher/grades');
+    await page.goto('/lycee-alpha/teacher/grades');
     
     // Vérifier que les élèves affichés sont de ses classes uniquement
     await page.waitForLoadState('networkidle');
@@ -133,7 +133,7 @@ test.describe('Isolation Multi-Tenant', () => {
       route.continue();
     });
     
-    await page.goto('/admin/students');
+    await page.goto('/lycee-alpha/admin/students');
     await page.waitForLoadState('networkidle');
     
     // Vérifier que les appels API passent le tenant_id

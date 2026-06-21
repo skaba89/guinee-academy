@@ -24,7 +24,7 @@ test.describe('IDOR Prevention', () => {
 
     // Try accessing a student from another tenant by manipulating the URL
     const otherTenantStudentId = '00000000-0000-0000-0000-000000000001';
-    await page.goto(`/admin/students/${otherTenantStudentId}`);
+    await page.goto(`/lycee-alpha/admin/students/${otherTenantStudentId}`);
 
     // Should show 404 or access denied, not the student data
     const hasError = await page
@@ -43,8 +43,8 @@ test.describe('IDOR Prevention', () => {
   }) => {
     await loginAsStudent(page);
 
-    // Navigate to homework
-    await page.goto('/student/homework');
+    // Navigate to homework (URL: /lycee-alpha/student/homework)
+    await page.goto('/lycee-alpha/student/homework');
 
     // Try to submit homework for another student via API interception
     const apiResponse = await page.evaluate(async () => {
@@ -106,14 +106,14 @@ test.describe('Token Blacklist', () => {
     await page.locator('input[name="email"]').fill('admin@test.local');
     await page.locator('input[name="password"]').fill('Password123!');
     await page.locator('button:has-text("Se connecter")').click();
-    await page.waitForURL('**/admin/dashboard');
+    await page.waitForURL(/\/[^/]+\/admin$/);
 
     // Get the token
     const token = await page.evaluate(() => localStorage.getItem('token'));
 
     // Logout
-    await page.locator('[data-testid="user-menu"]').click();
-    await page.locator('text=Déconnexion').click();
+    // Logout — click directly on the 'Déconnexion' button in the sidebar
+    await page.locator('button:has-text("Déconnexion")').click();
     await page.waitForURL('**/auth/login');
 
     // Try using the old token
@@ -143,7 +143,7 @@ test.describe('Token Blacklist', () => {
 
     // Create another page (simulating another session)
     const page2 = await context.newPage();
-    await page2.goto('/admin/dashboard');
+    await page2.goto('/lycee-alpha/admin');
 
     // Trigger logout-all from the first page
     const apiResponse = await page.evaluate(async () => {
@@ -232,8 +232,7 @@ test.describe('XSS Prevention', () => {
   }) => {
     await loginAsAdmin(page);
 
-    await page.goto('/admin/students');
-
+    await page.goto('/lycee-alpha/admin/students');
     // Try creating a student with XSS payload in the name
     const xssPayload = '<script>alert("xss")</script>';
 
@@ -256,7 +255,7 @@ test.describe('XSS Prevention', () => {
   }) => {
     await loginAsTeacher(page);
 
-    await page.goto('/teacher/grades');
+    await page.goto('/lycee-alpha/teacher/grades');
 
     // Check that the page doesn't have unescaped script tags
     const hasUnescapedScripts = await page.evaluate(() => {
@@ -373,7 +372,7 @@ test.describe('Permission-Based UI Rendering', () => {
   }) => {
     await loginAsStudent(page);
 
-    await page.goto('/student/grades');
+    await page.goto('/lycee-alpha/student/grades');
 
     // Student should see their grades but NOT edit buttons
     const editButtons = page.locator('button:has-text("Modifier"), button:has-text("Supprimer")');

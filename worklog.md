@@ -85,3 +85,7 @@ Stage Summary:
   * Text mismatches: `text=Mot de passe oublié` (actual: `Mot de passe oublié ?` with `?`).
 - Next session should: (1) pull the playwright-report artifact from CI to see exactly which tests still fail, (2) iterate on the remaining spec files using the same URL pattern fix, (3) add the missing UI elements (user-menu, register link) or skip those tests.
 
+
+Commit:
+- 49eb7b3 fix(e2e): align auth selectors & URLs with real router (LOCAL — not pushed; no GitHub credentials available in current env).
+- To push: `git push origin main` once GitHub auth is configured.

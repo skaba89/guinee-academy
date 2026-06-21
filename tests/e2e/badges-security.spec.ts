@@ -29,7 +29,7 @@ test.describe('Badges - Sécurité & Isolation Tenant', () => {
     await page.evaluate(() => localStorage.removeItem('guinee_academy:access_token'));
 
     // tenter de naviguer vers une page protégée
-    await page.goto('/admin/badges');
+    await page.goto('/lycee-alpha/admin/badges');
     await page.waitForLoadState('networkidle');
 
     const url = page.url();
@@ -52,7 +52,7 @@ test.describe('Badges - Sécurité & Isolation Tenant', () => {
     });
 
     await loginAsAdmin(page);
-    await page.goto('/admin/badges');
+    await page.goto('/lycee-alpha/admin/badges');
     await page.waitForLoadState('networkidle');
 
     // si des requêtes API ont été faites, elles doivent avoir un Bearer token

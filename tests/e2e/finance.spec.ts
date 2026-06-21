@@ -7,7 +7,7 @@ import { test, expect } from '../fixtures/auth';
 test.describe('Gestion des Finances', () => {
   test.beforeEach(async ({ loginAsAdmin, page }) => {
     await loginAsAdmin(page);
-    await page.goto('/admin/finances');
+    await page.goto('/lycee-alpha/admin/finances');
     await page.waitForLoadState('networkidle');
   });
 
@@ -90,7 +90,7 @@ test.describe('Finances - Sécurité API', () => {
     });
 
     await loginAsAdmin(page);
-    await page.goto('/admin/finances');
+    await page.goto('/lycee-alpha/admin/finances');
     await page.waitForLoadState('networkidle');
 
     for (const req of financeRequests) {
@@ -100,7 +100,7 @@ test.describe('Finances - Sécurité API', () => {
 
   test('accès sans auth redirige depuis la page finances', async ({ page }) => {
     await page.evaluate(() => localStorage.removeItem('guinee_academy:access_token'));
-    await page.goto('/admin/finances');
+    await page.goto('/lycee-alpha/admin/finances');
     await page.waitForLoadState('networkidle');
 
     const url = page.url();

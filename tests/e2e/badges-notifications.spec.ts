@@ -10,7 +10,7 @@ test.describe('Badges - Notifications & Interactions', () => {
   });
 
   test('la cloche de notifications est accessible sur le dashboard', async ({ page }) => {
-    await page.goto('/admin/dashboard');
+    await page.goto('/lycee-alpha/admin');
     await page.waitForLoadState('networkidle');
 
     // vérifier que le dashboard charge (notifications peuvent être absentes en test)
@@ -19,7 +19,7 @@ test.describe('Badges - Notifications & Interactions', () => {
   });
 
   test('la page badges peut recevoir une interaction clic', async ({ page }) => {
-    await page.goto('/admin/badges');
+    await page.goto('/lycee-alpha/admin/badges');
     await page.waitForLoadState('networkidle');
 
     // cliquer sur le premier bouton disponible sans crasher
@@ -34,7 +34,7 @@ test.describe('Badges - Notifications & Interactions', () => {
   });
 
   test('le token JWT contient les informations utilisateur', async ({ page }) => {
-    await page.goto('/admin/dashboard');
+    await page.goto('/lycee-alpha/admin');
     await page.waitForLoadState('networkidle');
 
     const token = await page.evaluate(() => localStorage.getItem('guinee_academy:access_token'));

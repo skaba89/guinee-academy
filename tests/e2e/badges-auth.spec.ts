@@ -7,7 +7,7 @@ import { test, expect } from '../fixtures/auth';
 test.describe('Badges - Authentification & Accès', () => {
   test('admin peut accéder à la page badges', async ({ loginAsAdmin, page }) => {
     await loginAsAdmin(page);
-    await page.goto('/admin/badges');
+    await page.goto('/lycee-alpha/admin/badges');
     await page.waitForLoadState('networkidle');
 
     await expect(page.locator('h1, h2').first()).toBeVisible();
@@ -17,7 +17,7 @@ test.describe('Badges - Authentification & Accès', () => {
 
   test('admin peut accéder à la page gamification', async ({ loginAsAdmin, page }) => {
     await loginAsAdmin(page);
-    await page.goto('/admin/gamification');
+    await page.goto('/lycee-alpha/admin/gamification');
     await page.waitForLoadState('networkidle');
 
     await expect(page.locator('h1, h2').first()).toBeVisible();
@@ -29,7 +29,7 @@ test.describe('Badges - Authentification & Accès', () => {
     // accès direct sans token
     await page.evaluate(() => localStorage.removeItem('guinee_academy:access_token'));
 
-    await page.goto('/admin/badges');
+    await page.goto('/lycee-alpha/admin/badges');
     await page.waitForLoadState('networkidle');
 
     // doit atterrir sur login ou page d'accueil
