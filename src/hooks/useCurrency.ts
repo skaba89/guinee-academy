@@ -1,3 +1,4 @@
+import { useSettings } from "@/hooks/useSettings";
 import { useTenant } from "@/contexts/TenantContext";
 
 export interface CurrencyConfig {
@@ -40,29 +41,55 @@ export const CURRENCIES: Record<string, CurrencyConfig> = {
   AOA: { code: "AOA", symbol: "Kz", name: "Kwanza Angolais", locale: "pt-AO", position: "after" },
 };
 
+/**
+ * Default currency used when no tenant setting is configured.
+ * Centralised here so the default is consistent across the app.
+ */
+export const DEFAULT_CURRENCY_CODE = "XOF";
+
+/**
+ * useCurrency
+ * -----------
+ * Reactive currency hook. Reads `currency` from the centralised
+ * SettingsProvider (which refetches from `/tenants/settings/` after every
+ * update) instead of the static `tenant.settings` snapshot exposed by
+ * TenantContext — so changing the currency in Settings instantly updates
+ * every page that uses `formatCurrency` / `formatCurrencyCompact`.
+ *
+ * The hook also falls back to `tenant.settings.currency` (if present) for
+ * backwards compatibility with code paths that haven't been migrated to the
+ * SettingsProvider yet (e.g. public pages, onboarding).
+ */
 export const useCurrency = () => {
+  // Primary source of truth — reactive to settings updates.
+  const { settings } = useSettings();
+  // Fallback for contexts where SettingsProvider is not yet bootstrapped
+  // (public pages, super-admin without tenant, onboarding wizard).
   const { tenant } = useTenant();
-  
-  const settings = tenant?.settings as Record<string, any> | undefined;
-  const currencyCode = settings?.currency || "XOF";
-  const currencyConfig = CURRENCIES[currencyCode] || CURRENCIES.XOF;
-  
+
+  const tenantSettings = tenant?.settings as Record<string, any> | undefined;
+  const currencyCode =
+    settings?.currency ||
+    tenantSettings?.currency ||
+    DEFAULT_CURRENCY_CODE;
+  const currencyConfig = CURRENCIES[currencyCode] || CURRENCIES[DEFAULT_CURRENCY_CODE];
+
   const formatCurrency = (value: number): string => {
-    const formattedNumber = new Intl.NumberFormat(currencyConfig.locale, { 
+    const formattedNumber = new Intl.NumberFormat(currencyConfig.locale, {
       minimumFractionDigits: 0,
-      maximumFractionDigits: 2 
+      maximumFractionDigits: 2
     }).format(value);
-    
+
     if (currencyConfig.position === "before") {
       return `${currencyConfig.symbol}${formattedNumber}`;
     }
     return `${formattedNumber} ${currencyConfig.symbol}`;
   };
-  
+
   const formatCurrencyCompact = (value: number): string => {
     if (value >= 1000000) {
       const formatted = (value / 1000000).toFixed(1);
-      return currencyConfig.position === "before" 
+      return currencyConfig.position === "before"
         ? `${currencyConfig.symbol}${formatted}M`
         : `${formatted}M ${currencyConfig.symbol}`;
     }
@@ -74,7 +101,7 @@ export const useCurrency = () => {
     }
     return formatCurrency(value);
   };
-  
+
   return {
     currency: currencyConfig,
     currencyCode,

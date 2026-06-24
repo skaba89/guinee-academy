@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useMemo, useCallback } from "react";
+import React, { createContext, useContext, useEffect, useMemo, useCallback, useRef } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTenant } from "@/contexts/TenantContext";
 import { useAuth } from "@/contexts/AuthContext";
@@ -62,11 +62,46 @@ interface SettingsContextType {
 const SettingsContext = createContext<SettingsContextType | undefined>(undefined);
 
 export function SettingsProvider({ children }: { children: React.ReactNode }) {
-    const { tenant } = useTenant();
+    const { tenant, setCurrentTenant } = useTenant();
     const { isSuperAdmin } = useAuth();
     const { toast } = useToast();
     const queryClient = useQueryClient();
     const [isUpdating, setIsUpdating] = React.useState(false);
+
+    /**
+     * Latest tenant snapshot kept in a ref so that `syncTenantSettings`
+     * can be a stable callback (no dependency on `tenant`). This prevents
+     * the render loop where:
+     *   tenant changes → syncTenantSettings identity changes →
+     *   effect re-fires → setCurrentTenant → tenant changes → …
+     */
+    const tenantRef = useRef(tenant);
+    useEffect(() => {
+        tenantRef.current = tenant;
+    }, [tenant]);
+
+    /**
+     * Sync the freshly-fetched settings back into TenantContext so that
+     * every component reading `tenant?.settings?.*` (useCurrency, HR tabs,
+     * invoice actions, onboarding wizard, etc.) gets reactive updates when
+     * the admin changes a setting — not just the components that go through
+     * useSettings(). Without this, TenantContext keeps the stale snapshot
+     * captured at login until the next full tenant refetch.
+     */
+    const syncTenantSettings = useCallback(
+        (newSettings: TenantSettingsSchema) => {
+            const current = tenantRef.current;
+            if (!current) return;
+            const currentSettings = (current.settings || {}) as Record<string, any>;
+            const nextSettings = { ...currentSettings, ...newSettings };
+            // Skip the setState if nothing actually changed — avoids
+            // triggering downstream effects (e.g. i18n overrides) on no-op re-renders.
+            const isSame = JSON.stringify(currentSettings) === JSON.stringify(nextSettings);
+            if (isSame) return;
+            setCurrentTenant({ ...current, settings: nextSettings });
+        },
+        [setCurrentTenant]
+    );
 
     // Super admins have no tenant context — skip fetching settings entirely.
     // The backend would return 400; the frontend should just use DEFAULT_SETTINGS.
@@ -107,6 +142,15 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
         };
     }, [tenant, cachedSettings]);
 
+    // Keep TenantContext's `tenant.settings` snapshot in sync with the
+    // freshly-fetched settings so that all `tenant?.settings?.*` readers
+    // (useCurrency, HR tabs, invoices, onboarding, etc.) react to changes.
+    useEffect(() => {
+        if (!hasTenantContext) return;
+        if (!cachedSettings) return;
+        syncTenantSettings(cachedSettings as TenantSettingsSchema);
+    }, [cachedSettings, hasTenantContext, syncTenantSettings]);
+
     // Sync language with i18n
     useEffect(() => {
         if (settings?.language && settings.language !== i18n.language) {
@@ -122,6 +166,10 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
             await apiClient.patch("/tenants/settings/", updates);
             await refetch();
 
+            // Eagerly sync the new values into TenantContext so the UI
+            // updates instantly, even before the refetch round-trip lands.
+            syncTenantSettings(updates as TenantSettingsSchema);
+
             if (updates.language && updates.language !== i18n.language) {
                 i18n.changeLanguage(updates.language);
             }
@@ -134,7 +182,7 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
         } finally {
             setIsUpdating(false);
         }
-    }, [tenant?.id, refetch, toast]);
+    }, [tenant?.id, refetch, toast, syncTenantSettings]);
 
     const updateSetting = useCallback(async (key: keyof TenantSettingsSchema, value: any) => {
         return updateSettings({ [key]: value });
